@@ -47,15 +47,24 @@ slash to indicate a folder.
 
 ## Connection Methods
 
+**popupLogin()**
+```javascript
+fileClient.popupLogin().then( webId => {
+    if(!webId) console.log(fileClient.err)
+    else console.log( `Logged in as ${webId}.`)
+})
+```
+
+Opens a popup window that prompts for an IDP then lets you login.
+
 **login(**IDP**)**<br>
-**popupLogin(**IDP,popupUrl**)**
 ```javascript
 fileClient.login(idp).then( webId => {
     if(!webId) console.log(fileClient.err)
     else console.log( `Logged in as ${webId}.`)
 })
 ```
-Logs in to the specified IDP (Identity Provider, e.g. 'https://solid.community') on a redirected page (login) or a popup window (popupLogin) and returns to wherever it was called from.  The popupUrl parameter is the location of an html popup login form and if omitted uses the form at https://solid.community/common/popup.html as the default.
+Logs in to the specified IDP (Identity Provider, e.g. 'https://solid.community') on a redirected page and returns to wherever it was called from.
 
 **logout()**
 ```javascript

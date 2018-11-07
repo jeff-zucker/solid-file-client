@@ -8,16 +8,15 @@ document.addEventListener("DOMContentLoaded", function(event) {
 var fileClient = new SolidFileClient()
 
 /* THIS EXAMPLE WRITES DATA  SO YOU NEED A SOLID STORAGE TO RUN IT
-   YOU MUST ENTER YOUR IDP (INCLUDING YOUR DOMAIN)
+   YOU MUST ENTER THE URL OF A TEST DIRECTORY
 *************************************************************** */
-var idp        = "https://jeffz.solid.community" // PUT-YOUR-IDP-HERE
-var newFolder  = idp + "/public/test-folder/"
+var newFolder  = "https://jeffz.solid.community/public/test-folder/"
 var newFile    = newFolder + "test-file.txt"
 var newContent = "hello world"
 /* ************************************************************ */
-    
+
   // LOGIN
-fileClient.login(idp).then( webId => {
+fileClient.popupLogin().then( webId => {
     if(!webId){ console.log(fileClient.err); return; }
     console.log( `Logged in as ${webId}.`)
     create()
