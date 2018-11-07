@@ -191,4 +191,8 @@ fileClient.fetch( url ).then( results => {
      else // do something with results.value
  })
 ```  
+<<<<<<< HEAD
 **copyright (c) 2018 Jeff Zucker**
+=======
+**copyright (c) 2018 Jeff Zucker**
+>>>>>>> 01f37008fce9fa7c53b1cbd7eadc776388183a80
