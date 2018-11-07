@@ -1,7 +1,7 @@
 {
   "name": "solid-file-client",
   "version": "1.0.0",
-  "description": "A library supporting CRUD for Solid files and folders.",
+  "description": "A library for creating and managing files and folders in Solid data stores",
   "main": "solid-file-client.js",
   "keywords": [
     "Solid",
