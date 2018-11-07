@@ -1,0 +1,16 @@
+{
+  "name": "solid-file-client",
+  "version": "1.0.0",
+  "description": "A library supporting CRUD for Solid files and folders.",
+  "main": "solid-file-client.js",
+  "keywords": [
+    "Solid",
+    "Linked Data"
+  ],
+  "author": "Jeff Zucker <dubzed@gmail.com>",
+  "license": "MIT",
+  "dependencies": {
+    "rdflib": "^0.19.0",
+    "solid-auth-client": "^2.2.11"
+  }
+}
