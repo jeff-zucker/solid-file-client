@@ -18,8 +18,9 @@ In a node/require context
         // rdflib and solid-auth-client must be available
         // but will be required automatically by the library
 
+        ```javascript
         const fileClient = require('solid-file-client')
-
+        ```
 In the browser
 
         <script src="somepath/rdflib.js"></script>
