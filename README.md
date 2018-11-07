@@ -15,19 +15,19 @@ Just download it.
 ## Invocation
 In a node/require context
 
-        // rdflib and solid-auth-client must be available
-        // but will be required automatically by the library
+``` javascript
+// rdflib and solid-auth-client must be available
+// but will be required automatically by the library
 
-        ```javascript
-        const fileClient = require('solid-file-client')
-        ```
+const fileClient = require('solid-file-client')
+```
 In the browser
-
-        <script src="somepath/rdflib.js"></script>
-        <script src="somepath/solid-auth-client.js"></script>
-        <script src="somepath/solid-file-client.js"></script>
-        const fileClient = new SolidFileClient()
-
+```html 
+<script src="somepath/rdflib.js"></script>
+<script src="somepath/solid-auth-client.js"></script>
+<script src="somepath/solid-file-client.js"></script>
+<script> const fileClient = new SolidFileClient() </script>
+```
 ## Error reporting
 
 All methods are asynchronous, return false on error, and put the error
