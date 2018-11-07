@@ -95,7 +95,7 @@ NOTE : if the file already exists, the solid.community server (and others) will 
 ```javascript
 fileClient.readFile( newFile ).then( response => {
     if(!response) console.log(fileClient.err)
-    else console.log( `File content is : ${response.value}.`
+    else console.log( `File content is : ${response.value}.` )
 })
 ```
 In the case of a successful fetch of an empty file, the response
