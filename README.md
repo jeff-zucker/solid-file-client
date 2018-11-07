@@ -1,13 +1,13 @@
 # solid-file-client
-A library supporting connections and CRUD for Solid files and folders
+
+**A library for creating and managing files and folders in Solid data stores**
 
 This library provides a simple interface for logging in and out of a 
 Solid data store and for creating, reading, updating, and deleting
 files and folders on it. It may be used either directly in the browser or 
-with node/require.  Working examples of both kinds of usage can be found in
-the included browser-example.html and node-example.js files.  The library
-is based on solid-auth-client and simply provides an error-handling 
-interface and some convenient shortcuts on top of it.
+with node/require. The library is based on solid-auth-client, providing
+an error-handling interface and some convenient shortcuts on
+top of solid-auth-client's methods.
 
 ## Installation
 Just download it.
@@ -54,7 +54,6 @@ fileClient.popupLogin().then( webId => {
     else console.log( `Logged in as ${webId}.`)
 })
 ```
-
 Opens a popup window that prompts for an IDP then lets you login.
 
 **login(**IDP**)**<br>
