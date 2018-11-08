@@ -6,8 +6,8 @@ var SolidFileClient = function(){
 var self = this
 
 if (typeof(module)!="undefined" ){
-    $rdf  = require('rdflib')
-    solid = { auth : require('solid-auth-client') }
+    if(typeof($rdf)==='undefined') $rdf = require('rdflib')
+    if(typeof(solid)==='undefined') solid={auth:require('solid-auth-client')}
 }
 
 /* FILETYPES
