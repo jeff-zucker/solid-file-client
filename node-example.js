@@ -12,6 +12,7 @@ const fileClient = require('./js');
 
 const subjectName = 'https://solside.solid.community/profile/card#me';
 const nameIs = $rdf.sym('http://xmlns.com/foaf/0.1/name');
+console.time();
 fileClient.fetchAndParse(subjectName).then(graph => {
   if (!graph) {
     console.log(fileClient.err);
@@ -20,5 +21,6 @@ fileClient.fetchAndParse(subjectName).then(graph => {
   const subject = $rdf.sym(subjectName);
   const name = graph.any(subject, nameIs);
   console.log(`Hi, my name is ${name}.`);
+  console.timeEnd();
 });
 /* That's all */
