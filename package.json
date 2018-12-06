@@ -1,4 +1,11 @@
 {
+  "scripts": {
+    "test": "nyc --reporter=text mocha --inspect --require babel-register --require source-map-support --recursive",
+    "build": "babel src --out-dir js",
+    "prepare": "npm run build && webpack --optimize-minimize",
+    "watch": "babel --watch src --out-dir js",
+    "coverage": "nyc report --reporter=text-lcov"
+  },
   "name": "solid-file-client",
   "version": "1.0.0",
   "description": "A library for creating and managing files and folders in Solid data stores",
@@ -10,7 +17,34 @@
   "author": "Jeff Zucker <dubzed@gmail.com>",
   "license": "MIT",
   "dependencies": {
-    "rdflib": "^0.19.0",
-    "solid-auth-client": "^2.2.11"
+    "rdflib": "^0.19.1",
+    "solid-auth-client": "^2.2.14"
+  },
+  "devDependencies": {
+    "@babel/cli": "7.2.0",
+    "@babel/core": "^7.2.0",
+    "@babel/plugin-proposal-do-expressions": "^7.2.0",
+    "@babel/plugin-proposal-optional-chaining": "^7.2.0",
+    "@babel/plugin-proposal-pipeline-operator": "^7.2.0",
+    "@babel/preset-env": "^7.2.0",
+    "@babel/runtime": "^7.2.0",
+    "babel-eslint": "^10.0.1",
+    "babel-plugin-lodash": "^3.3.4",
+    "babel-plugin-macros": "^2.4.2",
+    "eslint-plugin-babel": "^5.3.0",
+    "eslint-plugin-mocha": "^5.2.0",
+    "mocha": "^5.2.0",
+    "eslint": "^5.9.0",
+    "eslint-config-airbnb": "^17.1.0",
+    "eslint-config-prettier": "^3.3.0",
+    "eslint-plugin-flowtype": "^3.2.0",
+    "eslint-plugin-import": "^2.14.0",
+    "eslint-plugin-jest": "^22.1.2",
+    "eslint-plugin-prettier": "^3.0.0",
+    "flow-bin": "^0.87.0",
+    "chai": "^4.2.0",
+    "nyc": "^13.1.0",
+    "webpack": "^4.27.1",
+    "webpack-cli": "^3.1.2"
   }
 }
