@@ -16,12 +16,19 @@
   ],
   "author": "Jeff Zucker <dubzed@gmail.com>",
   "license": "MIT",
+  "browserslist": "> 0.25%, not dead",
   "babel": {
     "presets": [
-      "@babel/preset-env"
+      [
+        "@babel/preset-env",
+        {
+          "useBuiltIns": "entry"
+        }
+      ]
     ],
     "plugins": [
-      "@babel/plugin-transform-flow-strip-types"
+      "@babel/plugin-transform-flow-strip-types",
+      "@babel/plugin-transform-runtime"
     ]
   },
   "dependencies": {
@@ -34,6 +41,7 @@
     "@babel/cli": "7.2.0",
     "@babel/core": "^7.2.0",
     "@babel/plugin-transform-flow-strip-types": "^7.2.0",
+    "@babel/plugin-transform-runtime": "^7.2.0",
     "@babel/preset-env": "^7.2.0",
     "@babel/runtime": "^7.2.0",
     "babel-eslint": "^10.0.1",
