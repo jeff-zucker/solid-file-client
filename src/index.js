@@ -1,246 +1,350 @@
-/* VERSION 0.1.0
-**     
-*/
-var SolidFileClient = function(){
-
-var self = this
-
-if (typeof(module)!="undefined" ){
-    if(typeof($rdf)==='undefined') $rdf = require('rdflib')
-    if(typeof(solid)==='undefined') solid={auth:require('solid-auth-client')}
-}
+// @flow
+import $rdf from 'rdflib';
+import solidAuth from 'solid-auth-client';
 
 /* FILETYPES
-*/
-this.guessFileType = function(url){
-    var ext = url.replace(/.*\./,'')
-    if( ext.match( /\/$/ )   )         return 'folder'
-    if( ext.match( /(md|markdown)/)  ) return 'text/markdown'
-    if( ext.match( /html/)  )          return 'text/html'
-    if( ext.match( /xml/)  )           return 'text/xml'
-    if( ext.match( /ttl/) )            return 'text/turtle'
-    if( ext.match( /n3/)  )            return 'text/n3'
-    if( ext.match( /rq/) )             return 'application/sparql'
-    if( ext.match( /css/) )            return 'text/css'
-    if( ext.match( /txt/) )            return 'text/plain'
-    if( ext.match( /json/) )           return 'application/json'
-    if( ext.match( /js/) )             return 'application/javascript'
-    if( ext.match( /(png|gif|jpeg|tif)/) )  return 'image'
-    if( ext.match( /(mp3|aif|ogg)/) )  return 'audio'
-    if( ext.match( /(avi|mp4|mpeg)/) )  return 'video'
-    /* default */                      return 'text/turtle'
-}
-this.getFileType = function( graph, url ){
-    var subj = $rdf.sym(url)
-    var pred=$rdf.sym("http://www.w3.org/1999/02/22-rdf-syntax-ns#type")
-    var types = graph.each(subj,pred,undefined)
-    for(var t in types){
-        var type=types[t].value
-        if( type.match("ldp#BasicContainer") )
-            return "folder"
-        if(type.match("http://www.w3.org/ns/iana/media-types/")){
-            type=type.replace("http://www.w3.org/ns/iana/media-types/",'')
-            return type.replace('#Resource','')
-        }
+ */
+
+/** A type used internally to indicate we are handling a folder */
+export const folderType = Symbol('folder');
+/**
+ * Return content mime-type of a file the URL point to. If it's a folder, return a symbol indicate that it is a folder.
+ * @param {$rdf.IndexedFormula} graph a $rdf.graph() database instance
+ * @param {string} url location of the folder
+ */
+export function getFileType(graph: $rdf.IndexedFormula, url: string) {
+  const folderNode = $rdf.sym(url);
+  const isAnInstanceOfClass = $rdf.sym('http://www.w3.org/1999/02/22-rdf-syntax-ns#type');
+  const types = graph.each(folderNode, isAnInstanceOfClass, undefined);
+  for (const index in types) {
+    const contentType = types[index].value;
+    if (contentType.match('ldp#BasicContainer')) return folderType;
+    if (contentType.match('http://www.w3.org/ns/iana/media-types/')) {
+      return contentType.replace('http://www.w3.org/ns/iana/media-types/', '').replace('#Resource', '');
     }
-    return "unknown"
+  }
+  return 'unknown';
 }
+
+export function guessFileType(url: string) {
+  const ext = url.replace(/.*\./, '');
+  if (ext.match(/\/$/)) return folderType;
+  if (ext.match(/(md|markdown)/)) return 'text/markdown';
+  if (ext.match(/html/)) return 'text/html';
+  if (ext.match(/xml/)) return 'text/xml';
+  if (ext.match(/ttl/)) return 'text/turtle';
+  if (ext.match(/n3/)) return 'text/n3';
+  if (ext.match(/rq/)) return 'application/sparql';
+  if (ext.match(/css/)) return 'text/css';
+  if (ext.match(/txt/)) return 'text/plain';
+  if (ext.match(/json/)) return 'application/json';
+  if (ext.match(/js/)) return 'application/javascript';
+  if (ext.match(/(png|gif|jpeg|tif)/)) return 'image';
+  if (ext.match(/(mp3|aif|ogg)/)) return 'audio';
+  if (ext.match(/(avi|mp4|mpeg)/)) return 'video';
+  /* default */ return 'text/turtle';
+}
+
 /* SOLID READ/WRITE FUNCTIONS
-*/
-this.createFile = async function(url,type,content){
-    var newThing = url.replace(/\/$/,'').replace(/.*\//,'')
-    var parentFolder = url.replace(newThing,'').replace(/\/\/$/,'/')
-    var response = await this.add(parentFolder,newThing,type,content)
-    return response
+ */
+
+/**
+ *
+ * @param {string} parentFolder URL of parent folder
+ * @param {string} url suggested URL for new content
+ * @param {*} content the request body
+ * @param {string} contentType Content-Type of the request
+ */
+export async function add<T>(parentFolder: string, url: string, content: T, contentType: string | Symbol) {
+  let link = '<http://www.w3.org/ns/ldp#Resource>; rel="type"';
+  if (contentType === folderType) {
+    link = '<http://www.w3.org/ns/ldp#BasicContainer>; rel="type"';
+    contentType = 'text/turtle';
+  }
+  const request = {
+    method: 'POST',
+    headers: { 'Content-Type': contentType, slug: url, link },
+    body: content,
+  };
+
+  const response = await solidAuth.fetch(parentFolder, request);
+  if (!response.ok) throw new Error(`${response.status} (${response.statusText})`);
+  return response;
 }
-this.createFolder = async function(url){
-    var response = await this.createFile( url,"folder")
-    return response
+
+/**
+ * This method creates a new empty file.
+ * The contentType should be specified either in the URL's extension or in the contentType parameter, but not both.
+ *
+ * NOTE : if the file already exists, the solid.community server (and others) will create an additional file with a prepended numerical ID so if you don't want that to happen, use updateFile() which will first delete the file if it exists, and then add the new file.
+ * @param {string} url the location to put this file
+ * @param {*} content the request body
+ * @param {string} contentType Content-Type of the request
+ */
+export async function createFile<T>(url: string, content: T, contentType: string | Symbol) {
+  // remove file extension name
+  const newThing = url.replace(/\/$/, '').replace(/.*\//, '');
+  const parentFolder = url.replace(newThing, '').replace(/\/\/$/, '/');
+  const response = await add(parentFolder, newThing, content, contentType);
+  return response;
 }
-this.deleteFolder = async function(url) {
-    var res = await solid.auth.fetch(url,{method : 'DELETE'})
-           .catch(err => { self.err = err; return false })
-    if(res.ok) return true
-    else { 
-        self.err = res.status + " ("+res.statusText+")"
-        return false 
+
+/**
+ * This method creates a new empty folder at given URL.
+ * @param {string} url the location to put this folder
+ */
+export async function createFolder(url: string) {
+  const response = await createFile(url, undefined, folderType);
+  return response;
+}
+
+/**
+ * Delete a folder at given URL.
+ * 
+ * Attempting to delete a non-empty folder will fail with a "409 Conflict"
+error.
+ * @param {string} url the location of the folder to be deleted
+ */
+export async function deleteFile(url: string) {
+  const response = await solidAuth.fetch(url, { method: 'DELETE' });
+  if (!response.ok) throw new Error(`${response.status} (${response.statusText})`);
+  return response;
+}
+
+/**
+ * Delete a file at given URL.
+ * @param {string} url the location of the folder to be deleted
+ */
+export function deleteFolder(url: string) {
+  return deleteFile(url);
+}
+
+/**
+ * Update the content of a file.
+ *
+ * NOTE : this is a file-level update, it replaces the file with the new content by removing the old version of the file and adding the new one.
+ * @param {string} url the url of the file to be updated
+ * @param {*} content the request body
+ */
+export function updateFile<T>(url: string, content: T, contentType: string | Symbol) {
+  return deleteFile(url).then(() => createFile(url, content, contentType));
+}
+
+/**
+ * Fetch a RUL.
+ *
+ * Results will be empty on failure to fetch and on success results.value will hold the raw text of the resource. It may be called with a simple URL parameter or with a full request object which specifies method, headers, etc.
+ *
+ * This is a pass-through to solid-auth-client.fetch() providing some error trapping to make it consistent with the solid-file-client interface but otherwise, see the solid-auth-client docs and the Solid REST spec for details.
+ * @param {string} url
+ * @param {Request} request
+ */
+export async function fetch(url: string, request?: Request): Promise<string> {
+  const response = await solidAuth.fetch(url, request);
+  if (!response.ok) throw new Error(`${response.status} (${response.statusText})`);
+  return response.text();
+}
+
+/**
+ * Read the content of a file at given URL.
+ *
+ * In the case of a successful fetch of an empty file, the response will be true but the response.value will be empty. This means that any true response can be interpreted as "this file exists" and you need to check response.value for its content, if any.
+ * @param {string} url Location of the file to read.
+ */
+export function readFile(url: string) {
+  return fetch(url);
+}
+
+/**
+ * Parse RDF text and put it into a $rdf.graph() database instance.
+ * @param {string} text RDF text that can be passed to $rdf.parse()
+ * @param {*} content the request body
+ * @param {string} contentType Content-Type of the request
+ */
+export function text2graph(
+  text: string,
+  url: string,
+  contentType: string | Symbol = guessFileType(url),
+): Promise<$rdf.IndexedFormula> {
+  return new Promise((resolve, reject) => {
+    if (contentType === folderType) reject(new Error('Can not put folderType to $rdf.parse()'));
+    const graph = $rdf.graph();
+    $rdf.parse(text, graph, url, contentType, (error, newGraph) => {
+      if (error) reject(error);
+      else resolve(newGraph);
+    });
+  });
+}
+
+export function getStats(graph: $rdf.IndexedFormula, subjectName: string) {
+  const subjectNode = $rdf.sym(subjectName);
+  const mod = $rdf.sym('http://purl.org/dc/terms/modified');
+  const size = $rdf.sym('http://www.w3.org/ns/posix/stat#size');
+  const mtime = $rdf.sym('http://www.w3.org/ns/posix/stat#mtime');
+  return {
+    modified: graph.any(subjectNode, mod, undefined).value,
+    size: graph.any(subjectNode, size, undefined).value,
+    mtime: graph.any(subjectNode, mtime, undefined).value,
+  };
+}
+
+export type FolderItem = {
+  label: string,
+  url: string,
+  name: string,
+  modified: string,
+  size: string,
+  mtime: string,
+  type: string | Symbol,
+};
+export function getFolderItems(graph: $rdf.IndexedFormula, subjectName: string) {
+  const contains: {
+    folders: Array<FolderItem>,
+    files: Array<FolderItem>,
+  } = {
+    folders: [],
+    files: [],
+  };
+  const items = graph.each($rdf.sym(subjectName), $rdf.sym('http://www.w3.org/ns/ldp#contains'), undefined);
+
+  for (let i = 0; i < items.length; i += 1) {
+    const item = items[i];
+    const newItem = {
+      type: getFileType(graph, item.value),
+      ...getStats(graph, item.value),
+      label: decodeURIComponent(item.value).replace(/.*\//, ''),
+      url: '',
+      name: '',
+    };
+    if (newItem.type === folderType) {
+      newItem.url = item.value.replace(/[/]+/g, '/').replace(/https:/, 'https:/');
+      newItem.name = newItem.url.replace(/\/$/, '').replace(/.*\//, '');
+      contains.folders.push(newItem);
+    } else {
+      newItem.url = item.value;
+      newItem.name = newItem.url.replace(/.*\//, '');
+      // if (newItem.name === 'index.html') hasIndexHtml = true;
+      contains.files.push(newItem);
     }
+  }
+  return contains;
 }
-this.updateFile = async function(url,content) {
-    var del = await this.deleteFile( url )
-    // if(!del) return false
-    var add = await this.createFile(url,undefined,content)
-    return(add)
+
+export type FolderData = {
+  type: typeof folderType,
+  /** folder name (without path) */
+  name: string,
+  /** full URL of the resource */
+  url: string,
+  /** dcterms:modified date */
+  modified: string,
+  /** stat:mtime */
+  mtime: string,
+  /** stat:size */
+  size: number,
+  /** parentFolder or undefined if none */
+  parent?: string,
+  /** raw content of the folder's turtle representation */
+  content: string,
+  /** an array of files in the folder */
+  files: Array<FolderItem>,
+  /** an array of sub-folders in the folder */
+  folders: Array<FolderItem>,
+};
+/**
+ * Each item in the arrays of files and sub-folders will be a file object which is the same as a folder object except it does not have the last two fields (files,folders). The content-type in this case is not guessed, it is read from the folder's triples, i.e. what the server sends.
+ * @param {$rdf.IndexedFormula} graph a $rdf.graph() database instance
+ * @param {string} url location of the folder
+ * @param {string} content raw content of the folder's RDF (turtle) representation,
+ */
+export function processFolder(graph: $rdf.IndexedFormula, url: string, content: string): FolderData {
+  // log("processing folder")
+  const items = getFolderItems(graph, url);
+  const stats = getStats(graph, url);
+  const fullName = url.replace(/\/$/, '');
+  const name = fullName.replace(/.*\//, '');
+  const parent = fullName.replace(name, '');
+  return {
+    type: folderType,
+    name,
+    url,
+    modified: stats.modified,
+    size: stats.size,
+    mtime: stats.mtime,
+    parent,
+    content,
+    folders: items.folders,
+    files: items.files,
+  };
 }
-this.deleteFile = this.deleteFolder
-this.readFile   = function(url){return this.fetch(url) }
-this.readFolder = async function(url){
-    var body = await self.fetch(url)
-    if(!body) return false
-    var graph = self.text2graph( body.value, url, "text/turtle" )
-    if(!graph) return false
-    return self.processFolder( graph, url, body.value ) 
+
+/**
+ *
+ * @param {string} url Location of the folder to read.
+ */
+export async function readFolder(url: string): Promise<FolderData> {
+  const folderRDFText = await fetch(url);
+  if (!folderRDFText) throw new Error(`No such folder at ${url}`);
+  const graph = await text2graph(folderRDFText, url, 'text/turtle');
+  return processFolder(graph, url, folderRDFText);
 }
-this.fetchAndParse = async function(url,contentType){
-    contentType = contentType || this.guessFileType(url)
-    var res = await solid.auth.fetch(url).catch(err=>{
-        self.err=err; console.log(err); return false;
-    })
-    if(!res.ok) { 
-        self.err = res.status + " ("+res.statusText+")"
-        return false 
-    }
-    if( contentType==='application/json' ){
-        var obj = await res.json().catch(err=>{self.err=err; return false })
-        return (obj)
-    }
-    var txt = await res.text().catch(err=>{self.err=err; return false })
-    return self.text2graph(txt,url,contentType)
+
+/**
+ * Parse the resource at a given URL.
+ *
+ * If the content-type is omitted, it will be guessed from the file extension. If the content-type is (or is guessed to be) 'text/turtle' or any other format that rdflib can parse, the response will be parsed by rdflib and returned as an rdflib graph object. If the content-type is 'application/json' the response will be a JSON object.
+ * @param {string} url suggested URL for new content
+ * @param {string} contentType Content-Type of the request
+ */
+export async function fetchAndParse(url: string, contentType: string | Symbol = guessFileType(url)) {
+  const response = await solidAuth.fetch(url);
+  if (!response.ok) throw new Error(`${response.status} (${response.statusText})`);
+  if (contentType === 'application/json') return response.json();
+  return text2graph(await response.text(), url, contentType);
 }
-this.text2graph = function(text,url,contentType){
-    contentType = contentType || this.guessFileType(url)
-    var graph=$rdf.graph();
-    try{
-        $rdf.parse(text,graph,url,contentType);
-        return graph;
-    } catch(err){
-        self.err=err
-        return false
-    }
-}
-this.add = async function(parentFolder,newThing,type,content) {
-    var link = '<http://www.w3.org/ns/ldp#Resource>; rel="type"';
-    var filetype;
-    if(type==='folder'){
-        var link = '<http://www.w3.org/ns/ldp#BasicContainer>; rel="type"'
-        filetype = "text/turtle"
-    }
-    var request = {
-         method : 'POST',
-         headers : { 'Content-Type':filetype,slug:newThing,link:link }
-    }
-    if(content) request.body=content
-    var response = await solid.auth.fetch( parentFolder, request )
-                         .catch(err=>{self.err=err;return false})
-    if(response.ok) return true
-    else { 
-        self.err = response.status + " ("+response.statusText+")"
-        return false 
-    }
-}
-this.fetch = async function(url,request){
-    var res = await solid.auth.fetch(url,request).catch(err => {
-       self.err = err; return false 
-    })
-    if(!res.ok) { 
-        self.err = res.status + " ("+res.statusText+")"
-        return false 
-    }
-    var txt = await res.text().catch(err => {
-       self.err = err; return false 
-    })
-    return({value:txt})
-}
+
 /* SESSION MANAGEMENT
-*/
-this.checkSession = async function() { 
-    var sess = await solid.auth.currentSession()
-    if(!sess){
-        self.webId = undefined
-        return false;
-    }
-    self.webId = sess.webId
-    return { webId : sess.webId }
+ */
+
+/**
+ * Get current session or reject.
+ */
+export async function checkSession(): Promise<{ webId: string }> {
+  const session = await solidAuth.currentSession();
+  if (!session) {
+    throw new Error('No session');
+  }
+  return session;
 }
-this.popupLogin = async function() {
-    let session = await solid.auth.currentSession();
-    let popupUri = 'https://solid.community/common/popup.html';
-    if (!session)
-        session = await solid.auth.popupLogin({ popupUri });
-    return(session.webId);
+
+/**
+ * Get current session. If failed, try to get session by a login popup.
+ * 
+ * Logs in to the specified IDP (Identity Provider, e.g. 'https://solid.community') on a redirected page and returns to wherever it was called from.
+ * @param {string} popupUri URI of login popup provider
+ */
+export async function popupLogin(
+  popupUri: string = 'https://solid.community/common/popup.html',
+): Promise<{ webId: string }> {
+  let session = await solidAuth.currentSession();
+  if (!session) {
+    session = await solidAuth.popupLogin({ popupUri });
+  }
+  return session;
 }
-this.login = async function(idp) {
-      const session = await solid.auth.currentSession();
-      if (!session)
-          await solid.auth.login(idp);
-      return(session.webId);
+
+/**
+ * Get current session. If failed, try to get session by a redirect.
+ * 
+ * Logs in to the specified IDP (Identity Provider, e.g. 'https://solid.community').
+ * Be aware that this will redirect the user away from your application to their identity provider. When they return, currentSession() will return their login information.
+ * @param {string} idp 
+ */
+export async function login(idp: string) {
+  const session = await solidAuth.currentSession();
+  if (!session) await solidAuth.login(idp);
+  else return session;
 }
-this.logout = async function(){
-    session=''
-    var res = await solid.auth.logout();
-    return res;
+export function logout(): Promise<> {
+  return solidAuth.logout();
 }
-/* INTERNAL FUNCTIONS
-*/
-this.getStats = function(graph,subj){
-    subj      = $rdf.sym(subj)
-    var mod   = $rdf.sym('http://purl.org/dc/terms/modified')
-    var size  = $rdf.sym('http://www.w3.org/ns/posix/stat#size')
-    var mtime = $rdf.sym('http://www.w3.org/ns/posix/stat#mtime')
-    return {
-        modified : graph.any(subj,mod,undefined).value,
-            size : graph.any(subj,size,undefined).value,
-           mtime : graph.any(subj,mtime,undefined).value
-    }
-}
-this.getFolderItems = function(graph,subj){
-        var contains = {
-            folders : [],
-            files   : []
-         }
-        var itemsTmp = graph.each(
-            $rdf.sym(subj),
-            $rdf.sym('http://www.w3.org/ns/ldp#contains'),
-            undefined
-        )
-        // self.log("Got "+itemsTmp.length+" items")
-        for(i=0;i<itemsTmp.length;i++){
-             var item = itemsTmp[i];
-             var newItem = {}
-             newItem.type = this.getFileType( graph, item.value )
-             var stats = self.getStats(graph,item.value)
-             newItem.modified = stats.modified
-             newItem.size = stats.size
-             newItem.mtime = stats.mtime
-             newItem.label=decodeURIComponent(item.value).replace( /.*\//,'')
-             if(newItem.type==='folder'){
-                  item.value = item.value.replace(/[/]+/g,'/');
-                  item.value = item.value.replace(/https:/,'https:/');
-                  var name = item.value.replace( /\/$/,'')
-                  newItem.name = name.replace( /.*\//,'')
-                  newItem.url  = item.value
-                  contains.folders.push(newItem)
-             }
-             else {
-                  newItem.url=item.value
-                  newItem.name=item.value.replace(/.*\//,'')
-                  if(newItem.name==='index.html') self.hasIndexHtml=true
-                  contains.files.push(newItem)
-             }
-        }
-        return contains;
-}
-this.processFolder = function(graph,url,content,callback){
-        // this.log("processing folder")
-        var items = self.getFolderItems(graph,url);
-        var stats = self.getStats(graph,url)
-        var fullname = url.replace( /\/$/,'')
-        var name = fullname.replace( /.*\//,'')
-        var parent = fullname.replace(name,'')
-        return({
-             type : "folder",
-             name : name,
-              url : url,
-         modified : stats.modified,
-             size : stats.size,
-            mtime : stats.mtime,
-           parent : parent,
-          content : content,
-          folders : items.folders,
-            files : items.files,
-        })
-}
-return this
-}
-if (typeof(module)!="undefined" )  module.exports = SolidFileClient()
-/* END */
