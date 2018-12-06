@@ -9,13 +9,21 @@
   "name": "solid-file-client",
   "version": "1.0.0",
   "description": "A library for creating and managing files and folders in Solid data stores",
-  "main": "solid-file-client.js",
+  "main": "dist/index.js",
   "keywords": [
     "Solid",
     "Linked Data"
   ],
   "author": "Jeff Zucker <dubzed@gmail.com>",
   "license": "MIT",
+  "babel": {
+    "presets": [
+      "@babel/preset-env"
+    ],
+    "plugins": [
+      "@babel/plugin-transform-flow-strip-types"
+    ]
+  },
   "dependencies": {
     "eslint-plugin-jsx-a11y": "^6.1.2",
     "eslint-plugin-react": "^7.11.1",
@@ -25,14 +33,10 @@
   "devDependencies": {
     "@babel/cli": "7.2.0",
     "@babel/core": "^7.2.0",
-    "@babel/plugin-proposal-do-expressions": "^7.2.0",
-    "@babel/plugin-proposal-optional-chaining": "^7.2.0",
-    "@babel/plugin-proposal-pipeline-operator": "^7.2.0",
+    "@babel/plugin-transform-flow-strip-types": "^7.2.0",
     "@babel/preset-env": "^7.2.0",
     "@babel/runtime": "^7.2.0",
     "babel-eslint": "^10.0.1",
-    "babel-plugin-lodash": "^3.3.4",
-    "babel-plugin-macros": "^2.4.2",
     "chai": "^4.2.0",
     "eslint": "^5.9.0",
     "eslint-config-airbnb": "^17.1.0",
