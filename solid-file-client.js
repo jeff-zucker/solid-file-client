@@ -66,10 +66,10 @@ this.deleteFolder = async function(url) {
         return false 
     }
 }
-this.updateFile = async function(url,content) {
+this.updateFile = async function(url,content,contentType) {
     var del = await this.deleteFile( url )
     // if(!del) return false
-    var add = await this.createFile(url,undefined,content)
+    var add = await this.createFile(url,contentType,content)
     return(add)
 }
 this.deleteFile = this.deleteFolder
