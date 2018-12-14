@@ -1,8 +1,8 @@
 {
   "scripts": {
     "test": "jest --coverage",
-    "build": "babel src --out-dir js",
-    "prepublish": "npm run build && webpack --optimize-minimize",
+    "build": "babel src --out-dir js && webpack --optimize-minimize",
+    "prepublish": "npm run test && npm run build",
     "watch": "babel --watch src --out-dir js"
   },
   "name": "solid-file-client",

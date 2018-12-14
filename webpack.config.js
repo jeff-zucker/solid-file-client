@@ -5,7 +5,6 @@ module.exports = {
     path: `${__dirname}/dist`,
     filename: 'index.js',
     libraryTarget: 'var',
-    library: 'pubcore',
-    libraryExport: 'default',
+    library: 'SolidFileClient',
   },
 };
