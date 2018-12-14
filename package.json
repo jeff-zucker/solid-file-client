@@ -1,10 +1,9 @@
 {
   "scripts": {
-    "test": "jest",
+    "test": "jest --coverage",
     "build": "babel src --out-dir js",
-    "prepare": "npm run build && webpack --optimize-minimize",
-    "watch": "babel --watch src --out-dir js",
-    "coverage": "nyc report --reporter=text-lcov"
+    "prepublish": "npm run build && webpack --optimize-minimize",
+    "watch": "babel --watch src --out-dir js"
   },
   "name": "solid-file-client",
   "version": "1.0.0",
@@ -61,7 +60,6 @@
     "flow-bin": "^0.87.0",
     "jest": "^23.6.0",
     "mocha": "^5.2.0",
-    "nyc": "^13.1.0",
     "regenerator-runtime": "^0.13.1",
     "webpack": "^4.27.1",
     "webpack-cli": "^3.1.2"
