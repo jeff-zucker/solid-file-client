@@ -1,14 +1,20 @@
 {
   "scripts": {
     "test": "jest --coverage",
-    "build": "babel src --out-dir js && webpack --optimize-minimize",
+    "clean": "rimraf dist",
+    "build": "NODE_ENV=production && npm run clean && rollup -c",
     "prepublish": "npm run test && npm run build",
     "watch": "babel --watch src --out-dir js"
   },
   "name": "solid-file-client",
   "version": "1.0.0",
   "description": "A library for creating and managing files and folders in Solid data stores",
-  "main": "dist/index.js",
+  "files": [
+    "dist"
+  ],
+  "main": "dist/cjs",
+  "module": "dist/esm/solid-file-client.js",
+  "browser": "dist/umd/solid-file-client.js",
   "keywords": [
     "Solid",
     "Linked Data"
@@ -16,20 +22,6 @@
   "author": "Jeff Zucker <dubzed@gmail.com>",
   "license": "MIT",
   "browserslist": "> 0.25%, not dead",
-  "babel": {
-    "presets": [
-      [
-        "@babel/preset-env",
-        {
-          "useBuiltIns": "entry"
-        }
-      ]
-    ],
-    "plugins": [
-      "@babel/plugin-transform-flow-strip-types",
-      "@babel/plugin-transform-runtime"
-    ]
-  },
   "dependencies": {
     "eslint-plugin-jsx-a11y": "^6.1.2",
     "eslint-plugin-react": "^7.11.1",
@@ -61,7 +53,13 @@
     "jest": "^23.6.0",
     "mocha": "^5.2.0",
     "regenerator-runtime": "^0.13.1",
-    "webpack": "^4.27.1",
-    "webpack-cli": "^3.1.2"
+    "rimraf": "^2.6.2",
+    "rollup": "^0.67.4",
+    "rollup-plugin-babel": "^4.1.0",
+    "rollup-plugin-commonjs": "^9.2.0",
+    "rollup-plugin-json": "^3.1.0",
+    "rollup-plugin-node-resolve": "^4.0.0",
+    "rollup-plugin-replace": "^2.1.0",
+    "rollup-plugin-uglify": "^6.0.0"
   }
 }
