@@ -4,7 +4,7 @@ const path = require('path');
 
 module.exports = {
   context: path.resolve(__dirname, '..'),
-  mode: 'none',
+  mode: 'production',
   entry: {
     'solid-file-client': './src/index.js',
   },
