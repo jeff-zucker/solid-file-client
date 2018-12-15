@@ -14,7 +14,7 @@ export type { FolderData };
  * @param {*} content the request body
  * @param {string} contentType Content-Type of the request
  */
-export async function add<T>(parentFolder: string, url: string, content: T, contentType: string | Symbol) {
+export async function add<T>(parentFolder: string, url: string, content: T, contentType: string) {
   let link = '<http://www.w3.org/ns/ldp#Resource>; rel="type"';
   if (contentType === folderType) {
     link = '<http://www.w3.org/ns/ldp#BasicContainer>; rel="type"';
@@ -40,7 +40,7 @@ export async function add<T>(parentFolder: string, url: string, content: T, cont
  * @param {*} content the request body
  * @param {string} contentType Content-Type of the request
  */
-export async function createFile<T>(url: string, content: T, contentType: string | Symbol) {
+export async function createFile<T>(url: string, content: T, contentType: string) {
   // remove file extension name
   const newThing = url.replace(/\/$/, '').replace(/.*\//, '');
   const parentFolder = url.replace(newThing, '').replace(/\/\/$/, '/');
@@ -85,7 +85,7 @@ export function deleteFolder(url: string) {
  * @param {string} url the url of the file to be updated
  * @param {*} content the request body
  */
-export function updateFile<T>(url: string, content: T, contentType: string | Symbol) {
+export function updateFile<T>(url: string, content: T, contentType: string) {
   return deleteFile(url).then(() => createFile(url, content, contentType));
 }
 
@@ -133,7 +133,7 @@ export async function readFolder(url: string): Promise<FolderData> {
  * @param {string} url suggested URL for new content
  * @param {string} contentType Content-Type of the request
  */
-export async function fetchAndParse(url: string, contentType: string | Symbol = guessFileType(url)) {
+export async function fetchAndParse(url: string, contentType: string = guessFileType(url)) {
   const response = await solidAuth.fetch(url);
   if (!response.ok) throw new Error(`${response.status} (${response.statusText})`);
   if (contentType === 'application/json') return response.json();

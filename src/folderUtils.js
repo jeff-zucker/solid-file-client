@@ -14,9 +14,9 @@ export function getStats(graph: $rdf.IndexedFormula, subjectName: string) {
 }
 
 /** A type used internally to indicate we are handling a folder */
-export const folderType = Symbol('folder');
+export const folderType = 'folder';
 /**
- * Return content mime-type of a file the URL point to. If it's a folder, return a symbol indicate that it is a folder.
+ * Return content mime-type of a file the URL point to. If it's a folder, return 'folder' indicate that it is a folder.
  * @param {$rdf.IndexedFormula} graph a $rdf.graph() database instance
  * @param {string} url location of the folder
  */
@@ -41,7 +41,7 @@ export type FolderItem = {
   modified: string,
   size: string,
   mtime: string,
-  type: string | Symbol,
+  type: string,
 };
 export function getFolderItems(graph: $rdf.IndexedFormula, subjectName: string) {
   const contains: {
@@ -152,7 +152,7 @@ export function guessFileType(url: string) {
 export function text2graph(
   text: string,
   url: string,
-  contentType: string | Symbol = guessFileType(url),
+  contentType: string = guessFileType(url),
 ): Promise<$rdf.IndexedFormula> {
   return new Promise((resolve, reject) => {
     if (contentType === folderType) reject(new Error('Can not put folderType to $rdf.parse()'));
