@@ -3,7 +3,7 @@
 const path = require('path');
 const CleanWebpackPlugin = require('clean-webpack-plugin');
 const ReplaceInFileWebpackPlugin = require('replace-in-file-webpack-plugin');
-const { context, mode, entry, module: _module, externals, devtool } = require('./webpack.common.config');
+const { context, mode, entry, module: _module, devtool } = require('./webpack.common.config');
 
 const outputDir = './browser';
 
@@ -19,7 +19,6 @@ module.exports = {
     libraryTarget: 'window',
   },
   module: _module,
-  externals,
   plugins: [
     // Replace the assignment to window by a module export
     new ReplaceInFileWebpackPlugin([
