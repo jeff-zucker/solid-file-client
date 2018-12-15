@@ -8,7 +8,7 @@
 */
 
 const $rdf = require('rdflib');
-const fileClient = require('./dist/cjs');
+const fileClient = require('./module');
 
 const subjectName = 'https://solside.solid.community/profile/card#me';
 const nameIs = $rdf.sym('http://xmlns.com/foaf/0.1/name');

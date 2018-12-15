@@ -8,3 +8,7 @@ node_modules/
 coverage/
 js/
 dist/
+dist-lib/
+lib/
+browser/
+module/
