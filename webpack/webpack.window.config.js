@@ -1,4 +1,4 @@
-/* Browser bundle that exposes solid-auth-client as window.solid.auth */
+/* Browser bundle that exposes solid-file-client as window.SolidFileClient */
 
 const path = require('path');
 const CleanWebpackPlugin = require('clean-webpack-plugin');

@@ -1,4 +1,4 @@
-/* Browser-friendly CommonJS bundle that exports solid-auth-client */
+/* Browser-friendly CommonJS bundle that exports solid-file-client */
 
 const path = require('path');
 const CleanWebpackPlugin = require('clean-webpack-plugin');
