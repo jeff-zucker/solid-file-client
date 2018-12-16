@@ -11,18 +11,9 @@ top of solid-auth-client's methods.
 
 ## Installation
 
-Just download it.
+Just download or clone it.
 
 ## Invocation
-
-In a node/require context
-
-```javascript
-// rdflib and solid-auth-client must be available
-// but will be required automatically by the library
-
-const fileClient = require('solid-file-client');
-```
 
 In the browser
 
@@ -31,6 +22,15 @@ In the browser
 <script>
     const fileClient = SolidFileClient;
 </script>
+```
+
+In a node/require context
+
+```javascript
+// rdflib and solid-auth-client must be available
+// but will be required automatically by the library
+
+const fileClient = require('solid-file-client');
 ```
 
 ## Error reporting
@@ -57,7 +57,7 @@ slash to indicate a folder.
 ```javascript
 fileClient.popupLogin().then( webId => {
     else console.log( `Logged in as ${webId}.`)
-}, err => console.log(err);
+}, err => console.log(err) );
 ```
 
 Opens a popup window that prompts for an IDP then lets you login.
@@ -67,7 +67,7 @@ Opens a popup window that prompts for an IDP then lets you login.
 ```javascript
 fileClient.login(idp).then( webId => {
     console.log( `Logged in as ${webId}.`)
-}, err => console.log(err);
+}, err => console.log(err) );
 ```
 
 Logs in to the specified IDP (Identity Provider, e.g. 'https://solid.community') on a redirected page and returns to wherever it was called from.
@@ -83,7 +83,7 @@ fileClient.logout().then( console.log( `Bye now!` )
 ```javascript
 fileClient.checkSession().then( session => {
     console.log("Logged in as "+session.webId)
-}, err => console.log(err);
+}, err => console.log(err) );
 ```
 
 ## File Methods
@@ -92,9 +92,9 @@ fileClient.checkSession().then( session => {
 
 ```javascript
 fileClient.createFile(newFile).then(success => {
-  if (!success) console.log(fileClient.err);
-  else console.log(`Created file ${newFile}.`);
-});
+  console.log(`Created file ${newFile}.`);
+}, err => console.log(err) );
+
 ```
 
 This method creates a new empty file.
@@ -106,24 +106,17 @@ NOTE : if the file already exists, the solid.community server (and others) will 
 **readFile(**URL**)**
 
 ```javascript
-fileClient.readFile(newFile).then(response => {
-  if (!response) console.log(fileClient.err);
-  else console.log(`File content is : ${response.value}.`);
-});
+fileClient.readFile(newFile).then(  body => {
+  console.log(`File content is : ${body}.`);
+}, err => console.log(err) );
 ```
-
-In the case of a successful fetch of an empty file, the response
-will be true but the response.value will be empty. This means
-that any true response can be interpreted as "this file exists"
-and you need to check response.value for its content, if any.
 
 **updateFile(**URL,content**)**
 
 ```javascript
 fileClient.updateFile( url, newContent, contentType ).then( success => {
-    if(!success) console.log(fileClient.err)
-    else console.log( `Updated ${url}.`)
-})
+    console.log( `Updated ${url}.`)
+}, err => console.log(err) );
 ```
 NOTE : this is a file-level update, it replaces the file with the new content by removing the old version of the file and adding the new one.  The contentType parameter is optional, do not specify it if you include a file extension.
 
@@ -131,9 +124,8 @@ NOTE : this is a file-level update, it replaces the file with the new content by
 
 ```javascript
 fileClient.deleteFile(url).then(success => {
-  if (!success) console.log(fileClient.err);
-  else console.log(`Deleted ${url}.`);
-});
+  console.log(`Deleted ${url}.`);
+}, err => console.log(err) );
 ```
 
 **fetchAndParse(**URL,contentType**)**
@@ -148,11 +140,8 @@ be a JSON object.
 
 ```javascript
 fileClient.fetchAndParse(url, 'text/turtle').then(graph => {
-  if (!graph) alert("Couldn't fetch or parse : " + fileClient.err);
-  else {
     let something = graph.any(someSubject, somePredicate);
-  }
-});
+}, err => console.log(err) );
 ```
 
 ## Folder Methods
@@ -161,18 +150,16 @@ fileClient.fetchAndParse(url, 'text/turtle').then(graph => {
 
 ```javascript
 fileClient.createFolder(url).then(success => {
-  if (!success) console.log(fileClient.err);
-  else console.log(`Created folder ${url}.`);
-});
+  console.log(`Created folder ${url}.`);
+}, err => console.log(err) );
 ```
 
 **deleteFolder(**URL**)**
 
 ```javascript
 fileClient.deleteFolder(url).then(success => {
-  if (!success) console.log(fileClient.err);
-  else console.log(`Deleted ${url}.`);
-});
+  console.log(`Deleted ${url}.`);
+}, err => console.log(err) );
 ```
 
 Attempting to delete a non-empty folder will fail with a "409 Conflict"
@@ -182,9 +169,8 @@ error.
 
 ```javascript
 fileClient.readFolder(url).then(folder => {
-  if (!folder) console.log(fileClient.err);
-  else console.log(`Read ${folder.name}, it has ${folder.files.length} files.`);
-});
+  console.log(`Read ${folder.name}, it has ${folder.files.length} files.`);
+}, err => console.log(err) );
 ```
 
 On success, the readFolder() method returns a folder object in this format:
@@ -223,10 +209,9 @@ otherwise, see the solid-auth-client docs and the Solid REST spec for
 details.
 
 ```javascript
-fileClient.fetch( url ).then( results => {
-    if(!results) alert("Could not fetch "+url+" "+fileClient.err)
-     else // do something with results.value
- })
+fileClient.fetch( url, request ).then( results => {
+     // do something with results
+}, err => console.log(err) );
 ```
 
 **copyright (c) 2018 Jeff Zucker**
