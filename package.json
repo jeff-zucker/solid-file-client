@@ -35,6 +35,11 @@
     "rdflib": "^0.19.1",
     "solid-auth-client": "^2.2.14"
   },
+  "peerDependencies": {
+    "@babel/runtime": "^7.2.0",
+    "rdflib": "^0.19.1",
+    "solid-auth-client": "^2.2.14"
+  },
   "devDependencies": {
     "@babel/cli": "7.2.0",
     "@babel/core": "^7.2.0",
