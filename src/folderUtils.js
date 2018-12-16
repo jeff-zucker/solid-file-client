@@ -16,11 +16,11 @@ export function getStats(graph: $rdf.IndexedFormula, subjectName: string) {
 /** A type used internally to indicate we are handling a folder */
 export const folderType = 'folder';
 /**
- * Return content mime-type of a file the URL point to. If it's a folder, return 'folder' indicate that it is a folder.
  * @param {$rdf.IndexedFormula} graph a $rdf.graph() database instance
  * @param {string} url location of the folder
+ * @returns {string} content mime-type of a file, If it's a folder, return 'folder', 'unknown' for not sure
  */
-export function getFileType(graph: $rdf.IndexedFormula, url: string) {
+export function getFileType(graph: $rdf.IndexedFormula, url: string): string {
   const folderNode = $rdf.sym(url);
   const isAnInstanceOfClass = $rdf.sym('http://www.w3.org/1999/02/22-rdf-syntax-ns#type');
   const types = graph.each(folderNode, isAnInstanceOfClass, undefined);
@@ -98,10 +98,10 @@ export type FolderData = {
   folders: Array<FolderItem>,
 };
 /**
- * Each item in the arrays of files and sub-folders will be a file object which is the same as a folder object except it does not have the last two fields (files,folders). The content-type in this case is not guessed, it is read from the folder's triples, i.e. what the server sends.
  * @param {$rdf.IndexedFormula} graph a $rdf.graph() database instance
  * @param {string} url location of the folder
  * @param {string} content raw content of the folder's RDF (turtle) representation,
+ * @returns {Object} FolderData
  */
 export function processFolder(graph: $rdf.IndexedFormula, url: string, content: string): FolderData {
   // log("processing folder")
@@ -144,10 +144,10 @@ export function guessFileType(url: string) {
 }
 
 /**
- * Parse RDF text and put it into a $rdf.graph() database instance.
  * @param {string} text RDF text that can be passed to $rdf.parse()
  * @param {*} content the request body
  * @param {string} contentType Content-Type of the request
+ * @returns {$rdf.IndexedFormula} a $rdf.graph() database instance with parsed RDF
  */
 export function text2graph(
   text: string,
