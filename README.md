@@ -128,13 +128,12 @@ and you need to check response.value for its content, if any.
 **updateFile(**URL,content**)**
 
 ```javascript
-fileClient.updateFile(url, newContent).then(success => {
-  if (!success) console.log(fileClient.err);
-  else console.log(`Updated ${url}.`);
-});
+fileClient.updateFile( url, newContent, contentType ).then( success => {
+    if(!success) console.log(fileClient.err)
+    else console.log( `Updated ${url}.`)
+})
 ```
-
-NOTE : this is a file-level update, it replaces the file with the new content by removing the old version of the file and adding the new one.
+NOTE : this is a file-level update, it replaces the file with the new content by removing the old version of the file and adding the new one.  The contentType parameter is optional, do not specify it if you include a file extension.
 
 **deleteFile(**URL**)**
 
