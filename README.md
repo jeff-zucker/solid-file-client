@@ -27,32 +27,19 @@ const fileClient = require('solid-file-client');
 In the browser
 
 ```html
-<script src="somepath/rdflib.js"></script>
-<script src="somepath/solid-auth-client.js"></script>
-<script src="somepath/solid-file-client.js"></script>
+<script src="path-to-solid-file-client.bundle.js"></script>
 <script>
-  const fileClient = new SolidFileClient();
+    const fileClient = SolidFileClient;
 </script>
 ```
 
 ## Error reporting
 
-<<<<<<< HEAD
 All methods are promises. For example
 ```javascript
 fileClient.delete( url ).then( response => {
     alert( url+" successfully deleted" )
 }, err => console.log(url+" not deleted : "+err) );
-=======
-All methods are asynchronous, return false on error, and put the error
-in the fileClient.err variable. For example
-
-```javascript
-fileClient.delete(url).then(response => {
-  if (!response) alert("Couldn't delete " + url + ' ' + fileClient.err);
-  else alert(url + ' successfully deleted');
-});
->>>>>>> a77cbd4364c96c8829784d83ff33036b9981055e
 ```
 
 ## Content-types
@@ -68,16 +55,9 @@ slash to indicate a folder.
 **popupLogin()**
 
 ```javascript
-<<<<<<< HEAD
 fileClient.popupLogin().then( webId => {
     else console.log( `Logged in as ${webId}.`)
 }, err => console.log(err);
-=======
-fileClient.popupLogin().then(webId => {
-  if (!webId) console.log(fileClient.err);
-  else console.log(`Logged in as ${webId}.`);
-});
->>>>>>> a77cbd4364c96c8829784d83ff33036b9981055e
 ```
 
 Opens a popup window that prompts for an IDP then lets you login.
@@ -85,16 +65,9 @@ Opens a popup window that prompts for an IDP then lets you login.
 **login(**IDP**)**<br>
 
 ```javascript
-<<<<<<< HEAD
 fileClient.login(idp).then( webId => {
     console.log( `Logged in as ${webId}.`)
 }, err => console.log(err);
-=======
-fileClient.login(idp).then(webId => {
-  if (!webId) console.log(fileClient.err);
-  else console.log(`Logged in as ${webId}.`);
-});
->>>>>>> a77cbd4364c96c8829784d83ff33036b9981055e
 ```
 
 Logs in to the specified IDP (Identity Provider, e.g. 'https://solid.community') on a redirected page and returns to wherever it was called from.
@@ -108,16 +81,9 @@ fileClient.logout().then( console.log( `Bye now!` )
 **checkSession()**
 
 ```javascript
-<<<<<<< HEAD
 fileClient.checkSession().then( session => {
     console.log("Logged in as "+session.webId)
 }, err => console.log(err);
-=======
-fileClient.checkSession().then(session => {
-  if (!session) console.log('Not logged in.');
-  else console.log('Logged in as ' + session.webId);
-});
->>>>>>> a77cbd4364c96c8829784d83ff33036b9981055e
 ```
 
 ## File Methods

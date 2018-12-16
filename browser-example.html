@@ -18,7 +18,6 @@ YOU MUST ENTER THE URL OF A TEST DIRECTORY
         const newContent = 'hello world';
         /* ************************************************************ */
 
-<<<<<<< HEAD
 fileClient.logout().then( ()=>{
     fileClient.popupLogin().then( webId => {
         console.log( `Logged in as ${webId}.`)
@@ -73,97 +72,6 @@ function logout(){
 })
 
 </script><!-- that's all except for including the libraries -->
-=======
-        // LOGIN
-        fileClient.popupLogin().then(webId => {
-          if (!webId) {
-            console.log(fileClient.err);
-            return;
-          }
-          console.log(`Logged in as ${webId}.`);
-          create();
-        });
-
-        function create() {
-          // CREATE FOLDER
-          fileClient.createFolder(newFolder).then(success => {
-            if (!success) {
-              console.log(fileClient.err);
-              return;
-            }
-            console.log(`Created folder ${newFolder}.`);
-            // CREATE FILE
-            fileClient.createFile(newFile).then(success => {
-              if (!success) {
-                console.log(fileClient.err);
-                return;
-              }
-              console.log(`Created file ${newFile}.`);
-              // UPDATE FILE
-              fileClient.updateFile(newFile, newContent).then(success => {
-                if (!success) {
-                  console.log(fileClient.err);
-                  return;
-                }
-                console.log(`Updated ${newFile}.`);
-                read();
-              });
-            });
-          });
-        }
-        function read() {
-          // READ FOLDER
-          fileClient.readFolder(newFolder).then(folder => {
-            if (!folder) {
-              console.log(fileClient.err);
-              return;
-            }
-            console.log(`Read ${folder.name}, it has ${folder.files.length} files.`);
-            // READ FILE
-            fileClient.readFile(newFile).then(body => {
-              if (!body) {
-                console.log(fileClient.err);
-                return;
-              }
-              console.log(`File content : ${body.value}.`);
-              del();
-            });
-          });
-        }
-        function del() {
-          // DELETE FILE
-          fileClient.deleteFile(newFile).then(success => {
-            if (!success) {
-              console.log(fileClient.err);
-              return;
-            }
-            console.log(`Deleted ${newFile}.`);
->>>>>>> a77cbd4364c96c8829784d83ff33036b9981055e
-
-            // DELETE FOLDER
-            fileClient.deleteFolder(newFolder).then(success => {
-              if (!success) {
-                console.log(fileClient.err);
-                return;
-              }
-              console.log(`Deleted ${newFolder}.`);
-              logout();
-            });
-          });
-        }
-        function logout() {
-          // CHECK SESSION
-          fileClient.checkSession().then(session => {
-            if (!session) console.log('Not logged in.');
-            else {
-              console.log(`Logged in as ${session.webId}.`);
-              // LOG OUT
-              fileClient.logout().then(console.log('Logged out.'));
-            }
-          });
-        }
-      });
-    </script>
   </head>
   <body></body>
 </html>
