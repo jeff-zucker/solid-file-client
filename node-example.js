@@ -6,6 +6,17 @@
       To run this from the command line: node node-example
       please compile the code first!
 */
+<<<<<<< HEAD
+    const fileClient = require('./solid-file-client')
+    var subj = 'https://solside.solid.community/profile/card#me'
+    var pred = 'http://xmlns.com/foaf/0.1/name'
+    fileClient.fetchAndParse( subj ).then( graph => {
+        subj=$rdf.sym(subj)
+        pred=$rdf.sym(pred)
+        var name = graph.any(subj,pred)
+        console.log(`Hi, my name is ${name}.`) 
+     }, err => console.log(err) ) ;
+=======
 
 const $rdf = require('rdflib');
 const fileClient = require('./module');
@@ -23,4 +34,5 @@ fileClient.fetchAndParse(subjectName).then(graph => {
   console.log(`Hi, my name is ${name}.`);
   console.timeEnd();
 });
+>>>>>>> a77cbd4364c96c8829784d83ff33036b9981055e
 /* That's all */
