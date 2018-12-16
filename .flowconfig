@@ -1,0 +1,13 @@
+[ignore]
+
+[include]
+
+[libs]
+
+[lints]
+
+[options]
+esproposal.optional_chaining=ignore
+esproposal.decorators=ignore
+
+[strict]

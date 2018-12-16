@@ -1,1 +1,14 @@
 drafts
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+node_modules/
+.npm
+.nyc_output
+coverage/
+js/
+dist/
+dist-lib/
+lib/
+browser/
+module/

@@ -1,100 +1,112 @@
-<!DOCTYPE html><html><head><meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width"><title>
-    solid-file-client in-browser example
-</title>
-<script>
-document.addEventListener("DOMContentLoaded", function(event) { 
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width" />
+    <title>solid-file-client in-browser example</title>
 
-var fileClient = new SolidFileClient()
+    <script src="./dist-lib/solid-file-client.bundle.js"></script>
+    <script>
+      document.addEventListener('DOMContentLoaded', () => {
+        const fileClient = SolidFileClient;
 
-/* THIS EXAMPLE WRITES DATA  SO YOU NEED A SOLID STORAGE TO RUN IT
-   YOU MUST ENTER THE URL OF A TEST DIRECTORY
+        /* THIS EXAMPLE WRITES DATA  SO YOU NEED A SOLID STORAGE TO RUN IT
+YOU MUST ENTER THE URL OF A TEST DIRECTORY
 *************************************************************** */
-var newFolder  = "https://jeffz.solid.community/public/test-folder/"
-var newFile    = newFolder + "test-file.txt"
-var newContent = "hello world"
-/* ************************************************************ */
+        const newFolder = 'https://jeffz.solid.community/public/test-folder/';
+        const newFile = `${newFolder}test-file.txt`;
+        const newContent = 'hello world';
+        /* ************************************************************ */
 
-  // LOGIN
-fileClient.popupLogin().then( webId => {
-    if(!webId){ console.log(fileClient.err); return; }
-    console.log( `Logged in as ${webId}.`)
-    create()
-})
+        // LOGIN
+        fileClient.popupLogin().then(webId => {
+          if (!webId) {
+            console.log(fileClient.err);
+            return;
+          }
+          console.log(`Logged in as ${webId}.`);
+          create();
+        });
 
-function create(){
- // CREATE FOLDER
-    fileClient.createFolder( newFolder ).then( success => {
-        if(!success){ console.log(fileClient.err); return; }
-        console.log( `Created folder ${newFolder}.`)
- // CREATE FILE
-        fileClient.createFile( newFile ).then( success => {
-            if(!success){ console.log(fileClient.err); return; }
-            console.log( `Created file ${newFile}.`)
- // UPDATE FILE
-            fileClient.updateFile( newFile, newContent ).then( success => {
-                if(!success){ console.log(fileClient.err); return; }
-                console.log( `Updated ${newFile}.`)
-                read()
-            })
-        })
-    })
-}        
-function read(){
-  // READ FOLDER
-      fileClient.readFolder( newFolder ).then( folder => {
-          if(!folder){ console.log(fileClient.err); return; }
-          console.log( 
-            `Read ${folder.name}, it has ${folder.files.length} files.`
-          )
-  // READ FILE
-        fileClient.readFile( newFile ).then( body => {
-            if(!body){ console.log(fileClient.err); return; }
-            console.log( 
-                `File content : ${body.value}.`
-            )
-            del()
-         })
-     })
-}        
-function del(){
-  // DELETE FILE
-    fileClient.deleteFile( newFile ).then( success => {
-        if(!success){ console.log(fileClient.err); return }
-        console.log( `Deleted ${newFile}.`)
-
-  // DELETE FOLDER
-        fileClient.deleteFolder( newFolder ).then( success => {
-            if(!success){ console.log(fileClient.err); return }
-            console.log( `Deleted ${newFolder}.`)
-            logout()
-        })
-    })
-}
-function logout(){
-  // CHECK SESSION
-    fileClient.checkSession().then( session => {
-        if(!session) console.log("Not logged in.")
-        else {
-            console.log(`Logged in as ${session.webId}.`)
-  // LOG OUT 
-           fileClient.logout().then( console.log("Logged out.") )
+        function create() {
+          // CREATE FOLDER
+          fileClient.createFolder(newFolder).then(success => {
+            if (!success) {
+              console.log(fileClient.err);
+              return;
+            }
+            console.log(`Created folder ${newFolder}.`);
+            // CREATE FILE
+            fileClient.createFile(newFile).then(success => {
+              if (!success) {
+                console.log(fileClient.err);
+                return;
+              }
+              console.log(`Created file ${newFile}.`);
+              // UPDATE FILE
+              fileClient.updateFile(newFile, newContent).then(success => {
+                if (!success) {
+                  console.log(fileClient.err);
+                  return;
+                }
+                console.log(`Updated ${newFile}.`);
+                read();
+              });
+            });
+          });
         }
-    })
-}
+        function read() {
+          // READ FOLDER
+          fileClient.readFolder(newFolder).then(folder => {
+            if (!folder) {
+              console.log(fileClient.err);
+              return;
+            }
+            console.log(`Read ${folder.name}, it has ${folder.files.length} files.`);
+            // READ FILE
+            fileClient.readFile(newFile).then(body => {
+              if (!body) {
+                console.log(fileClient.err);
+                return;
+              }
+              console.log(`File content : ${body.value}.`);
+              del();
+            });
+          });
+        }
+        function del() {
+          // DELETE FILE
+          fileClient.deleteFile(newFile).then(success => {
+            if (!success) {
+              console.log(fileClient.err);
+              return;
+            }
+            console.log(`Deleted ${newFile}.`);
 
-})
-
-</script><!-- that's all except for including the libraries -->
-
-<script src=
-   "https://solid.github.io/releases/rdflib.js/rdflib-0.12.2.min.js"
-></script>
-<script src=
-   "https://solid.github.io/solid-auth-client/dist/solid-auth-client.bundle.js"
-></script>
-<script src=
-    "./solid-file-client.js"
-></script>
-</head><body>
-</body></html>
+            // DELETE FOLDER
+            fileClient.deleteFolder(newFolder).then(success => {
+              if (!success) {
+                console.log(fileClient.err);
+                return;
+              }
+              console.log(`Deleted ${newFolder}.`);
+              logout();
+            });
+          });
+        }
+        function logout() {
+          // CHECK SESSION
+          fileClient.checkSession().then(session => {
+            if (!session) console.log('Not logged in.');
+            else {
+              console.log(`Logged in as ${session.webId}.`);
+              // LOG OUT
+              fileClient.logout().then(console.log('Logged out.'));
+            }
+          });
+        }
+      });
+    </script>
+  </head>
+  <body></body>
+</html>
