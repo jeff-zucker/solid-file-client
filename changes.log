@@ -20,3 +20,5 @@ Many changes introduced by the talented @linonetwo.
          // ...
      }, err => console.log(err) );
 
+* updateFile() now takes an optional third parameter to specify content-type
+
