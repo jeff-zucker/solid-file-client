@@ -19,9 +19,7 @@ Either download locally as shown below or use CDN like this:
 
 ## Downloading locally
 
-       ```
        npm install solid-file-client
-       ```
 
 ## Build Options
 
@@ -35,15 +33,11 @@ If you install locally, the node_modules/solid-file-client/ folder contains thre
 
 In the browser
 
-       ```
        const fileClient = SolidFileClient;
-       ```
 
 In a node/require context
 
-       ```javascript
        const fileClient = require('solid-file-client');
-       ```
 
 ## Error reporting
 
