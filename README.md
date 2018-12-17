@@ -111,7 +111,7 @@ fileClient.readFile(newFile).then(  body => {
 }, err => console.log(err) );
 ```
 
-**updateFile(**URL,content**)**
+**updateFile(**URL,content,contentType**)**
 
 ```javascript
 fileClient.updateFile( url, newContent, contentType ).then( success => {
