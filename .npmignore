@@ -1,7 +1,4 @@
 !dist/
-!browser/
-!dist-lib/
-!lib/
 !src/
 !tests/
 !package.json/

@@ -8,7 +8,7 @@
 */
 
     const $rdf = require('rdflib')
-    const fileClient = require('./lib')
+    const fileClient = require('./dist')
     var subj = 'https://solside.solid.community/profile/card#me'
     var pred = 'http://xmlns.com/foaf/0.1/name'
     fileClient.fetchAndParse( subj ).then( graph => {

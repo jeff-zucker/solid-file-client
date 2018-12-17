@@ -5,18 +5,19 @@
     <meta name="viewport" content="width=device-width" />
     <title>solid-file-client in-browser example</title>
 
-    <script src="./dist/solid-file-client.bundle.js"></script>
+    <script src="./dist/umd/solid-file-client.bundle.js"></script>
     <script>
       document.addEventListener('DOMContentLoaded', () => {
-        const fileClient = SolidFileClient;
+/************************************************************************
+THIS EXAMPLE WRITES DATA  SO YOU NEED A SOLID STORAGE TO RUN IT
+YOU MUST ENTER THE URL OF A TEST DIRECTORY HERE
+*************************************************************************/
+    const newFolder = 'https://jeffz.solid.community/public/test-folder/';
+/************************************************************************/
 
-        /* THIS EXAMPLE WRITES DATA  SO YOU NEED A SOLID STORAGE TO RUN IT
-YOU MUST ENTER THE URL OF A TEST DIRECTORY
-*************************************************************** */
-        const newFolder = 'https://jeffz.solid.community/public/test-folder/';
-        const newFile = `${newFolder}test-file.txt`;
-        const newContent = 'hello world';
-        /* ************************************************************ */
+const fileClient = SolidFileClient;
+const newFile = `${newFolder}test-file.txt`;
+const newContent = 'hello world';
 
 fileClient.logout().then( ()=>{
     fileClient.popupLogin().then( webId => {

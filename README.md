@@ -9,29 +9,37 @@ with node/require. The library is based on solid-auth-client, providing
 an error-handling interface and some convenience shortcuts on
 top of solid-auth-client's methods.
 
-## Installation
+## Using in the browser
 
-Just download or clone it.
+Either download locally as shown below or use CDN like this:
+       ```HTML
+       <script src="https://cdn.jsdelivr.net/npm/solid-file-client@0.2.0/dist/umd/solid-file-client.bundle.js"></script>
+   
+## Downloading locally
+       ```
+       npm install solid-file-client
+       ```
+## Build Options
+
+If you install locally, the node_modules/solid-file-client/ folder contains three builds:
+
+    ./dist       built for use with node
+    ./dist/umd   built for use with browser, bundled rdflib & solid-auth-client
+    ./dist/esm   built for use with module-import/esm
 
 ## Invocation
 
 In the browser
 
-```html
-<script src="path-to-solid-file-client.bundle.js"></script>
-<script>
-    const fileClient = SolidFileClient;
-</script>
-```
+       ```javascript
+       const fileClient = SolidFileClient;
+       ```
 
 In a node/require context
 
-```javascript
-// rdflib and solid-auth-client must be available
-// but will be required automatically by the library
-
-const fileClient = require('solid-file-client');
-```
+       ```javascript
+       const fileClient = require('solid-file-client');
+       ```
 
 ## Error reporting
 
