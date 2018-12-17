@@ -13,12 +13,6 @@
   "name": "solid-file-client",
   "version": "0.2.0",
   "description": "A library for creating and managing files and folders in Solid data stores",
-  "files": [
-    "lib",
-    "module",
-    "dist",
-    "dist-popup"
-  ],
   "main": "lib/index-default.js",
   "browser": "browser/index.js",
   "module": "module/index.js",
