@@ -12,9 +12,11 @@ top of solid-auth-client's methods.
 ## Using in the browser
 
 Either download locally as shown below or use CDN like this:
-       ```HTML
+
+```HTML
        <script src="https://cdn.jsdelivr.net/npm/solid-file-client@0.2.0/dist/umd/solid-file-client.bundle.js"></script>
-   
+```
+
 ## Downloading locally
        ```
        npm install solid-file-client
@@ -23,9 +25,9 @@ Either download locally as shown below or use CDN like this:
 
 If you install locally, the node_modules/solid-file-client/ folder contains three builds:
 
-    ./dist       built for use with node
-    ./dist/umd   built for use with browser, bundled rdflib & solid-auth-client
-    ./dist/esm   built for use with module-import/esm
+       ./dist       built for use with node
+       ./dist/umd   built for use with browser, bundled rdflib & solid-auth-client
+       ./dist/esm   built for use with module-import/esm
 
 ## Invocation
 
