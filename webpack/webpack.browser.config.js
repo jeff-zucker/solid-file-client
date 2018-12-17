@@ -5,7 +5,7 @@ const CleanWebpackPlugin = require('clean-webpack-plugin');
 const ReplaceInFileWebpackPlugin = require('replace-in-file-webpack-plugin');
 const { context, mode, entry, module: _module, devtool } = require('./webpack.common.config');
 
-const outputDir = './browser';
+const outputDir = './dist/more/bundle'; // './browser';
 
 module.exports = {
   context,
