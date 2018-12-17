@@ -6,9 +6,6 @@ node_modules/
 .npm
 .nyc_output
 coverage/
-js/
 dist/
-dist-lib/
 lib/
-browser/
 module/
