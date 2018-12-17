@@ -16,8 +16,7 @@
   "files": [
     "lib",
     "module",
-    "browser",
-    "dist-lib",
+    "dist",
     "dist-popup"
   ],
   "main": "lib/index-default.js",
