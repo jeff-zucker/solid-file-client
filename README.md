@@ -220,4 +220,4 @@ fileClient.fetch( url, request ).then( results => {
 }, err => console.log(err) );
 ```
 
-**copyright (c) 2018 Jeff Zucker**
+**copyright (c) 2018 Jeff Zucker** may be freely used with MIT license
