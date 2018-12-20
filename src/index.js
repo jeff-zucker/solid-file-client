@@ -1,154 +1,155 @@
-// @flow
-import solidAuth from 'solid-auth-client';
-import { guessFileType, text2graph, folderType, processFolder, type FolderData } from './folderUtils';
+let solidAuth;
+if(typeof(window)==='undefined'){
+    solidAuth = require('./cli-auth')
+}
+else {
+    solidAuth = require('solid-auth-client')
+}
+const fou = require('./folderUtils')
 
-export type { FolderData };
+exports.createFile = createFile;
+exports.createFolder = createFolder;
+exports.readFile = readFile;
+exports.readFolder = readFolder;
+exports.updateFile = updateFile;
+exports.deleteFile = remove;
+exports.deleteFolder = remove;
+exports.fetch = solidAuth.fetch;
+exports.checkSession = checkSession;
+exports.login = login;
+exports.logout = solidAuth.logout;
+exports.popupLogin = popupLogin;
+exports.fetchAndParse = fetchAndParse;
 
-/* SOLID READ/WRITE FUNCTIONS
- */
+async function fetchAndParse(url,contentType){
+  return new Promise((resolve, reject)=>{
+    contentType = contentType || fou.guessFileType(url)
+    solidAuth.fetch(url).then( res => {
+        if(!res.ok) { 
+            reject( res.status + " ("+res.statusText+")" ); // HTTP ERROR
+        }
+        else if( contentType==='application/json' ){
+            res.json().then( json => {
+                resolve(json)        // JSON PARSE SUCCESS
+            }, err=>reject(err) );   // JSON PARSE ERROR
+        }
+        else {
+            res.text().then( txt => {
+                text2graph(txt,url,contentType).then( graph => {
+                    resolve(graph);  // RDF PARSE SUCCESS
+                },err=>reject(err)); // RDF PARSE ERROR
+            },err=>reject(err));     // TEXT READ ERROR
+        }
+    },err=>reject(err));             // NETWORK ERROR
+  });
+}
+async function popupLogin() {
+    let session = await solid.auth.currentSession();
+    if (!session) {
+        let popupUri = 'https://solid.community/common/popup.html';
+        session = await solid.auth.popupLogin({ popupUri });
+    }
+    return(session.webId);
+}
 
-/**
- * @param {string} parentFolder URL of parent folder
- * @param {string} url suggested URL for new content
- * @param {*} content the request body
- * @param {string} contentType Content-Type of the request
- */
-export async function add<T>(parentFolder: string, url: string, content: T, contentType: string) {
+async function checkSession() {
+    const session = await solidAuth.currentSession();
+    return session;
+}
+async function login(credentials) {
+  const session = await solidAuth.currentSession();
+  if (!session) await solidAuth.login(credentials);
+  else return session;
+}
+
+
+
+async function add(parentFolder, url, content, contentType) {
+ return new Promise((resolve, reject)=>{
   let link = '<http://www.w3.org/ns/ldp#Resource>; rel="type"';
-  if (contentType === folderType) {
+  if (contentType === 'folder') {
     link = '<http://www.w3.org/ns/ldp#BasicContainer>; rel="type"';
     contentType = 'text/turtle';
   }
   const request = {
     method: 'POST',
-    headers: { 'Content-Type': contentType, slug: url, link },
-    body: content,
+    headers: { slug:url, link },
+    body: content
   };
-
-  const response = await solidAuth.fetch(parentFolder, request);
-  if (!response.ok) throw new Error(`${response.status} (${response.statusText})`);
-  return response;
+  if(contentType) request.headers["Content-Type"] = contentType;
+  solidAuth.fetch(parentFolder, request).then( res => {
+      resolve(res)
+  },err=>{reject(err)});
+ });
 }
 
-/**
- * @param {string} url the location to put this file
- * @param {*} content the request body
- * @param {string} contentType Content-Type of the request
- */
-export async function createFile<T>(url: string, content: T, contentType: string) {
-  // remove file extension name
+async function createFolder(url) {
+    return new Promise((resolve, reject)=>{
+        createFile(url, undefined, "folder").then( res=> {
+            resolve(res);
+        },err=>{reject(err)});
+    });
+}
+
+async function createFile(url, content, contentType) {
+  return new Promise((resolve, reject)=>{
   const newThing = url.replace(/\/$/, '').replace(/.*\//, '');
   const parentFolder = url.replace(newThing, '').replace(/\/\/$/, '/');
-  const response = await add(parentFolder, newThing, content, contentType);
-  return response;
+  add(parentFolder, newThing, content, contentType).then( res=>  {
+      resolve( res);
+  }, err=> {reject(err)});
+ });
 }
 
-/**
- * @param {string} url the location to put this folder
- */
-export async function createFolder(url: string) {
-  const response = await createFile(url, undefined, folderType);
-  return response;
+async function remove(url) {
+ return new Promise((resolve, reject)=>{
+    solidAuth.fetch(url, { method: 'DELETE' }).then( res => {
+        resolve();
+     }, err=> {
+//         if(err && err.toString().match(/404/)){
+             resolve()
+//         }
+//         else reject(err)
+     });
+  });
 }
-
-/**
- * @param {string} url the location of the folder to be deleted
- */
-export async function deleteFile(url: string) {
-  const response = await solidAuth.fetch(url, { method: 'DELETE' });
-  if (!response.ok) throw new Error(`${response.status} (${response.statusText})`);
-  return response;
+async function updateFile(url, content, contentType) {
+ return new Promise((resolve, reject)=>{
+    remove(url).then(() => {
+        createFile(url, content, contentType).then( res => {
+            resolve(res);
+        },err=>{reject(err)});
+    },err=>{reject(err)});
+ });
 }
-
-/**
- * @param {string} url the location of the folder to be deleted
- */
-export function deleteFolder(url: string) {
-  return deleteFile(url);
+async function readFile(url){
+    return new Promise((resolve, reject)=>{
+        solidAuth.fetch(url).then( result => {
+            resolve(result.body);
+        },err=>reject(err));
+    });
 }
-
-/**
- * @param {string} url the url of the file to be updated
- * @param {*} content the request body
- */
-export function updateFile<T>(url: string, content: T, contentType: string) {
-  return deleteFile(url).then(() => createFile(url, content, contentType));
+async function readFolder(url){
+    return new Promise((resolve, reject)=>{
+        solidAuth.fetch(url).then( folderRDF => {
+           folderRDF = folderRDF.body;
+           fou.text2graph(folderRDF, url, 'text/turtle').then( graph =>{
+               resolve( fou.processFolder(graph, url, folderRDF) );
+           },err=>reject(err));
+        },err=>reject(err));
+    });
 }
-
-/**
- * @param {string} url
- * @param {Request} request
- */
-export async function fetch(url: string, request?: Request): Promise<string> {
-  const response = await solidAuth.fetch(url, request);
-  if (!response.ok) throw new Error(`${response.status} (${response.statusText})`);
-  return response.text();
+/*
+async fetch = function(url,request){
+    return new Promise((resolve, reject)=>{
+        solidAuth.fetch(url,request).then( res => {
+            if(!res.ok) { 
+                reject( res.status + " ("+res.statusText+")")
+            }
+            res.text().then( txt => {
+                resolve(txt)
+            }, err => reject(err) )
+        }, err => reject(err) );
+    })
 }
-
-/**
- * @param {string} url Location of the file to read.
- */
-export function readFile(url: string) {
-  return fetch(url);
-}
-
-
-/**
- * @param {string} url Location of the folder to read.
- */
-export async function readFolder(url: string): Promise<FolderData> {
-  const folderRDFText = await fetch(url);
-  if (!folderRDFText) throw new Error(`No such folder at ${url}`);
-  const graph = await text2graph(folderRDFText, url, 'text/turtle');
-  return processFolder(graph, url, folderRDFText);
-}
-
-/**
- * @param {string} url suggested URL for new content
- * @param {string} contentType Content-Type of the request
- */
-export async function fetchAndParse(url: string, contentType: string = guessFileType(url)) {
-  const response = await solidAuth.fetch(url);
-  if (!response.ok) throw new Error(`${response.status} (${response.statusText})`);
-  if (contentType === 'application/json') return response.json();
-  return text2graph(await response.text(), url, contentType);
-}
-
-/* SESSION MANAGEMENT
- */
-
-/**
- *
- */
-export async function checkSession(): Promise<{ webId: string }> {
-  const session = await solidAuth.currentSession();
-  if (!session) {
-    throw new Error('No session');
-  }
-  return session;
-}
-
-/**
- * @param {string} popupUri URI of login popup provider
- */
-export async function popupLogin(
-  popupUri: string = 'https://solid.community/common/popup.html',
-): Promise<{ webId: string }> {
-  let session = await solidAuth.currentSession();
-  if (!session) {
-    session = await solidAuth.popupLogin({ popupUri });
-  }
-  return session;
-}
-
-/**
- * @param {string} idp
- */
-export async function login(idp: string) {
-  const session = await solidAuth.currentSession();
-  if (!session) await solidAuth.login(idp);
-  else return session;
-}
-export function logout(): Promise<> {
-  return solidAuth.logout();
-}
+*/
