@@ -1,15 +1,26 @@
-const $rdf = require('rdflib');
-
 const folderType = 'folder';
 
-exports.getStats = getStats;
-exports.folderType = folderType;
-exports.getFileType = getFileType;
-exports.getFolderItems = getFolderItems;
-exports.processFolder = processFolder;
-exports.guessFileType = guessFileType;
-exports.text2graph = text2graph;
-
+if(typeof(exports)!="undefined"){
+    $rdf = require('rdflib')
+    exports.getStats = getStats;
+    exports.folderType = folderType;
+    exports.getFileType = getFileType;
+    exports.getFolderItems = getFolderItems;
+    exports.processFolder = processFolder;
+    exports.guessFileType = guessFileType;
+    exports.text2graph = text2graph;
+}
+else {
+    var folderUtils = {
+       getStats : getStats,
+       folderType : folderType,
+       getFileType : getFileType,
+       getFolderItems : getFolderItems,
+       processFolder : processFolder,
+       guessFileType : guessFileType,
+       text2graph : text2graph,
+    }
+}
 function getStats(graph,subjectName) {
   const subjectNode = $rdf.sym(subjectName);
   const mod = $rdf.sym('http://purl.org/dc/terms/modified');
@@ -41,18 +52,6 @@ function getFileType(graph,url) {
   }
   return 'unknown';
 }
-
-/*
-exports.type FolderItem = {
-  label: string,
-  url: string,
-  name: string,
-  modified: string,
-  size: string,
-  mtime: string,
-  type: string,
-};
-*/
 function getFolderItems(graph, subjectName) {
   var contains = {files:[],folders:[]};
   const items = graph.each($rdf.sym(subjectName), $rdf.sym('http://www.w3.org/ns/ldp#contains'), undefined);

@@ -1,29 +1,41 @@
-let solidAuth;
 if(typeof(window)==='undefined'){
     solidAuth = require('./cli-auth')
+    folderUtils = require('./folderUtils')
+    exports.createFile = createFile;
+    exports.createFolder = createFolder;
+    exports.readFile = readFile;
+    exports.readFolder = readFolder;
+    exports.updateFile = updateFile;
+    exports.deleteFile = remove;
+    exports.deleteFolder = remove;
+    exports.fetch = solidAuth.fetch;
+    exports.checkSession = checkSession;
+    exports.login = login;
+    exports.logout = solidAuth.logout;
+    exports.popupLogin = popupLogin;
+    exports.fetchAndParse = fetchAndParse;
 }
 else {
-    solidAuth = require('solid-auth-client')
+    solidAuth = solid.auth;
+    var fileClient = {
+       createFile : createFile,
+       createFolder : createFolder,
+       readFile : readFile,
+       readFolder : readFolder,
+       updateFile : updateFile,
+       deleteFile : remove,
+       deleteFolder : remove,
+       fetch : solidAuth.fetch,
+       checkSession : checkSession,
+       login : login,
+       logout : solidAuth.logout,
+       popupLogin : popupLogin,
+       fetchAndParse : fetchAndParse,
+    }
 }
-const fou = require('./folderUtils')
-
-exports.createFile = createFile;
-exports.createFolder = createFolder;
-exports.readFile = readFile;
-exports.readFolder = readFolder;
-exports.updateFile = updateFile;
-exports.deleteFile = remove;
-exports.deleteFolder = remove;
-exports.fetch = solidAuth.fetch;
-exports.checkSession = checkSession;
-exports.login = login;
-exports.logout = solidAuth.logout;
-exports.popupLogin = popupLogin;
-exports.fetchAndParse = fetchAndParse;
-
 async function fetchAndParse(url,contentType){
   return new Promise((resolve, reject)=>{
-    contentType = contentType || fou.guessFileType(url)
+    contentType = contentType || folderUtils.guessFileType(url)
     solidAuth.fetch(url).then( res => {
         if(!res.ok) { 
             reject( res.status + " ("+res.statusText+")" ); // HTTP ERROR
@@ -35,7 +47,7 @@ async function fetchAndParse(url,contentType){
         }
         else {
             res.text().then( txt => {
-                text2graph(txt,url,contentType).then( graph => {
+                folderUtils.text2graph(txt,url,contentType).then( graph => {
                     resolve(graph);  // RDF PARSE SUCCESS
                 },err=>reject(err)); // RDF PARSE ERROR
             },err=>reject(err));     // TEXT READ ERROR
@@ -61,9 +73,6 @@ async function login(credentials) {
   if (!session) await solidAuth.login(credentials);
   else return session;
 }
-
-
-
 async function add(parentFolder, url, content, contentType) {
  return new Promise((resolve, reject)=>{
   let link = '<http://www.w3.org/ns/ldp#Resource>; rel="type"';
@@ -82,7 +91,6 @@ async function add(parentFolder, url, content, contentType) {
   },err=>{reject(err)});
  });
 }
-
 async function createFolder(url) {
     return new Promise((resolve, reject)=>{
         createFile(url, undefined, "folder").then( res=> {
@@ -90,7 +98,6 @@ async function createFolder(url) {
         },err=>{reject(err)});
     });
 }
-
 async function createFile(url, content, contentType) {
   return new Promise((resolve, reject)=>{
   const newThing = url.replace(/\/$/, '').replace(/.*\//, '');
@@ -100,7 +107,6 @@ async function createFile(url, content, contentType) {
   }, err=> {reject(err)});
  });
 }
-
 async function remove(url) {
  return new Promise((resolve, reject)=>{
     solidAuth.fetch(url, { method: 'DELETE' }).then( res => {
@@ -131,16 +137,16 @@ async function readFile(url){
 }
 async function readFolder(url){
     return new Promise((resolve, reject)=>{
-        solidAuth.fetch(url).then( folderRDF => {
-           folderRDF = folderRDF.body;
-           fou.text2graph(folderRDF, url, 'text/turtle').then( graph =>{
-               resolve( fou.processFolder(graph, url, folderRDF) );
-           },err=>reject(err));
+        fetch(url).then( folderRDF => {
+//           folderRDF = folderRDF.body;
+            folderUtils.text2graph( folderRDF, url,'text/turtle').then(graph=>{
+                   resolve( folderUtils.processFolder(graph, url, folderRDF) );
+            },err=>reject(err));
         },err=>reject(err));
     });
 }
-/*
-async fetch = function(url,request){
+
+async function fetch(url,request){
     return new Promise((resolve, reject)=>{
         solidAuth.fetch(url,request).then( res => {
             if(!res.ok) { 
@@ -152,4 +158,4 @@ async fetch = function(url,request){
         }, err => reject(err) );
     })
 }
-*/
+

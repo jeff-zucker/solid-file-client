@@ -1,11 +1,18 @@
 #!/usr/bin/env node
 const fc  = require('./dist/index.js');
-const t   = require('./src/test.js');
+const t   = require('./src/dispatch.js');
+/*
+ * YOU MUST ENTER THE FOLLOWING DATA
+ *     your IDP, e.g. 'https://solid.community'
+ *     your username at the IDP e.g. "jeffz"
+ *     your password
+ *     URL of a base directory where files can be written and deleted
+ */
 const cfg = getConfig({
-    idp  : ''  // your IDP, e.g. 'https://solid.community',
-    user : '', // your username at the IDP e.g. "jeffz"
-    pass : '', // your password
-    base : ''  // a folder that will be created, tested, then deleted
+    idp  : '',
+    user : '',
+    pass : '',
+    base : '' 
 });
 t.dispatch( [
     "Testing solid-file-client ... logging in ...",

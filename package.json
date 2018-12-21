@@ -1,5 +1,6 @@
 {
   "scripts": {
+    "test": "jest --coverage",
     "clean": "rimraf dist coverage",
     "prepublish": "npm run test && npm run build",
     "watch": "babel --watch src --out-dir js",
