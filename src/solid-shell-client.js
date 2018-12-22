@@ -1,46 +1,39 @@
+/* a light layer on top of solid-cli, giving it persistant sessions
+ * and making it conform to the same API as solid-auth-client
+ */
+
 let session;
-const client = getClient();
-const ifetch = require('isomorphic-fetch');
+const ifetch      = require('isomorphic-fetch');
+const SolidClient = require('@solid/cli/src/SolidClient');
+const IdManager   = require('@solid/cli/src/IdentityManager');
+const client      = getClient();
 
 exports.fetch = fetch;
 exports.currentSession = currentSession;
 exports.login = login;
 exports.logout = logout;
 
-async function zzzfetch(url,options){
-    return new Promise((resolve, reject)=>{
-        do_fetch(url,options).then( (result) => {
-resolve(result);
-//            if(typeof(result)!="undefined" && result[0]) resolve(result[1]);
-//            else reject(result[1]);
-        },err=>reject(err));
-    });
-}
-
-async function fetch(url,options){
-    let host = url.replace(/https:\/\//,'').replace(/\/.*$/,'');
-    let path = url.replace(host,'').replace(/https:\/\//,'')
-    options = options || {};
-    options.hostname = host;
-    options.path = path;
-    options.method = options.method || 'GET';
-    options.headers = options.headers || {};
+/*  TBD: make fetch a two-step request like solid-auth-client
+ *  check if authorization needed and only send token if it its
+ */
+async function fetch(url,request){
+    request = request || {};
+    request.method = request.method || 'GET';
+    request.headers = request.headers || {};
     if( session ) {
          let token = await client.createToken(url, session);
-         options.credentials = "include";
-         options.headers.authorization= `Bearer ${token}`;
+         request.credentials = "include";
+         request.headers.authorization= `Bearer ${token}`;
     }
-    return await ifetch(url,options);
+    return await ifetch(url,request);
 }
 function getClient() {
-    let SolidClient= require('@solid/cli/src/SolidClient');
-    let IdManager  = require('@solid/cli/src/IdentityManager');
     let identityManager = new IdManager();
     return new SolidClient({ identityManager });
 }
 /* 
- * RATHER MINIMAL, BUT FOR NOW THEY"LL DO
-*/
+ *  RATHER MINIMAL, BUT FOR NOW THEY"LL DO
+ */
 async function logout() {
     session = undefined;    
     return(1);
@@ -53,4 +46,3 @@ async function login( { idp, username, password } ) {
     session.webID = session.idClaims.sub
     return session;
 }
-

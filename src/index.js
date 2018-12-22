@@ -1,4 +1,10 @@
 if(typeof(window)==='undefined'){
+/*
+    import solidAuth from 'solid-auth-client';
+    import { guessFileType, text2graph, folderType, processFolder, 
+             type FolderData 
+           } from './folderUtils';
+*/
     solidAuth = require('./solid-shell-client')
     folderUtils = require('./folderUtils')
     exports.createFile = createFile;
