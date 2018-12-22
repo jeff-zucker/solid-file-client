@@ -4,75 +4,27 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width" />
     <title>solid-file-client in-browser example</title>
-
-    <script src="./dist/umd/solid-file-client.bundle.js"></script>
-    <script>
-      document.addEventListener('DOMContentLoaded', () => {
-/************************************************************************
-THIS EXAMPLE WRITES DATA  SO YOU NEED A SOLID STORAGE TO RUN IT
-YOU MUST ENTER THE URL OF A TEST DIRECTORY HERE
-*************************************************************************/
-    const newFolder = 'https://jeffz.solid.community/public/test-folder/';
-/************************************************************************/
-
-const fileClient = SolidFileClient;
-const newFile = `${newFolder}test-file.txt`;
-const newContent = 'hello world';
-
-fileClient.logout().then( ()=>{
-    fileClient.popupLogin().then( webId => {
-        console.log( `Logged in as ${webId}.`)
-        create()
-    }, err => console.log(err) );
-}, err => console.log(err) );
-
-function create(){
-    fileClient.createFolder( newFolder ).then( success => {
-        console.log( `Created folder ${newFolder}.`)
-        fileClient.createFile( newFile ).then( success => {
-            console.log( `Created file ${newFile}.`)
-            fileClient.updateFile( newFile, newContent ).then( success => {
-                console.log( `Updated ${newFile}.`)
-                read()
-            }, err => console.log(err) )
-        }, err => console.log(err) )
-    }, err => console.log(err) )
-}        
-function read(){
-    fileClient.readFolder( newFolder ).then( folder => {
-          console.log( 
-            `Read ${folder.name}, it has ${folder.files.length} files.`
-          )
-          fileClient.readFile( newFile ).then( body => {
-              console.log( 
-                  `File content : ${body}.`
-              )
-              del()
-         }, err => console.log(err) );
-     }, err => console.log(err) );
-}        
-function del(){
-    fileClient.deleteFile( newFile ).then( success => {
-        console.log( `Deleted ${newFile}.`)
-        fileClient.deleteFolder( newFolder ).then( success => {
-            console.log( `Deleted ${newFolder}.`)
-            logout()
-        }, err => console.log(err) );
-    }, err => console.log(err) );
-}
-function logout(){
-    fileClient.checkSession().then( session => {
-        if(!session) console.log("Not logged in.")
-        else {
-            console.log(`Logged in as ${session.webId}.`)
-            fileClient.logout().then( console.log("Logged out.") )
-        }
-    }, err => console.log(err) )
-}
-
-})
-
-</script><!-- that's all except for including the libraries -->
+<script src=
+   "https://solid.github.io/releases/rdflib.js/rdflib-0.12.2.min.js"
+></script>
+<script src=
+   "https://solid.github.io/solid-auth-client/dist/solid-auth-client.bundle.js"
+></script>
+<script src="./src/folderUtils.js"></script>
+<script src="./src/index.js"></script>
+<script src="./src/batch.js"></script>
+<script>
+const fc = fileClient;
+const cfg = batch.getConfig({
+    idp  : 'https://solid.community',
+    base : 'https://jeffz.solid.community/public/test/'
+});
+</script>
+<script src="./src/crudTest.js"></script>
+<script> batch.run( crudTest(cfg) ); </script>
   </head>
-  <body></body>
+  <body>
+This test runs in the browser's cosole, so please open dev-tools and choose
+"console" to watch.
+  </body>
 </html>

@@ -1,20 +1,20 @@
-/* solid-file-client node/require example
-      Fetches my profile (a turtle file), or croaks the fetch error.
-      Parses it into an RDF graph, or croaks the parse error.
-      Finds my name in the graph and announces it
+#!/usr/bin/env node
+/*
+ * YOU MUST ENTER THE FOLLOWING DATA
+ *     your IDP, e.g. 'https://solid.community'
+ *     your username at the IDP e.g. "jeffz"
+ *     your password
+ *     URL of a base directory where files can be written and deleted
+ *        (the directory does not need to be public, the test logs you in)
+ */
+const fc  = require('./src/');
+var batch = require('./src/batch');
+const cfg = batch.getConfig({
+    idp  : 'https://solid.community',
+    user : 'jeffz',                  
+    pass : '',          
+    base : 'https://jeffz.solid.community/public/test/'
+});
+let test = require('./src/crudTest');
+batch.run( test.crudTest(cfg) );
 
-      To run this from the command line: node node-example
-      please compile the code first!
-*/
-
-    const $rdf = require('rdflib')
-    const fileClient = require('./dist')
-    var subj = 'https://solside.solid.community/profile/card#me'
-    var pred = 'http://xmlns.com/foaf/0.1/name'
-    fileClient.fetchAndParse( subj ).then( graph => {
-        subj=$rdf.sym(subj)
-        pred=$rdf.sym(pred)
-        var name = graph.any(subj,pred)
-        console.log(`Hi, my name is ${name}.`) 
-     }, err => console.log(err) ) ;
-/* That's all */

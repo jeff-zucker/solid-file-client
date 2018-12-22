@@ -1,5 +1,5 @@
 if(typeof(window)==='undefined'){
-    solidAuth = require('./cli-auth')
+    solidAuth = require('./solid-shell-client')
     folderUtils = require('./folderUtils')
     exports.createFile = createFile;
     exports.createFolder = createFolder;
@@ -36,7 +36,7 @@ else {
 async function fetchAndParse(url,contentType){
   return new Promise((resolve, reject)=>{
     contentType = contentType || folderUtils.guessFileType(url)
-    solidAuth.fetch(url).then( res => {
+    fetch(url).then( res => {
         if(!res.ok) { 
             reject( res.status + " ("+res.statusText+")" ); // HTTP ERROR
         }
@@ -82,11 +82,12 @@ async function add(parentFolder, url, content, contentType) {
   }
   const request = {
     method: 'POST',
-    headers: { slug:url, link },
+    headers: { slug:url, link:link },
     body: content
   };
-  if(contentType) request.headers["Content-Type"] = contentType;
-  solidAuth.fetch(parentFolder, request).then( res => {
+  if( typeof(contentType)!="undefined" || typeof(window)!="undefined") 
+       request.headers["Content-Type"] = contentType;
+    fetch(parentFolder, request).then( res => {
       resolve(res)
   },err=>{reject(err)});
  });
@@ -99,46 +100,40 @@ async function createFolder(url) {
     });
 }
 async function createFile(url, content, contentType) {
-  return new Promise((resolve, reject)=>{
-  const newThing = url.replace(/\/$/, '').replace(/.*\//, '');
-  const parentFolder = url.replace(newThing, '').replace(/\/\/$/, '/');
-  add(parentFolder, newThing, content, contentType).then( res=>  {
-      resolve( res);
-  }, err=> {reject(err)});
- });
+    return new Promise((resolve, reject)=>{
+        const newThing = url.replace(/\/$/, '').replace(/.*\//, '');
+        const parentFolder = url.replace(newThing, '').replace(/\/\/$/, '/');
+        add(parentFolder, newThing, content, contentType).then( res=>  {
+            resolve( res);
+        }, err=> {reject(err)});
+    });
 }
 async function remove(url) {
  return new Promise((resolve, reject)=>{
-    solidAuth.fetch(url, { method: 'DELETE' }).then( res => {
-        resolve();
+     fetch(url, { method: 'DELETE' }).then( res => {
+        resolve(res);
      }, err=> {
-//         if(err && err.toString().match(/404/)){
-             resolve()
-//         }
-//         else reject(err)
+        resolve(err)
      });
   });
 }
 async function updateFile(url, content, contentType) {
- return new Promise((resolve, reject)=>{
-    remove(url).then(() => {
-        createFile(url, content, contentType).then( res => {
-            resolve(res);
-        },err=>{reject(err)});
-    },err=>{reject(err)});
- });
+    let res = await remove(url);
+    if(res.match(/409/)) { throw new Error("Coulnd't delete, conflict!") } 
+    res = await createFile(url, content);
+    if(res.match("Created")) return(res);
+    else throw new Error("Couln't create file");
 }
 async function readFile(url){
     return new Promise((resolve, reject)=>{
-        solidAuth.fetch(url).then( result => {
-            resolve(result.body);
+        fetch(url).then( result => {
+            resolve(result);
         },err=>reject(err));
     });
 }
 async function readFolder(url){
     return new Promise((resolve, reject)=>{
-        fetch(url).then( folderRDF => {
-//           folderRDF = folderRDF.body;
+       fetch(url).then( folderRDF => {
             folderUtils.text2graph( folderRDF, url,'text/turtle').then(graph=>{
                    resolve( folderUtils.processFolder(graph, url, folderRDF) );
             },err=>reject(err));
@@ -149,13 +144,13 @@ async function readFolder(url){
 async function fetch(url,request){
     return new Promise((resolve, reject)=>{
         solidAuth.fetch(url,request).then( res => {
-            if(!res.ok) { 
+            if(!res || !res.ok) { 
                 reject( res.status + " ("+res.statusText+")")
             }
             res.text().then( txt => {
                 resolve(txt)
             }, err => reject(err) )
-        }, err => reject(err) );
+       }, err => reject("!!!"+err) );
     })
 }
 

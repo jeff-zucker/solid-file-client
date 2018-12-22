@@ -1,22 +1,24 @@
 let session;
 const client = getClient();
+const ifetch = require('isomorphic-fetch');
 
 exports.fetch = fetch;
 exports.currentSession = currentSession;
 exports.login = login;
 exports.logout = logout;
 
-async function fetch(url,options){
+async function zzzfetch(url,options){
     return new Promise((resolve, reject)=>{
         do_fetch(url,options).then( (result) => {
-            if(typeof(result)!="undefined" && result[0]) resolve(result[1]);
-            else reject(result[1]);
+resolve(result);
+//            if(typeof(result)!="undefined" && result[0]) resolve(result[1]);
+//            else reject(result[1]);
         },err=>reject(err));
     });
 }
 
-async function do_fetch(url,options){
-    let host = url.replace(/https:\/\//,'').replace(/\/.*/,'');
+async function fetch(url,options){
+    let host = url.replace(/https:\/\//,'').replace(/\/.*$/,'');
     let path = url.replace(host,'').replace(/https:\/\//,'')
     options = options || {};
     options.hostname = host;
@@ -28,16 +30,7 @@ async function do_fetch(url,options){
          options.credentials = "include";
          options.headers.authorization= `Bearer ${token}`;
     }
-    res = await client.fetch(options,options.body);
-    if(typeof(res)==="undefined"){
-        return(0,"Could not fetch!")
-    }
-    if(!res.statusCode.toString().match(/^2/)){
-        return([0,res.statusCode + " "+res.statusMessage])
-    }
-    else {
-        return([1,res])
-    }
+    return await ifetch(url,options);
 }
 function getClient() {
     let SolidClient= require('@solid/cli/src/SolidClient');
