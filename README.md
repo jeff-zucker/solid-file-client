@@ -1,6 +1,7 @@
 # solid-file-client
-![npm](https://badge.fury.io/js/solid-file-client.svg)
+
 **A library for creating and managing files and folders in Solid data stores**
+![npm](https://badge.fury.io/js/solid-file-client.svg)
 
 This library provides a simple interface for logging in and out of a
 Solid data store and for creating, reading, updating, and deleting
