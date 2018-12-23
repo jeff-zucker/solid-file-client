@@ -4,6 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width" />
     <title>solid-file-client in-browser example</title>
+<!--
 <script src=
    "https://solid.github.io/releases/rdflib.js/rdflib-0.12.2.min.js"
 ></script>
@@ -12,9 +13,18 @@
 ></script>
 <script src="./src/folderUtils.js"></script>
 <script src="./src/index.js"></script>
+-->
+<script src="./dist/browser/solid-file-client.bundle.js"></script>
 <script src="./src/batch.js"></script>
 <script>
 const fc = fileClient;
+/*
+   YOU MUST CHANGE THE IDP AND BASE
+   The script will create the base folder, write and then delete files 
+   files in it and then delete the folder.  It does not need to be in 
+   a public folder - this script logs you in.
+   
+*/
 const cfg = batch.getConfig({
     idp  : 'https://solid.community',
     base : 'https://jeffz.solid.community/public/test/'
