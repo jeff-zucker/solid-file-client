@@ -1,25 +1,28 @@
-//import solidAuth from 'solid-auth-client';
-//import { guessFileType,text2graph,folderType,processFolder,type FolderData} from './folderUtils';
+"use strict";
+// import auth from 'solid-auth-client';
+// import * as folderUtils from './folderUtils';
+var solid;
+if(typeof(auth)!="undefined") solid = { auth:auth };
 
-//cjs-start
-    solidAuth = require('./solid-shell-client')
-    folderUtils = require('./folderUtils')
+// cjs-start
+    solid = {auth : require('./solid-shell-client')};
+    const folderUtils = require('./folderUtils')
     exports.createFile = createFile;
     exports.createFolder = createFolder;
     exports.readFile = readFile;
     exports.readFolder = readFolder;
     exports.updateFile = updateFile;
-    exports.deleteFile = remove;
-    exports.deleteFolder = remove;
+    exports.deleteFile = deleteFile;
+    exports.deleteFolder = deleteFolder;
     exports.fetch = fetch;
     exports.checkSession = checkSession;
     exports.login = login;
-    exports.logout = solidAuth.logout;
+    exports.logout = logout;
     exports.popupLogin = popupLogin;
     exports.fetchAndParse = fetchAndParse;
-//cjs-end
+// cjs-end
 
-/*cjs*/async function fetchAndParse(url,contentType){
+/*cjs*/ async function fetchAndParse(url,contentType){
   return new Promise((resolve, reject)=>{
     contentType = contentType || folderUtils.guessFileType(url)
     fetch(url).then( res => {
@@ -41,7 +44,7 @@
     },err=>reject(err));             // NETWORK ERROR
   });
 }
-/*cjs*/async function popupLogin() {
+/*cjs*/ async function popupLogin() {
     let session = await solid.auth.currentSession();
     if (!session) {
         let popupUri = 'https://solid.community/common/popup.html';
@@ -50,16 +53,16 @@
     return(session.webId);
 }
 
-/*cjs*/async function checkSession() {
-    const session = await solidAuth.currentSession();
+/*cjs*/ async function checkSession() {
+    const session = await solid.auth.currentSession();
     return session;
 }
-/*cjs*/async function login(credentials) {
-  const session = await solidAuth.currentSession();
-  if (!session) await solidAuth.login(credentials);
+/*cjs*/ async function login(credentials) {
+  const session = await solid.auth.currentSession();
+  if (!session) await solid.auth.login(credentials);
   else return session;
 }
-/*cjs*/async function add(parentFolder, url, content, contentType) {
+/*cjs*/ async function add(parentFolder, url, content, contentType) {
  return new Promise((resolve, reject)=>{
   let link = '<http://www.w3.org/ns/ldp#Resource>; rel="type"';
   if (contentType === 'folder') {
@@ -78,14 +81,14 @@
   },err=>{reject(err)});
  });
 }
-/*cjs*/async function createFolder(url) {
+/*cjs*/ async function createFolder(url) {
     return new Promise((resolve, reject)=>{
         createFile(url, undefined, "folder").then( res=> {
             resolve(res);
         },err=>{reject(err)});
     });
 }
-/*cjs*/async function createFile(url, content, contentType) {
+/*cjs*/ async function createFile(url, content, contentType) {
     return new Promise((resolve, reject)=>{
         const newThing = url.replace(/\/$/, '').replace(/.*\//, '');
         const parentFolder = url.replace(newThing, '').replace(/\/\/$/, '/');
@@ -94,7 +97,10 @@
         }, err=> {reject(err)});
     });
 }
-/*cjs*/async function remove(url) {
+/*cjs*/ async function logout(){return(solid.auth.logout());}
+/*cjs*/ async function deleteFile(url){return(remove(url));}
+/*cjs*/ async function deleteFolder(url){return(remove(url));}
+/*cjs*/ async function remove(url) {
  return new Promise((resolve, reject)=>{
      fetch(url, { method: 'DELETE' }).then( res => {
         resolve(res);
@@ -103,21 +109,21 @@
      });
   });
 }
-/*cjs*/async function updateFile(url, content, contentType) {
+/*cjs*/ async function updateFile(url, content, contentType) {
     let res = await remove(url);
     if(res.match(/409/)) { throw new Error("Coulnd't delete, conflict!") } 
     res = await createFile(url, content);
     if(res.match("Created")) return(res);
     else throw new Error("Couln't create file");
 }
-/*cjs*/async function readFile(url){
+/*cjs*/ async function readFile(url){
     return new Promise((resolve, reject)=>{
         fetch(url).then( result => {
             resolve(result);
         },err=>reject(err));
     });
 }
-/*cjs*/async function readFolder(url){
+/*cjs*/ async function readFolder(url){
     return new Promise((resolve, reject)=>{
        fetch(url).then( folderRDF => {
             folderUtils.text2graph( folderRDF, url,'text/turtle').then(graph=>{
@@ -127,9 +133,9 @@
     });
 }
 
-/*cjs*/async function fetch(url,request){
+/*cjs*/ async function fetch(url,request){
     return new Promise((resolve, reject)=>{
-        solidAuth.fetch(url,request).then( res => {
+        solid.auth.fetch(url,request).then( res => {
             if(!res || !res.ok) { 
                 reject( res.status + " ("+res.statusText+")")
             }

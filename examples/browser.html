@@ -14,10 +14,10 @@
 <script src="./src/folderUtils.js"></script>
 <script src="./src/index.js"></script>
 -->
-<script src="./dist/browser/solid-file-client.bundle.js"></script>
-<script src="./src/batch.js"></script>
+<script src="../dist/browser/solid-file-client.bundle.js"></script>
+<script src="../src/batch.js"></script>
 <script>
-const fc = fileClient;
+fc = SolidFileClient;
 /*
    YOU MUST CHANGE THE IDP AND BASE
    The script will create the base folder, write and then delete files 
@@ -25,12 +25,12 @@ const fc = fileClient;
    a public folder - this script logs you in.
    
 */
-const cfg = batch.getConfig({
+cfg = batch.getConfig({
     idp  : 'https://solid.community',
     base : 'https://jeffz.solid.community/public/test/'
 });
 </script>
-<script src="./src/crudTest.js"></script>
+<script src="../src/crudTest.js"></script>
 <script> batch.run( crudTest(cfg) ); </script>
   </head>
   <body>

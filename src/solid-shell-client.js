@@ -2,11 +2,13 @@
  * and making it conform to the same API as solid-auth-client
  */
 
-//import * as ifetch          from 'isomorphic-fetch';
-//import * as SolidClient     from '@solid/cli/src/SolidClient';
-//import * as IdentityManager from '@solid/cli/src/IdentityManager';
+"use strict";
 
-//cjs-start
+// import * as ifetch          from 'isomorphic-fetch';
+// import * as SolidClient     from '@solid/cli/src/SolidClient';
+// import * as IdentityManager from '@solid/cli/src/IdentityManager';
+
+// cjs-start
 const ifetch          = require('isomorphic-fetch');
 const SolidClient     = require('@solid/cli/src/SolidClient');
 const IdentityManager = require('@solid/cli/src/IdentityManager');
@@ -14,15 +16,16 @@ exports.fetch = fetch;
 exports.currentSession = currentSession;
 exports.login = login;
 exports.logout = logout;
-//cjs-end
+// cjs-end
 
 let session;
+const idMan = new IdentityManager()
 const client = new SolidClient({ identityManager : new IdentityManager() });
 
 /*  TBD: make fetch a two-step request like solid-auth-client
  *  check if authorization needed and only send token if it its
  */
-/*cjs*/async function fetch(url,request){
+/*cjs*/ async function fetch(url,request){
     request = request || {};
     request.method = request.method || 'GET';
     request.headers = request.headers || {};
@@ -36,14 +39,14 @@ const client = new SolidClient({ identityManager : new IdentityManager() });
 /* 
  *  RATHER MINIMAL, BUT FOR NOW THEY"LL DO
  */
-/*cjs*/async function logout() {
+/*cjs*/ async function logout() {
     session = undefined;    
     return(1);
 }
-/*cjs*/async function currentSession(){
+/*cjs*/ async function currentSession(){
     return(session)
 }
-/*cjs*/async function login( { idp, username, password } ) {
+/*cjs*/ async function login( { idp, username, password } ) {
     session = await client.login(idp,{username,password});
     session.webID = session.idClaims.sub
     return session;

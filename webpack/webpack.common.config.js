@@ -6,7 +6,7 @@ module.exports = {
   context: path.resolve(__dirname, '..'),
   mode: 'production',
   entry: {
-    'solid-file-client': './src/index.js',
+    'solid-file-client': './lib/index.js',
   },
   module: {
     rules: [

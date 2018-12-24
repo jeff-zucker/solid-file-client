@@ -1,17 +1,19 @@
 {
   "scripts": {
+    "test": "jest --coverage",
     "clean": "rm -rf dist && rm -rf coverage",
     "prepublish": "./cjs2esm && npm run test && npm run build",
-    "watch": "babel --watch src --out-dir js",
+    "watch": "babel --watch lib --out-dir js",
     "build": "npm run clean && npm run build:lib && npm run build:module && npm run build:window",
     "build:lib": "rm -rf dist && babel lib --env-name production -d dist/node",
     "build:module": "babel lib --env-name module -d dist/esm",
     "build:window": "webpack --config=./webpack/webpack.window.config.js -p"
   },
-  "main"    : "dist/node/index.js",
-  "browser" : "dist/browser/solid-file-client.bundle.js",
-  "module"  : "dist/esm/index.js",
+  "main": "dist/node/index.js",
+  "browser": "dist/browser/solid-file-client.bundle.js",
+  "module": "dist/esm/index.js",
   "name": "solid-file-client",
+  "Zbuild:module": "build-esm babel lib --env-name module -d dist/esm",
   "version": "0.3.0",
   "description": "A library for creating and managing files and folders in Solid data stores",
   "keywords": [
@@ -42,6 +44,7 @@
     "babel-eslint": "^10.0.1",
     "babel-jest": "^23.6.0",
     "babel-loader": "^8.0.0-beta.6",
+    "build-esm": "^4.2.0",
     "chai": "^4.2.0",
     "clean-webpack-plugin": "^1.0.0",
     "eslint": "^5.9.0",
