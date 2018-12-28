@@ -1,12 +1,14 @@
 "use strict";
 // import auth from 'solid-auth-client';
 // import * as folderUtils from './folderUtils';
+
 var solid;
 if(typeof(auth)!="undefined") solid = { auth:auth };
-
 // cjs-start
+if(typeof(window)==="undefined"){
     solid = {auth : require('./solid-shell-client')};
-    const folderUtils = require('./folderUtils')
+    var folderUtils = require('./folderUtils')
+    var fs = require('fs')
     exports.createFile = createFile;
     exports.createFolder = createFolder;
     exports.readFile = readFile;
@@ -20,26 +22,40 @@ if(typeof(auth)!="undefined") solid = { auth:auth };
     exports.logout = logout;
     exports.popupLogin = popupLogin;
     exports.fetchAndParse = fetchAndParse;
+    exports.uploadFile = uploadFile;
+//    exports.uploadFolder = uploadFolder;
+    exports.downloadFile = downloadFile;
+    exports.copyFile = copyFile;
+    exports.getCredentials = getCredentials;
+}
 // cjs-end
 
+/*cjs*/ async function copyFile(oldFile,newFile) {
+    readFile(oldFile).then( content => {
+        createFile(newFile,content).then( res => {
+            return(res)
+        }, err => {throw new Error("copy upload error  "+err)});
+    }, err => {throw new Error("copy download error  "+err)});
+}
 /*cjs*/ async function fetchAndParse(url,contentType){
   return new Promise((resolve, reject)=>{
     contentType = contentType || folderUtils.guessFileType(url)
     fetch(url).then( res => {
+/*
         if(!res.ok) { 
-            reject( res.status + " ("+res.statusText+")" ); // HTTP ERROR
+            reject( res.statusCode + " ("+res.statusMessage+")" ); // HTTP ERROR
         }
-        else if( contentType==='application/json' ){
+        else
+*/
+ if( contentType==='application/json' ){
             res.json().then( json => {
-                resolve(json)        // JSON PARSE SUCCESS
-            }, err=>reject(err) );   // JSON PARSE ERROR
+                resolve(json)    
+            }, err=>reject("JSON parse : "+err) );
         }
         else {
-            res.text().then( txt => {
-                folderUtils.text2graph(txt,url,contentType).then( graph => {
-                    resolve(graph);  // RDF PARSE SUCCESS
-                },err=>reject(err)); // RDF PARSE ERROR
-            },err=>reject(err));     // TEXT READ ERROR
+              folderUtils.text2graph(res,url,contentType).then( graph => {
+                    resolve(graph);
+              },err=>reject("RDF parse : "+err));
         }
     },err=>reject(err));             // NETWORK ERROR
   });
@@ -111,16 +127,17 @@ if(typeof(auth)!="undefined") solid = { auth:auth };
 }
 /*cjs*/ async function updateFile(url, content, contentType) {
     let res = await remove(url);
-    if(res.match(/409/)) { throw new Error("Coulnd't delete, conflict!") } 
-    res = await createFile(url, content);
-    if(res.match("Created")) return(res);
-    else throw new Error("Couln't create file");
+    if(res.match && res.match(/409/)) { throw new Error("Coulnd't delete, conflict!") } 
+    res = await createFile(url, content,contentType);
+    return(res)
+//    if(res.match && res.match("Created")) return(res);
+//    else throw new Error("Couln't create file");
 }
 /*cjs*/ async function readFile(url){
     return new Promise((resolve, reject)=>{
         fetch(url).then( result => {
             resolve(result);
-        },err=>reject(err));
+        },err=>reject("fetch error "+err));
     });
 }
 /*cjs*/ async function readFolder(url){
@@ -132,17 +149,71 @@ if(typeof(auth)!="undefined") solid = { auth:auth };
         },err=>reject(err));
     });
 }
-
 /*cjs*/ async function fetch(url,request){
     return new Promise((resolve, reject)=>{
-        solid.auth.fetch(url,request).then( res => {
-            if(!res || !res.ok) { 
-                reject( res.status + " ("+res.statusText+")")
+        solid.auth.fetch(url,request).then( (res) => {
+            if(!res.ok) { 
+                reject( res.status + " ("+res.statusText+") "+url)
             }
-            res.text().then( txt => {
-                resolve(txt)
-            }, err => reject(err) )
-       }, err => reject("!!!"+err) );
+            let type = (res.headers._headers)
+               ? res.headers._headers['content-type']
+               : ""
+            type = type.toString()
+            if(type.match(/(image|audio|vido)/)){
+                res.buffer().then( blob => {
+                    resolve(blob)
+                }, err => reject("buffer error "+err) );
+            }
+            else if(res.text) {
+                res.text().then( text => {
+                    resolve(text)
+                }, err => reject("buffer error "+err) );
+            }
+            else resolve(res);
+       }, err => { reject("fetch errror "+err+url) } );
     })
 }
-
+/* METHODS BELOW HERE HAVE BOTH WINDOWS AND CONSOLE VERSIONS
+ */
+/*cjs*/ async function getCredentials(fn){
+    return new Promise((resolve, reject)=>{
+        fn = fn || "./solid-credentials.json";
+        let creds;
+        try {
+            creds = fs.readFileSync(fn,'utf8');
+        } catch(err) { reject("read file error "+err) }
+        try {
+            creds = JSON.parse( creds );
+            if(!creds) reject("JSON parse error : "+err)
+        } catch(err) { reject("JSON parse error : "+err) }
+        resolve(creds);
+    });
+}
+/*cjs*/ async function doWin(url) {
+    return true;
+}
+/*cjs*/ async function downloadFile(url) {
+  if(typeof(window)!="undefined") return doWin(url)
+  return new Promise((resolve, reject)=>{
+    let fn = url.replace(/.*\//,'')
+    fetch(url,{encoding:null}).then( content => {
+        try { 
+            fs.writeFileSync(fn,content);
+            resolve(fn);
+        }
+        catch(err) { reject("write error "+fn+" "+err) }
+    }, err => { reject("fetch error "+err) })
+  });
+}
+/*cjs*/ async function uploadFile(url) {
+  if(typeof(window)!="undefined") return doWin(url)
+    return new Promise((resolve, reject)=>{
+    let fn = url.replace(/.*\//,'');    
+    let content = fs.readFileSync(fn,'utf-8');
+    deleteFile(url,content).then( () => {
+        createFile(url,content).then( () => {
+            resolve(fn);
+        }, err => { reject("create "+err) });
+    }, err => { reject("delete error "+err) });
+  });
+}

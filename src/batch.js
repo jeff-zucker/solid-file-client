@@ -3,6 +3,7 @@ let passed = 0;
 let skipped = 0;
 let test = [];
 let quiet = false;
+let done = false;
 
 if( typeof(window)==="undefined" ){
     exports.run = run;
@@ -23,9 +24,10 @@ else {
     }
 }
 
-function run(functions,verbosity){
+function run(functions,callback,verbosity){
     if(functions){
         test = functions;
+        done = callback;
         quiet = verbosity;
     }
     testCount += 1;
@@ -37,16 +39,16 @@ function run(functions,verbosity){
         }
         else thisTest();
     }
-    else if(!quiet) {
+    else {
         let total = testCount - skipped;
-        console.log(`#\n## Passed ${passed}/${total} tests.\n#`)
+        if(!quiet) console.log(`#\n## Passed ${passed}/${total} tests.\n#`)
         if(passed != total) abort("Failed some tests ... ");
+        if(done) done();        
     }
 }
 function abort(msg){
     if(!quiet && msg) console.log(msg);
     test=undefined;
-    if(typeof(window)==="undefined") process.exit(-1);
 }
 function ok(msg){
     console.log("ok: "+msg);
@@ -64,13 +66,13 @@ function fail(msg){
 }
 function getConfig(opts) { 
     let cfg= {
-        newFolder   : opts.base,
-        newFile     : opts.base + 'test.txt',
+        newFolder   : opts.base + opts.test,
+        newFile     : opts.base + opts.test + 'test.txt',
         newText     : 'hello new Solid world!',
         credentials : {
             idp      : opts.idp,
-            username : opts.user,
-            password : opts.pass
+            username : opts.username,
+            password : opts.password,
         }
     };
     if(typeof(window)!="undefined"){

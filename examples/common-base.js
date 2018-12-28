@@ -1,8 +1,11 @@
 if(typeof(window)==="undefined"){
-    fc    = require('./');
-    batch = require('./batch');
+    fc    = require('../src/index');
+    batch = require('../src/batch');
+    $rdf  = require('rdflib')
 }
-const crudTest = function(cfg){ return [
+let profile = 'https://jeffz.solid.community/profile/card'
+
+const common = function(cfg){ return [
     "Testing solid-file-client ... logging in ...",
     function(){
         fc.login(cfg.credentials).then( session =>{
@@ -28,14 +31,34 @@ const crudTest = function(cfg){ return [
         }, err => batch.fail("update file: ",err) );
     },
     function(){
+        fc.copyFile(cfg.newFile,cfg.newFile+".copy.txt").then( res =>{
+            batch.ok("copy file");
+        }, err => batch.fail("copy file: ",err) );
+    },
+    function(){
         fc.readFile(cfg.newFile).then( body =>{
             if(body===cfg.newText) batch.ok("read file")
             else batch.abort("read file: got file, but text doesn't match");
         }, err => batch.fail("read file: "+err) );
     },
+/*
     function(){
+        if(typeof(window)!="undefined")  batch.skip()
+        fc.downloadFile(profile).then( () =>{
+            batch.ok("download file");
+        }, err => batch.fail("dowload file : "+err) );
+    },
+    function(){
+        if(typeof(window)!="undefined")  batch.skip()
+        fc.uploadFile(cfg.newFolder+"/card").then( res =>{
+            batch.ok("upload file");
+        }, err => batch.fail("upload file : "+err) );
+    },
+*/
+    function(){
+        let wanted = 2;
         fc.readFolder(cfg.newFolder).then( folder =>{
-            if( folder.files.length===1 && folder.folders.length===0){
+            if( folder.files.length===wanted && folder.folders.length===0){
                 batch.ok("read folder");           
             }
             else {
@@ -44,11 +67,15 @@ const crudTest = function(cfg){ return [
         }, err => batch.fail(err) );
     },
     function(){
+     fc.deleteFile(cfg.newFolder+"/card").then( ()=> {
+      fc.deleteFile(cfg.newFile+".copy.txt").then( ()=> {
         fc.deleteFile(cfg.newFile).then( ()=> {
             fc.readFile(cfg.newFile).then( body =>{
                batch.fail("got file that should have been deleted");
             }, err => batch.ok("delete file") );
         }, err => fail(err) );
+      }, err => fail(err) );
+     }, err => fail(err) );
     },
     function(){
         fc.deleteFolder(cfg.newFolder).then( ()=> {
@@ -56,6 +83,17 @@ const crudTest = function(cfg){ return [
                batch.fail("got folder that should have been deleted");
             }, err => batch.ok("delete folder") );
         }, err => fail(err) );
+    },
+    function(){
+        var subj = profile + "#me"
+        var pred = 'http://xmlns.com/foaf/0.1/name'
+        fc.fetchAndParse( subj ).then( graph => {
+            subj=$rdf.sym(subj)
+            pred=$rdf.sym(pred)
+            var name = graph.any(subj,pred).value
+            if(name==="Jeff Zucker") batch.ok("fetch and parse");
+            else batch.fail("fecthed and parse : fetched but bad parse");
+         }, err => batch.fail("fetch and parse "+err) ) ;
     },
     function(){
         fc.checkSession().then( session => {
@@ -74,5 +112,5 @@ const crudTest = function(cfg){ return [
 ]
 }
 if(typeof(window)==="undefined"){
-    exports.crudTest = crudTest;
+    exports.common = common;
 }

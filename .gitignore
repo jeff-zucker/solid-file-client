@@ -11,5 +11,4 @@ node_modules/
 .nyc_output
 coverage/
 dist/
-src/sfc-pre-merge.js
-src/sfc-post-merge.js
+examples/cred.json

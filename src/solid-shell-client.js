@@ -1,5 +1,6 @@
-/* a light layer on top of solid-cli, giving it persistant sessions
- * and making it conform to the same API as solid-auth-client
+/* a light layer on top of solid-cli, giving it persistant 
+ * sessions and making it conform to the same API as 
+ * solid-auth-client
  */
 
 "use strict";
@@ -11,7 +12,7 @@
 // cjs-start
 const ifetch          = require('isomorphic-fetch');
 const SolidClient     = require('@solid/cli/src/SolidClient');
-const IdentityManager = require('@solid/cli/src/IdentityManager');
+const IdentityManager =require('@solid/cli/src/IdentityManager');
 exports.fetch = fetch;
 exports.currentSession = currentSession;
 exports.login = login;
