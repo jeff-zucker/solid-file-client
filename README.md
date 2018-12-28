@@ -3,18 +3,23 @@
 **A library for creating and managing files and folders in Solid data stores**
 
 This library provides a simple interface for logging in and out of a
-Solid data store and for creating, reading, updating, and deleting
-files and folders on it. It may be used either directly in the browser or
-with node/require. The library is based on solid-auth-client, providing
-an error-handling interface and some convenience shortcuts on
-top of solid-auth-client's methods.
+Solid data store, maintaining a persistent session, and for managing
+files and folders. It may be used either directly in the browser or
+with node/require. The library is based on @ReubenVerborgh's 
+solid-auth-client and solid-cli, providing an error-handling interface and 
+some convenience shortcuts on top of their methods and providing a common
+interface to the two modules.
+
+    solid-cli-----------+                       +---browser apps
+                        +---solid-file-client---+
+    solid-auth-client---+                       +---console apps
 
 ## Using in the browser
 
 Either download locally as shown below or use CDN like this:
 
 ```HTML
-       <script src="https://cdn.jsdelivr.net/npm/solid-file-client@0.2.0/dist/umd/solid-file-client.bundle.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/solid-file-client@0.2.0/dist/browser/solid-file-client.bundle.js"></script>
 ```
 
 ## Downloading locally
@@ -25,9 +30,8 @@ Either download locally as shown below or use CDN like this:
 
 If you install locally, the node_modules/solid-file-client/ folder contains three builds:
 
-       ./dist       built for use with node
-       ./dist/umd   built for use with browser, bundled rdflib & solid-auth-client
-       ./dist/esm   built for use with module-import/esm
+    ./dist/console for use with node
+    ./dist/browser for use with browser, bundled rdflib & solid-auth-client
 
 ## Invocation
 
@@ -131,6 +135,46 @@ NOTE : this is a file-level update, it replaces the file with the new content by
 ```javascript
 fileClient.deleteFile(url).then(success => {
   console.log(`Deleted ${url}.`);
+}, err => console.log(err) );
+```
+
+**copyFile(**old,new**)**
+
+Copies a file from one location on a Solid Server to another location on
+the same or a different Solid server.  Use the full URL, including file
+name, to both the old and new parameters.
+
+```javascript
+fileClient.copy(old,new).then(success => {
+  console.log(`Copied ${old} to ${new}.`);
+}, err => console.log(err) );
+```
+
+**downloadFile(**URL,filePath**)**
+
+Downloads the specified URL.  The filePath parameter is optional
+If filePath is not specified the file is saved in the current 
+working directory using the same filename as the URL.  If filePath
+is specified, it should be a path relative to the folder the script
+is running in and should contain the filename as well as the path.
+**Note**: only available in console for now, a browser-based version
+is coming soon.
+
+```javascript
+fileClient.downloadFile(url,localPath).then(success => {
+  console.log(`Downloaded ${url} to ${localPath}.`);
+}, err => console.log(err) );
+```
+**uploadFile(**filePath,URL**)**
+
+Uploads the specified URL. filPath should be a path relative to the 
+folder the script is running in and should contain the filename as well
+as the path.  The URL should also contain the filename. **Note**: only
+available in console for now, a browser-based version is coming soon.
+
+```javascript
+fileClient.uploadFile(localPath,url).then(success => {
+  console.log(`Uploaded ${localPath} to ${url}.`);
 }, err => console.log(err) );
 ```
 
