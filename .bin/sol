@@ -1,0 +1,93 @@
+#!/usr/bin/env node
+const program = require('commander');
+const sol = require('./sol.run.js');    // the commands
+const sh  = require('./sol.shell.js');  // the interactive interface
+/*
+ *  This file is the command-line interface
+*/
+program
+    .name('sol')
+    .description('Command line and interactive shell tool for Solid')
+    .version("0.1.0")
+;  
+program
+    .command('shell')
+    .description('run as an interactive shell')
+    .action( () => {
+        sol("login").then(()=>{sh()},err=>console.log(err));
+    });
+program
+    .command('upload <destination> <files...>')
+    .alias("u")
+    .description('upload a file to a Solid server')
+    .action( (destination,files) => {
+        sol("login").then( ()=>{ 
+            sol("upload",[destination,files]).then( ()=>{
+            },err=>console.log(err));
+        },err=>console.log(err));
+     },err=>console.log(err));
+program
+    .command('download <URL> <localFolder>')
+    .alias("d")
+    .description('download a Solid server file to current folder')
+    .action( (URL,localFolder) => {
+        sol("login").then( ()=>{ 
+            sol("download",[URL,localFolder]).then( ()=>{
+            },err=>console.log(err));
+        },err=>console.log(err));
+    });
+program
+    .command('copy <oldURL> <newURL>')
+    .alias('cp')
+    .description('copy a Solid server file to a Solid server location')
+    .action( (oldURL,newURL) => {
+        sol("login").then( ()=> { 
+            sol("copy",[oldURL,newURL]).then(()=>{
+            },err=>console.log(err));
+        },err=>console.log(err));
+    });
+program
+    .command('read <URL>')
+    .alias('r')
+    .description('read a file on a Solid server')
+    .action( (URL) => {
+        sol("login").then( ()=> { 
+            sol("read",[URL]).then(()=>{
+            },err=>console.log(err));
+        },err=>console.log(err));
+    });
+program
+    .command('readFolder <URL>')
+    .description("list a Solid server folder's directory")
+    .action( (oldURL,newURL) => {
+        sol("login").then( ()=> { 
+            sol("read",["folder",URL]).then(()=>{
+            },err=>console.log(err));
+        },err=>console.log(err));
+    });
+program
+    .command('delete <URL...>')
+    .alias('rm')
+    .description('delete a file or empty folder on a Solid server')
+    .action( URL => {
+        sol("login").then( ()=> { 
+            sol("delete",[URL]).then(()=>{
+            },err=>console.log(err));
+        },err=>console.log(err));
+    });
+program
+    .command('mkdir <URL...>')
+    .alias('md')
+    .description('create one or more folders')
+    .action( URL => {
+        sol("login").then( ()=> { 
+            sol("createFolder",[URL]).then(()=>{
+            },err=>console.log(err));
+        },err=>console.log(err));
+    });
+if(process.argv.length<3){
+    process.argv.push("-h");
+}
+program.parse(process.argv);
+
+

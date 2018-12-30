@@ -12,3 +12,6 @@ node_modules/
 coverage/
 dist/
 examples/cred.json
+.bin/test
+.bin/solid-credentials.json
+examples/solid-credentials.json

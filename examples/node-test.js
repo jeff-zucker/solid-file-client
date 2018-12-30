@@ -2,7 +2,7 @@
 /*
  * You must edit the file ./solid-credentials.json to run this test
  */
-const fc  = require('../src/index');
+const fc  = require('../dist/console/index');
 var batch = require('../src/batch');
 fc.getCredentials().then( cfg => {
     if(!cfg.password) croak("no pass");

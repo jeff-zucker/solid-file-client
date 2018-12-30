@@ -99,9 +99,13 @@ if(typeof(window)==="undefined"){
 }
 /*cjs*/ async function createFolder(url) {
     return new Promise((resolve, reject)=>{
-        createFile(url, undefined, "folder").then( res=> {
-            resolve(res);
-        },err=>{reject(err)});
+        readFile(url).then( res=> {
+            resolve();  // folder exists, don't recreate it
+        },err=>{
+            createFile(url, undefined, "folder").then( res=> {
+                resolve(res);
+            },err=>{reject(err)});
+        });
     });
 }
 /*cjs*/ async function createFile(url, content, contentType) {
@@ -159,7 +163,7 @@ if(typeof(window)==="undefined"){
                ? res.headers._headers['content-type']
                : ""
             type = type.toString()
-            if(type.match(/(image|audio|vido)/)){
+            if(type.match(/(image|audio|video)/)){
                 res.buffer().then( blob => {
                     resolve(blob)
                 }, err => reject("buffer error "+err) );
@@ -192,10 +196,9 @@ if(typeof(window)==="undefined"){
 /*cjs*/ async function doWin(url) {
     return true;
 }
-/*cjs*/ async function downloadFile(url) {
+/*cjs*/ async function downloadFile(url,fn) {
   if(typeof(window)!="undefined") return doWin(url)
   return new Promise((resolve, reject)=>{
-    let fn = url.replace(/.*\//,'')
     fetch(url,{encoding:null}).then( content => {
         try { 
             fs.writeFileSync(fn,content);
@@ -205,10 +208,9 @@ if(typeof(window)==="undefined"){
     }, err => { reject("fetch error "+err) })
   });
 }
-/*cjs*/ async function uploadFile(url) {
+/*cjs*/ async function uploadFile(fn,url) {
   if(typeof(window)!="undefined") return doWin(url)
     return new Promise((resolve, reject)=>{
-    let fn = url.replace(/.*\//,'');    
     let content = fs.readFileSync(fn,'utf-8');
     deleteFile(url,content).then( () => {
         createFile(url,content).then( () => {
