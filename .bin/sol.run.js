@@ -151,7 +151,7 @@ async function runSol(com,args) {
             if( fs.lstatSync(source).isFile() ){
                  fn = source.replace(/.*\//,'')
                  console.log("uploading file "+target+fn);
-                 fc.uploadFile(target,source).then( () => {
+                 fc.uploadFile(source,target).then( () => {
                       console.log("uploaded file");
                       resolve();
                  }, err => reject("error uploading file "+err) );
