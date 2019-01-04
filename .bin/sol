@@ -1,7 +1,8 @@
 #!/usr/bin/env node
-const program = require('commander');
-const sol = require('./sol.run.js');    // the commands
-const sh  = require('./sol.shell.js');  // the interactive interface
+const program = require('commander');       // the command-line interface
+const sol     = require('./sol.run.js');    // the commands
+const sh      = require('./sol.shell.js');  // the interactive interface
+const batch   = require('../src/batch');    // the batch interface
 /*
  *  This file is the command-line interface
 */
@@ -12,39 +13,10 @@ program
 ;  
 program
     .command('shell')
+    .alias('sh')
     .description('run as an interactive shell')
     .action( () => {
         sol("login").then(()=>{sh()},err=>console.log(err));
-    });
-program
-    .command('upload <destination> <files...>')
-    .alias("u")
-    .description('upload a file to a Solid server')
-    .action( (destination,files) => {
-        sol("login").then( ()=>{ 
-            sol("upload",[destination,files]).then( ()=>{
-            },err=>console.log(err));
-        },err=>console.log(err));
-     },err=>console.log(err));
-program
-    .command('download <URL> <localFolder>')
-    .alias("d")
-    .description('download a Solid server file to current folder')
-    .action( (URL,localFolder) => {
-        sol("login").then( ()=>{ 
-            sol("download",[URL,localFolder]).then( ()=>{
-            },err=>console.log(err));
-        },err=>console.log(err));
-    });
-program
-    .command('copy <oldURL> <newURL>')
-    .alias('cp')
-    .description('copy a Solid server file to a Solid server location')
-    .action( (oldURL,newURL) => {
-        sol("login").then( ()=> { 
-            sol("copy",[oldURL,newURL]).then(()=>{
-            },err=>console.log(err));
-        },err=>console.log(err));
     });
 program
     .command('read <URL>')
@@ -58,10 +30,21 @@ program
     });
 program
     .command('readFolder <URL>')
+    .alias('rf')
     .description("list a Solid server folder's directory")
-    .action( (oldURL,newURL) => {
+    .action( (URL) => {
         sol("login").then( ()=> { 
             sol("read",["folder",URL]).then(()=>{
+            },err=>console.log(err));
+        },err=>console.log(err));
+    });
+program
+    .command('createFolder <URL...>')
+    .alias('cf')
+    .description('create one or more folders')
+    .action( URL => {
+        sol("login").then( ()=> { 
+            sol("createFolder",[URL]).then(()=>{
             },err=>console.log(err));
         },err=>console.log(err));
     });
@@ -76,15 +59,46 @@ program
         },err=>console.log(err));
     });
 program
-    .command('mkdir <URL...>')
-    .alias('md')
-    .description('create one or more folders')
-    .action( URL => {
-        sol("login").then( ()=> { 
-            sol("createFolder",[URL]).then(()=>{
+    .command('upload <target> <files...>')
+    .alias("up")
+    .description('upload file(s) to a Solid server')
+    .action( (target,files) => {
+        sol("login").then( ()=>{ 
+            sol("upload",[target,files]).then( ()=>{
+            },err=>console.log(err));
+        },err=>console.log(err));
+     },err=>console.log(err));
+program
+    .command('download <target> <URL>')
+    .alias("dn")
+    .description('download a Solid file')
+    .action( (target,URL) => {
+        sol("login").then( ()=>{ 
+            sol("download",[target,URL]).then( ()=>{
             },err=>console.log(err));
         },err=>console.log(err));
     });
+program
+    .command('copy <oldURL> <newURL>')
+    .alias('cp')
+    .description('copy a file from one remote location to another')
+    .action( (oldURL,newURL) => {
+        sol("login").then( ()=> { 
+            sol("copy",[oldURL,newURL]).then(()=>{
+            },err=>console.log(err));
+        },err=>console.log(err));
+    });
+/* TBD
+program
+    .command('batch <scriptFile>')
+    .description('batch run commands in a script file')
+    .action( (scriptFile) => {
+        sol("login").then(()=>{
+            sol("batch",[scriptFile]).then(()=>{
+            },err=>console.log(err) )
+        },err=>console.log(err) )
+    },err=>console.log(err))
+*/
 if(process.argv.length<3){
     process.argv.push("-h");
 }

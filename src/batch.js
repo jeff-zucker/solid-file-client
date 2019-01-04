@@ -41,9 +41,14 @@ function run(functions,callback,verbosity){
     }
     else {
         let total = testCount - skipped;
-        if(!quiet) console.log(`#\n## Passed ${passed}/${total} tests.\n#`)
-        if(passed != total) abort("Failed some tests ... ");
-        if(done) done();        
+        if(total===0) {
+            if(done) done();        
+        }
+        else {
+          if(!quiet ) console.log(`#\n## Passed ${passed}/${total} tests.\n#`)
+          if(passed != total) abort("Failed some tests ... ");
+          if(done) done();        
+        }
     }
 }
 function abort(msg){

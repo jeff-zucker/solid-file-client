@@ -1,7 +1,6 @@
 if(typeof(window)==="undefined"){
     fc    = require('../src/index');
     batch = require('../src/batch');
-    $rdf  = require('rdflib')
 }
 let profile = 'https://jeffz.solid.community/profile/card'
 
@@ -13,20 +12,17 @@ const node = function(cfg){ return [
         }, err => { batch.abort("Test aborted : "+err); });
     },
     function(){
-        fc.deleteFolder(cfg.newFolder).then( res =>{
-            if( res.match(/409/) ){ batch.ok("folder already exists"); }
-            else fc.createFolder(cfg.newFolder).then( res =>{
-                batch.ok("create folder");
-            }, err => batch.fail("create folder: "+err) );
-        }, err => batch.fail("delete folder: "+err) );
+        fc.createFolder(cfg.newFolder).then( res =>{
+            batch.ok("create folder");
+        }, err => batch.fail("create folder: "+err) );
     },
     function(){
-        fc.downloadFile(profile).then( () =>{
+        fc.downloadFile(profile,"./download.txt").then( () =>{
             batch.ok("download file");
         }, err => batch.fail("dowload file : "+err) );
     },
     function(){
-        fc.uploadFile(cfg.newFolder+"/card").then( res =>{
+        fc.uploadFile(cfg.newFolder,"./download.txt").then( res =>{
             batch.ok("upload file");
         }, err => batch.fail("upload file : "+err) );
     },
@@ -39,10 +35,10 @@ const node = function(cfg){ return [
             else {
                 batch.fail("got folder but its content is wrong");
             }
-        }, err => batch.fail(err) );
+        }, err => { batch.fail(err); process.exit(); } );
     },
     function(){
-     fc.deleteFile(cfg.newFolder+"/card").then( ()=> {
+     fc.deleteFile(cfg.newFolder+"./download.txt").then( ()=> {
       fc.deleteFile(cfg.newFile+".copy.txt").then( ()=> {
         fc.deleteFile(cfg.newFile).then( ()=> {
             fc.readFile(cfg.newFile).then( body =>{

@@ -3,6 +3,7 @@ const path = require("path");
 //const fc = require("../dist/console/index.js");
 const fc = require("../src/index.js");
 const show = require("./sol.show.js");
+const batch = require("../src/batch");
 let credentials;
 
 module.exports = runSol;
@@ -11,7 +12,7 @@ async function runSol(com,args) {
   return new Promise((resolve,reject)=>{  switch(com){
 
         case "help" :
-        case "-h" :
+        case "h" :
             show("help");
             resolve();
             break;
@@ -27,30 +28,34 @@ async function runSol(com,args) {
             }, err => reject("error getting credentials : "+err) );
             break;
 
+        case "rf" :
+        case "readFolder" :
+            source = mungeURL(args[0]);
+            console.log("fetching from "+source)
+            fc.readFolder(source).then( folderObject => {
+                show("folder",folderObject);
+                resolve()
+            },err=>console.log(err));
+            break;
+        
+
         case "r" :
         case "read" :
-            if(args[0]==="folder") {
-                source = mungeURL(args[1])
-                console.log("fetching from "+source)
-                fc.readFolder(source).then( folderObject => {
-                    show("folder",folderObject);
-                    resolve()
-                },err=>console.log(err));
-            }
-            else {
-                source = mungeURL(args[0]);
-                console.log("fetching from "+source);
-                fc.readFile(source).then( fileBody =>{
-                    show("file",fileBody);
-                    resolve()
-                },err=>console.log(err));
-            }
+        case "readFile" :
+            source = mungeURL(args[0]);
+            console.log("fetching from file "+source);
+            fc.readFile(source).then( fileBody =>{
+                show("file",fileBody);
+                resolve()
+            },err=>console.log(err));
             break;
 
         case "rm" :
-        case "unlink" :
         case "delete" :
-            target = args[0];
+            if( args.length>1 ){
+                target = [ args ]  // in shell, multiple args
+            }
+            else target = args[0];
             if( typeof(target)!="string" && target.length<2){
                 target = target[0];
             }
@@ -59,8 +64,10 @@ async function runSol(com,args) {
                 if( target.match(/\*$/) ){
                     target = target.replace(/\*$/,'');
                     fc.readFolder(target).then( gotFolder => {
-                        doMany("rm",gotFolder.files);
-                        resolve()
+                        let all= gotFolder.folders.concat(gotFolder.files);
+                        doMany("rm",all).then( ()=>{
+                            resolve()
+                        },err=>console.log(err));
                     },err=>console.log(err));
                     break;
                 }
@@ -79,21 +86,22 @@ async function runSol(com,args) {
             }
             break;
 
-        case "md" :
-        case "mkdir" :
+        case "cf" :
         case "createFolder" :
-            target = args[0];
+            if( args.length>1 ){
+                target = [ args ]
+            }
+            else target = args[0];
             if( typeof(target)!="string" && target.length<2){
                 target = target[0];
             }
             if( typeof(target)==="string" ){
                 target = mungeURL(target);
-                console.log("creating folder "+target);
+                console.log("creating folder '"+target+"'");
                 fc.createFolder(target).then( () => {
                     console.log("created folder");
                     resolve();
                 }, err => reject("error creating folder "+err) );
-                break;
             }
             else {
                 doMany("createFolder",target).then( ()=>{
@@ -103,34 +111,61 @@ async function runSol(com,args) {
             }
             break;
 
-        case "d" :
+        case "dn" :
         case "download" :
-            fn = path.join( args[1] , args[0].replace(/.*\//,'') )
-            args[0] = mungeURL(args[0]);
-            args[1] = path.join(__dirname,fn);
-            console.log("downloading from "+args[0]+" to "+fn);
-            fc.downloadFile(args[0],args[1]).then( () => {
+            [target,source] = args;
+            fn = path.join( target , source.replace(/.*\//,'') )
+            source = mungeURL(source);
+            target = path.join(__dirname,fn);
+            console.log("downloading from "+source+" to "+fn);
+            fc.downloadFile(source,target).then( () => {
                 console.log("downloaded");
                 resolve();
             }, err => reject("error downloading file "+err) );
             break;
 
-        case "u" :
+        case "up" :
         case "upload" :
             [ target, source ] = args;
             target = mungeURL(target);
+            if( source.match && source.match(/\*$/) ){  // shell
+                source = source.replace(/\*$/,'');
+                source = path.join(__dirname,source);
+	        fs.readdir(source, (err,files) => {
+                    if(err) reject(err);
+                    else {
+                        files = files.map(x=>path.join(source,x))
+                        doMany("upload",files,target).then( ()=>{
+                            resolve()
+                        }, err => reject(err) )
+  		    }
+                },err=>reject(err));
+                break;
+            }
             if( typeof(source)!="string" ){
                 doMany("upload",source,target).then( ()=>{
                     resolve()
                 }, err => reject(err) )
                 break;
             }
-            console.log("uploading "+source);
-            souce = path.join(__dirname,source);
-            fc.uploadFile(source,target).then( () => {
-                console.log("uploaded");
-                resolve();
-            }, err => reject("error uploading file "+err) );
+            if( fs.lstatSync(source).isFile() ){
+                 fn = source.replace(/.*\//,'')
+                 console.log("uploading file "+target+fn);
+                 fc.uploadFile(target,source).then( () => {
+                      console.log("uploaded file");
+                      resolve();
+                 }, err => reject("error uploading file "+err) );
+                break;
+            }
+            else if( fs.lstatSync(source).isDirectory() ){
+                 source = source.replace(/.*\//,'')
+                 target = path.join(target,source).replace(/^https:\//,"https://")
+                 console.log("uploading folder "+target);
+                 fc.createFolder(target).then( () => {
+                      console.log("uploaded folder");
+                      resolve();
+                 }, err => reject("error uploading folder "+err) );
+            }
             break;
 
         case "cp"   :
@@ -144,14 +179,25 @@ async function runSol(com,args) {
             }, err => reject("error copying file "+err) );
             break;
 
-        case "dir" :
-        case "ls" :
-            fs.readdir("./", (err,files) => {
+        case "batch" :
+            source = path.join(__dirname,args[0])
+            fs.readFile( source, 'utf-8', (err,content) => {
                 if(err) reject(err);
                 else {
-                    files = files.join("\n");
-                    console.log(files);
-                    resolve();
+                    let set = []
+                    let commands = content.split("\n")
+                    for(c in commands){
+                        let line = commands[c].trim()
+                        if( !line ) continue;
+                        let newArgs = line.split(/\s+/)
+                        let newCom  = newArgs.shift()
+                        set.push( function(){
+                            runSol( newCom, newArgs ).then( ()=> {
+                                batch.skip()
+                            },err=>batch.skip(err) )
+                        })
+                    }
+                    batch.run(set);
                 }
             },err=>reject(err));
             break;
@@ -172,12 +218,22 @@ async function runSol(com,args) {
     }});
 }
 function mungeURL(url) {
+    if( url && url.match(/^https:\/[^/]/) )
+         url = url.replace(/^https:\//,"https://")
     if( url && !url.match(/^http/) && credentials && credentials.base) 
         return credentials.base + url;
     else
         return url;
 }
-
+function mungeLocalFolder(source){
+    let files = [];
+    for(var s in source){
+        if( fs.lstatSync(source[s]).isFile() ){
+            files.push(source[s]);
+        }
+    }
+    return(files)
+}
 async function doMany(com,files,targetDir){
     if( files.length < 1 ) return;
     let file = files.shift();
@@ -186,8 +242,8 @@ async function doMany(com,files,targetDir){
     }
     let fn = file.replace(/.*\//,'');
     if( targetDir ){
-        let target = path.join(targetDir,fn).replace(/:\//,'://');
-        runSol(com,[target,file]).then( ()=>{
+//        let target = path.join(targetDir,fn).replace(/:\//,'://');
+        runSol(com,[targetDir,file]).then( ()=>{
             doMany(com,files,targetDir);
         });
     }
@@ -197,3 +253,4 @@ async function doMany(com,files,targetDir){
         });
     }
 }
+

@@ -13,12 +13,9 @@ const common = function(cfg){ return [
         }, err => { batch.abort("Test aborted : "+err); });
     },
     function(){
-        fc.deleteFolder(cfg.newFolder).then( res =>{
-            if( res.match(/409/) ){ batch.ok("folder already exists"); }
-            else fc.createFolder(cfg.newFolder).then( res =>{
-                batch.ok("create folder");
-            }, err => batch.fail("create folder: "+err) );
-        }, err => batch.fail("delete folder: "+err) );
+        fc.createFolder(cfg.newFolder).then( res =>{
+            batch.ok("create folder");
+        }, err => batch.fail("create folder: "+err) );
     },
     function(){
         fc.createFile(cfg.newFile).then( res =>{
