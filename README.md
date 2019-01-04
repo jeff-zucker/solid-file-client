@@ -72,7 +72,7 @@ fileClient.popupLogin().then( webId => {
 }, err => console.log(err) );
 ```
 
-**login(**IDP**)** browser context
+**login(**IDP**)** **only in browser context**
 
 Logs in to the specified IDP (Identity Provider, e.g. 'https://solid.community') on a redirected page and returns to wherever it was called from. 
 
@@ -82,7 +82,7 @@ fileClient.login(idp).then( webId => {
 }, err => console.log(err) );
 ```
 
-**login(**credentials**)** node/console context
+**login(**credentials**)** **only in node/console context**
 
 Logs in using a credentials object that may be created in a script 
 or pulled from a config file.  See getCredentials() below for details
@@ -93,7 +93,7 @@ fileClient.login(credentials).then( webId => {
 }, err => console.log(err) );
 ```
 
-**getCredentials( configFile )**
+**getCredentials( configFile )** **only in node/console context**
 
 The configFile parameter is optional.  If supplied, it uses the specified
 file, otherwise a file named solid-credentials.json in the same folder
@@ -183,28 +183,25 @@ fileClient.copy(old,new).then(success => {
 }, err => console.log(err) );
 ```
 
-**downloadFile(**URL,filePath**)**
+**download(**localPath,URL**)**
 
-Downloads the specified URL.  The filePath parameter is optional
-If filePath is not specified the file is saved in the current 
-working directory using the same filename as the URL.  If filePath
-is specified, it should be a path relative to the folder the script
-is running in and should contain the filename as well as the path.
+Downloads the specified URL. The localPath should be a local folder with a path
+relative to the folder the script is running in.
 
-**Note**: only available in console for now, a browser-based version
-is coming soon.
+**Note**: only available in console for now.
+
 
 ```javascript
-fileClient.downloadFile(url,localPath).then(success => {
+fileClient.downloadFile(localPath,URL).then(success => {
   console.log(`Downloaded ${url} to ${localPath}.`);
 }, err => console.log(err) );
 ```
-**uploadFile(**filePath,URL**)**
+**upload(**remotePath,file**)**
 
-Uploads the specified URL. filPath should be a path relative to the 
-folder the script is running in and should contain the filename as well
-as the path.  The URL should also contain the filename. **Note**: only
-available in console for now, a browser-based version is coming soon.
+Uploads the specified local file whose path should be specified relative
+to the folder the script is running in.
+
+**Note**: only available in console for now.
 
 ```javascript
 fileClient.uploadFile(localPath,url).then(success => {

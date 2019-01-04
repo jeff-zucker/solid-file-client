@@ -209,7 +209,7 @@ if(typeof(window)==="undefined"){
     }, err => { reject("fetch error "+err) })
   });
 }
-/*cjs*/ async function uploadFile(url,fn) {
+/*cjs*/ async function uploadFile(fn,url) {
   if(typeof(window)!="undefined") return doWin(url)
     return new Promise((resolve, reject)=>{
     let content = fs.readFileSync(fn,'utf-8');
