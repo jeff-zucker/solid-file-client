@@ -1,3 +1,7 @@
+t
+n
+*~
+*#
 drafts
 npm-debug.log*
 yarn-debug.log*
@@ -7,3 +11,6 @@ node_modules/
 .nyc_output
 coverage/
 dist/
+examples/cred.json
+.bin/test
+.bin/cred.json

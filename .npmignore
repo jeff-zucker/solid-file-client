@@ -2,3 +2,10 @@
 !src/
 !tests/
 !package.json/
+examples/cred.json
+.bin/cred.json
+.bin/test
+*#
+*~
+drafts
+

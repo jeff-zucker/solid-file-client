@@ -4,18 +4,23 @@
 <br><a href="http://badge.fury.io/js/solid-file-client">![npm](https://badge.fury.io/js/solid-file-client.svg)</a>
 
 This library provides a simple interface for logging in and out of a
-Solid data store and for creating, reading, updating, and deleting
-files and folders on it. It may be used either directly in the browser or
-with node/require. The library is based on solid-auth-client, providing
-an error-handling interface and some convenience shortcuts on
-top of solid-auth-client's methods.
+Solid data store, maintaining a persistent session, and for managing
+files and folders. It may be used either directly in the browser or
+with node/require. The library is based on solid-auth-client and 
+solid-cli, providing an error-handling interface and some convenience
+shortcuts on top of their methods and providing a common interface to
+the two modules.
+
+    solid-cli-----------+                       +--> browser apps
+                        +---solid-file-client---+
+    solid-auth-client---+                       +--> console apps
 
 ## Using in the browser
 
 Either download locally as shown below or use CDN like this:
 
 ```HTML
-       <script src="https://cdn.jsdelivr.net/npm/solid-file-client@0.2.0/dist/umd/solid-file-client.bundle.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/solid-file-client@0.3.0/dist/browser/solid-file-client.bundle.js"></script>
 ```
 
 ## Downloading locally
@@ -24,11 +29,10 @@ Either download locally as shown below or use CDN like this:
 
 ## Build Options
 
-If you install locally, the node_modules/solid-file-client/ folder contains three builds:
+If you install locally, the node_modules/solid-file-client/ folder contains these builds:
 
-       ./dist       built for use with node
-       ./dist/umd   built for use with browser, bundled rdflib & solid-auth-client
-       ./dist/esm   built for use with module-import/esm
+    ./dist/console for use with node
+    ./dist/browser for use with browser, bundled rdflib & solid-auth-client
 
 ## Invocation
 
@@ -61,15 +65,17 @@ slash to indicate a folder.
 
 **popupLogin()**
 
+Opens a popup window that prompts for an IDP then lets you login.
+
 ```javascript
 fileClient.popupLogin().then( webId => {
     else console.log( `Logged in as ${webId}.`)
 }, err => console.log(err) );
 ```
 
-Opens a popup window that prompts for an IDP then lets you login.
+**login(**IDP**)** **only in browser context**
 
-**login(**IDP**)**<br>
+Logs in to the specified IDP (Identity Provider, e.g. 'https://solid.community') on a redirected page and returns to wherever it was called from. 
 
 ```javascript
 fileClient.login(idp).then( webId => {
@@ -77,7 +83,38 @@ fileClient.login(idp).then( webId => {
 }, err => console.log(err) );
 ```
 
-Logs in to the specified IDP (Identity Provider, e.g. 'https://solid.community') on a redirected page and returns to wherever it was called from.
+**login(**credentials**)** **only in node/console context**
+
+Logs in using a credentials object that may be created in a script 
+or pulled from a config file.  See getCredentials() below for details
+
+```javascript
+fileClient.login(credentials).then( webId => {
+    console.log( `Logged in as ${webId}.`)
+}, err => console.log(err) );
+```
+
+**getCredentials( configFile )** **only in node/console context**
+
+The configFile parameter is optional.  If supplied, it uses the specified
+file, otherwise a file named solid-credentials.json in the same folder
+as the script will be used.  The file must contain a json structure like
+this:
+
+```javascript
+{
+    "idp"      : "https://solid.community",
+    "username" : "YOUR-USER-NAME",                  
+    "password" : "YOUR-PASSWORD",
+    "base"     : "https://YOU.solid.community",
+    "test"     : "/public/test/"
+}
+```
+
+The base field should be the root of your POD with the trailing slash
+omitted.  The test field should specify a directory under the base that
+can be used to write test files. In the example above, the folder at
+https://YOU.solid.community/public/test/ would be used for testing.
 
 **logout()**
 
@@ -132,6 +169,44 @@ NOTE : this is a file-level update, it replaces the file with the new content by
 ```javascript
 fileClient.deleteFile(url).then(success => {
   console.log(`Deleted ${url}.`);
+}, err => console.log(err) );
+```
+
+**copyFile(**old,new**)**
+
+Copies a file from one location on a Solid Server to another location on
+the same or a different Solid server.  Use the full URL, including file
+name, to both the old and new parameters. 
+
+```javascript
+fileClient.copy(old,new).then(success => {
+  console.log(`Copied ${old} to ${new}.`);
+}, err => console.log(err) );
+```
+
+**download(**localPath,URL**)**
+
+Downloads the specified URL. The localPath should be a local folder with a path
+relative to the folder the script is running in.
+
+**Note**: only available in console for now.
+
+
+```javascript
+fileClient.downloadFile(localPath,URL).then(success => {
+  console.log(`Downloaded ${url} to ${localPath}.`);
+}, err => console.log(err) );
+```
+**upload(**remotePath,file**)**
+
+Uploads the specified local file whose path should be specified relative
+to the folder the script is running in.
+
+**Note**: only available in console for now.
+
+```javascript
+fileClient.uploadFile(localPath,url).then(success => {
+  console.log(`Uploaded ${localPath} to ${url}.`);
 }, err => console.log(err) );
 ```
 
