@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 const auth  = require('../src/solid-shell-client')
-const $rdf  = require('../node_modules/rdflib/src') // MODIFIED VERSION
+const $rdf  = require('./rdflib-modified') // MODIFIED VERSION
 
 const kb      = $rdf.graph()
 const fetcher = $rdf.fetcher(kb)
