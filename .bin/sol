@@ -21,7 +21,7 @@ program
 program
     .command('read <URL>')
     .alias('r')
-    .description('read a file on a Solid server')
+    .description('read a remote file')
     .action( (URL) => {
         sol("login").then( ()=> { 
             sol("read",[URL]).then(()=>{
@@ -31,7 +31,7 @@ program
 program
     .command('readFolder <URL>')
     .alias('rf')
-    .description("list a Solid server folder's directory")
+    .description("list a remote folder's contents")
     .action( (URL) => {
         sol("login").then( ()=> { 
             sol("read",["folder",URL]).then(()=>{
@@ -41,7 +41,7 @@ program
 program
     .command('createFolder <URL...>')
     .alias('cf')
-    .description('create one or more folders')
+    .description('create one or more remote folders')
     .action( URL => {
         sol("login").then( ()=> { 
             sol("createFolder",[URL]).then(()=>{
@@ -51,7 +51,7 @@ program
 program
     .command('delete <URL...>')
     .alias('rm')
-    .description('delete a file or empty folder on a Solid server')
+    .description('delete remote file(s_ or empty folder(s)')
     .action( URL => {
         sol("login").then( ()=> { 
             sol("delete",[URL]).then(()=>{
@@ -71,7 +71,7 @@ program
 program
     .command('download <target> <URL>')
     .alias("dn")
-    .description('download a Solid file')
+    .description('download a remote file')
     .action( (target,URL) => {
         sol("login").then( ()=>{ 
             sol("download",[target,URL]).then( ()=>{
@@ -81,10 +81,20 @@ program
 program
     .command('copy <oldURL> <newURL>')
     .alias('cp')
-    .description('copy a file from one remote location to another')
+    .description('copy a remote file to a remote location')
     .action( (oldURL,newURL) => {
         sol("login").then( ()=> { 
             sol("copy",[oldURL,newURL]).then(()=>{
+            },err=>console.log(err));
+        },err=>console.log(err));
+    });
+program
+    .command('copyFolder <oldURL> <newURL>')
+    .alias('cpf')
+    .description('deep copy a remote folder to a remote loc.')
+    .action( (oldURL,newURL) => {
+        sol("login").then( ()=> { 
+            sol("copyFolder",[oldURL,newURL]).then(()=>{
             },err=>console.log(err));
         },err=>console.log(err));
     });

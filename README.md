@@ -54,17 +54,9 @@ fileClient.delete( url ).then( response => {
 }, err => console.log(url+" not deleted : "+err) );
 ```
 
-## Content-types
-
-Many methods take and/or return content-type parameters. The library can
-handle text/_ types (e.g. text/turtle, text/html) and text-based application/_ types (e.g. application/json). A special content-type "folder" is
-used for ldp:BasicContainer resources. In cases where the content type is
-omitted, the type will be guessed from the file extension or a trailing
-slash to indicate a folder.
-
 ## Connection Methods
 
-**popupLogin()**
+**popupLogin()** **only in browser context**
 
 Opens a popup window that prompts for an IDP then lets you login.
 
@@ -97,9 +89,13 @@ fileClient.login(credentials).then( webId => {
 
 **getCredentials( configFile )** **only in node/console context**
 
-The configFile parameter is optional.  If supplied, it uses the specified
-file, otherwise a file named solid-credentials.json in the same folder
-as the script will be used.  The file must contain a json structure like
+The configFile parameter is optional.  It should point to a JSON file
+as described below. If no configFile is specified, the method will
+look for the file name in an environment variable SOLIDCRED. If 
+neither is found, the method looks for a file named 
+solid-credentials.json in the same folder as the script is run.  
+
+Wherever it is located, the file must contain a JSON structure like
 this:
 
 ```javascript
@@ -278,6 +274,19 @@ which is the same as a folder object except it does not have the
 last two fields (files,folders). The content-type in this
 case is not guessed, it is read from the folder's triples, i.e. what the
 server sends.
+
+**copyFolder(**oldFolder,newFolder**)**
+
+Does a deep (recursive) copy from one Solid folder to another, creating
+sub-folders as needed or filling them if they already exist.
+
+
+```javascript
+fileClient.copy(old,new).then(success => {
+  console.log(`Copied ${old} to ${new}.`);
+}, err => console.log(err) );
+```
+
 
 ## A General Fetch Method
 
