@@ -145,6 +145,7 @@ if(typeof(window)==="undefined"){
     });
 }
 /*cjs*/ async function readFolder(url){
+    if (url.substr(-1) != '/') url += '/';
     return new Promise((resolve, reject)=>{
        fetch(url).then( folderRDF => {
             folderUtils.text2graph( folderRDF, url,'text/turtle').then(graph=>{
