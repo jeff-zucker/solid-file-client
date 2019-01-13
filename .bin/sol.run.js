@@ -179,6 +179,17 @@ async function runSol(com,args) {
             }, err => reject("error copying file "+err) );
             break;
 
+        case "cpf"   :
+        case "copyFolder" :
+            args[0] = mungeURL(args[0]);
+            args[1] = mungeURL(args[1]);
+            console.log("copying folder "+args[0]+" to "+args[1]);
+            fc.copyFolder(args[0],args[1]).then( () => {
+                console.log("copied");
+                resolve();
+            }, err => reject("error copying folder "+err) );
+            break;
+
         case "batch" :
             source = path.join(__dirname,args[0])
             fs.readFile( source, 'utf-8', (err,content) => {

@@ -6,7 +6,6 @@ const fs = require('fs');
 let scripts = [
     'index',
     'folderUtils',
-    'solid-shell-client'
 ];
 
 //  preparing cjs files for conversion

@@ -6,7 +6,7 @@ var solid;
 if(typeof(auth)!="undefined") solid = { auth:auth };
 // cjs-start
 if(typeof(window)==="undefined"){
-    solid = {auth : require('./solid-shell-client')};
+    solid = {auth : require('solid-auth-cli')};
     var folderUtils = require('./folderUtils')
     var fs = require('fs')
     exports.createFile = createFile;
@@ -24,11 +24,65 @@ if(typeof(window)==="undefined"){
     exports.fetchAndParse = fetchAndParse;
     exports.uploadFile = uploadFile;
 //    exports.uploadFolder = uploadFolder;
+    exports.copyFolder = copyFolder;
     exports.downloadFile = downloadFile;
     exports.copyFile = copyFile;
     exports.getCredentials = getCredentials;
+    exports.text2graph = text2graph;
+    exports.guessFileType = guessFileType;
+    exports.processFolder = processFolder;
 }
 // cjs-end
+
+/* based on @timbl's solid-recursive-copy
+*/
+/*cjs*/ function copyFolder(src, dest, options, indent = ''){
+  options = options || {}
+  console.log('deepCopying ' + src + '\n'+indent+'-> ' + dest)
+  if( !src.match(/\/$/))  src += "/";
+  if( !dest.match(/\/$/)) dest += "/";
+  return new Promise(function(resolve, reject){
+    function mapURI(src, dest, x){
+        if (!x.startsWith(src)){
+            throw new Error(`source {${x}} is not in tree {${src}}`)
+        }
+        return dest + x.slice(src.length)
+    }
+    readFolder(src).then( folder => {
+        var promises = []
+        var all = folder.folders.concat(folder.files)
+        for(var i=0; i<all.length; i++){
+            let here = all[i] // here is a solid-file-client file object
+            let there = mapURI(src, dest, here.url)
+            if (here.type==="folder") {
+               createFolder(there).then( ()=> {
+                   promises.push(
+                       copyFolder(here.url,there,options, indent+'  ')
+                   )
+               })
+            } 
+            else { // copy a leaf
+                console.log('copying ' + there)
+                promises.push(copyFile(here.url, there))
+            }
+        }
+        Promise.all(promises).then(resolve(true)).catch(function (e) {
+            console.log("Overall promise rejected: " + e)
+            reject(e)
+         })
+    }, e => { reject("Could not read folder : "+e) } )
+  })
+}
+
+/*cjs*/ function guessFileType(url) {
+    return folderUtils.guessFileType(url)
+}
+/*cjs*/ function processFolder(graph,url,content) {
+    return folderUtils.processFolder(graph,url,content)
+}
+/*cjs*/ async function text2graph(text,url,contentType){
+    return folderUtils.text2graph(text,url,contentType)
+}
 
 /*cjs*/ async function copyFile(oldFile,newFile) {
     readFile(oldFile).then( content => {
@@ -181,18 +235,7 @@ if(typeof(window)==="undefined"){
 /* METHODS BELOW HERE HAVE BOTH WINDOWS AND CONSOLE VERSIONS
  */
 /*cjs*/ async function getCredentials(fn){
-    return new Promise((resolve, reject)=>{
-        fn = fn || "./solid-credentials.json";
-        let creds;
-        try {
-            creds = fs.readFileSync(fn,'utf8');
-        } catch(err) { reject("read file error "+err) }
-        try {
-            creds = JSON.parse( creds );
-            if(!creds) reject("JSON parse error : "+err)
-        } catch(err) { reject("JSON parse error : "+err) }
-        resolve(creds);
-    });
+    return solid.auth.getCredentials(fn)
 }
 /*cjs*/ async function doWin(url) {
     return true;

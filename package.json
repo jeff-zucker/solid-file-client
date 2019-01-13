@@ -1,14 +1,19 @@
 {
-  "name"       : "solid-file-client",
-  "version"    : "0.3.0",
+  "name": "solid-file-client",
+  "version": "0.3.1",
   "description": "A library for creating and managing files and folders in Solid data stores",
-  "author"     : "Jeff Zucker <dubzed@gmail.com>",
-  "license"    : "MIT",
-  "repository" : "https://github.com/jeff-zucker/solid-file-client/",
-  "keywords"   : [ "Solid", "Linked Data" ],
-  "bin"        : { "sol" : "./.bin/sol"},
+  "author": "Jeff Zucker <dubzed@gmail.com>",
+  "license": "MIT",
+  "repository": "https://github.com/jeff-zucker/solid-file-client/",
+  "keywords": [
+    "Solid",
+    "Linked Data"
+  ],
+  "bin": {
+    "sol": "./.bin/sol"
+  },
   "scripts": {
-    "sol" : "./.bin/sol",
+    "sol": "./.bin/sol",
     "test": "jest --coverage",
     "clean": "rimraf dist coverage",
     "prepublish": "./cjs2esm && npm run test && npm run build",
@@ -26,11 +31,11 @@
     "@solid/cli": "^0.1.0",
     "fs": "0.0.1-security",
     "rdflib": "^0.19.1",
+    "solid-auth-cli": "/home/jeff/Web/solid/solid-auth-cli",
     "solid-auth-client": "^2.2.14"
   },
   "peerDependencies": {
     "@babel/runtime": "^7.2.0",
-    "rdflib": "^0.19.1",
     "solid-auth-client": "^2.2.14"
   },
   "devDependencies": {
