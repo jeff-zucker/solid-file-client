@@ -21,7 +21,7 @@ the two modules.
 Either download locally as shown below or use CDN like this:
 
 ```HTML
-<script src="https://cdn.jsdelivr.net/npm/solid-file-client@0.3.0/dist/browser/solid-file-client.bundle.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/solid-file-client@0.4.0/dist/browser/solid-file-client.bundle.js"></script>
 ```
 
 ## Downloading locally
