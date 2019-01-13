@@ -31,7 +31,7 @@
     "@solid/cli": "^0.1.0",
     "fs": "0.0.1-security",
     "rdflib": "^0.19.1",
-    "solid-auth-cli": "/home/jeff/Web/solid/solid-auth-cli",
+    "solid-auth-cli": "^0.1.2",
     "solid-auth-client": "^2.2.14"
   },
   "peerDependencies": {
