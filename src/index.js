@@ -6,7 +6,7 @@ var solid;
 if(typeof(auth)!="undefined") solid = { auth:auth };
 // cjs-start
 if(typeof(window)==="undefined"){
-    solid = {auth : require('./solid-shell-client')};
+    solid = {auth : require('solid-auth-cli')};
     var folderUtils = require('./folderUtils')
     var fs = require('fs')
     exports.createFile = createFile;
@@ -234,18 +234,7 @@ if(typeof(window)==="undefined"){
 /* METHODS BELOW HERE HAVE BOTH WINDOWS AND CONSOLE VERSIONS
  */
 /*cjs*/ async function getCredentials(fn){
-    return new Promise((resolve, reject)=>{
-        fn = fn || process.env.SOLIDCRED || "./solid-credentials.json";
-        let creds;
-        try {
-            creds = fs.readFileSync(fn,'utf8');
-        } catch(err) { reject("read file error "+err) }
-        try {
-            creds = JSON.parse( creds );
-            if(!creds) reject("JSON parse error : "+err)
-        } catch(err) { reject("JSON parse error : "+err) }
-        resolve(creds);
-    });
+    return solid.auth.getCredentials(fn)
 }
 /*cjs*/ async function doWin(url) {
     return true;

@@ -91,9 +91,7 @@ fileClient.login(credentials).then( webId => {
 
 The configFile parameter is optional.  It should point to a JSON file
 as described below. If no configFile is specified, the method will
-look for the file name in an environment variable SOLIDCRED. If 
-neither is found, the method looks for a file named 
-solid-credentials.json in the same folder as the script is run.  
+look for the file named ~/.solid-auth-client-config.json.
 
 Wherever it is located, the file must contain a JSON structure like
 this:
@@ -102,7 +100,7 @@ this:
 {
     "idp"      : "https://solid.community",
     "username" : "YOUR-USER-NAME",                  
-    "password" : "YOUR-PASSWORD",
+    "password" : "YOUR-PASSWORD",     // OPTIONAL !!!
     "base"     : "https://YOU.solid.community",
     "test"     : "/public/test/"
 }
@@ -112,6 +110,10 @@ The base field should be the root of your POD with the trailing slash
 omitted.  The test field should specify a directory under the base that
 can be used to write test files. In the example above, the folder at
 https://YOU.solid.community/public/test/ would be used for testing.
+
+If you choose not to store passwords in the configuration file, your script
+should prompt for a password.
+
 
 **logout()**
 

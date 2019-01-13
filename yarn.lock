@@ -1227,7 +1227,8 @@ async-limiter@~1.0.0:
 
 async@^0.9.x:
   version "0.9.2"
-  resolved "http://registry.npm.taobao.org/async/download/async-0.9.2.tgz#aea74d5e61c1f899613bf64bda66d4c78f2fd17d"
+  resolved "https://registry.yarnpkg.com/async/-/async-0.9.2.tgz#aea74d5e61c1f899613bf64bda66d4c78f2fd17d"
+  integrity sha1-rqdNXmHB+JlhO/ZL2mbUx48v0X0=
 
 async@^2.1.4, async@^2.5.0:
   version "2.6.1"
@@ -2319,7 +2320,8 @@ es-to-primitive@^1.1.1:
 
 es6-promise@^2.0.0:
   version "2.3.0"
-  resolved "http://registry.npm.taobao.org/es6-promise/download/es6-promise-2.3.0.tgz#96edb9f2fdb01995822b263dd8aadab6748181bc"
+  resolved "https://registry.yarnpkg.com/es6-promise/-/es6-promise-2.3.0.tgz#96edb9f2fdb01995822b263dd8aadab6748181bc"
+  integrity sha1-lu258v2wGZWCKyY92KratnSBgbw=
 
 escape-string-regexp@1.0.5, escape-string-regexp@^1.0.2, escape-string-regexp@^1.0.5:
   version "1.0.5"
@@ -3930,7 +3932,8 @@ json5@^2.1.0:
 
 jsonld@^0.4.5:
   version "0.4.12"
-  resolved "http://registry.npm.taobao.org/jsonld/download/jsonld-0.4.12.tgz#a02f205d5341414df1b6d8414f1b967a712073e8"
+  resolved "https://registry.yarnpkg.com/jsonld/-/jsonld-0.4.12.tgz#a02f205d5341414df1b6d8414f1b967a712073e8"
+  integrity sha1-oC8gXVNBQU3xtthBTxuWenEgc+g=
   dependencies:
     es6-promise "^2.0.0"
     pkginfo "~0.4.0"
@@ -4318,7 +4321,8 @@ mz@^2.7.0:
 
 n3@^0.4.1:
   version "0.4.5"
-  resolved "http://registry.npm.taobao.org/n3/download/n3-0.4.5.tgz#5b70d3ab6a21c9e8d4c9bda2a3d4d90909beb508"
+  resolved "https://registry.yarnpkg.com/n3/-/n3-0.4.5.tgz#5b70d3ab6a21c9e8d4c9bda2a3d4d90909beb508"
+  integrity sha1-W3DTq2ohyejUyb2io9TZCQm+tQg=
 
 nan@^2.9.2:
   version "2.11.1"
@@ -4854,7 +4858,8 @@ pkg-dir@^3.0.0:
 
 pkginfo@~0.4.0:
   version "0.4.1"
-  resolved "http://registry.npm.taobao.org/pkginfo/download/pkginfo-0.4.1.tgz#b5418ef0439de5425fc4995042dced14fb2a84ff"
+  resolved "https://registry.yarnpkg.com/pkginfo/-/pkginfo-0.4.1.tgz#b5418ef0439de5425fc4995042dced14fb2a84ff"
+  integrity sha1-tUGO8EOd5UJfxJlQQtztFPsqhP8=
 
 pluralize@^7.0.0:
   version "7.0.0"
@@ -5028,7 +5033,8 @@ rc@^1.2.7:
 
 rdflib@^0.19.1:
   version "0.19.1"
-  resolved "http://registry.npm.taobao.org/rdflib/download/rdflib-0.19.1.tgz#66141051902c7e7e407b4b61d075461cc0c0a28c"
+  resolved "https://registry.yarnpkg.com/rdflib/-/rdflib-0.19.1.tgz#66141051902c7e7e407b4b61d075461cc0c0a28c"
+  integrity sha512-O7osObhO5o++hsUPGOLTxdNwXRaI6O+uyL98E7yBmqWrQm0AfqUHFBiASb4gN9fYcLD2LLHBxfhJTIWl8VZHUg==
   dependencies:
     async "^0.9.x"
     jsonld "^0.4.5"
@@ -5469,6 +5475,11 @@ snapdragon@^0.8.1:
     source-map "^0.5.6"
     source-map-resolve "^0.5.0"
     use "^3.1.0"
+
+"solid-auth-cli@file:../../../../../../home/jeff/Web/solid/solid-auth-cli":
+  version "0.1.0"
+  dependencies:
+    "@solid/cli" "^0.1.0"
 
 solid-auth-client@^2.2.14, solid-auth-client@^2.2.3:
   version "2.2.14"
@@ -6230,11 +6241,13 @@ xml-name-validator@^3.0.0:
 
 xmldom@0.1.19:
   version "0.1.19"
-  resolved "http://registry.npm.taobao.org/xmldom/download/xmldom-0.1.19.tgz#631fc07776efd84118bf25171b37ed4d075a0abc"
+  resolved "https://registry.yarnpkg.com/xmldom/-/xmldom-0.1.19.tgz#631fc07776efd84118bf25171b37ed4d075a0abc"
+  integrity sha1-Yx/Ad3bv2EEYvyUXGzftTQdaCrw=
 
 xmldom@^0.1.22:
   version "0.1.27"
-  resolved "http://registry.npm.taobao.org/xmldom/download/xmldom-0.1.27.tgz#d501f97b3bdb403af8ef9ecc20573187aadac0e9"
+  resolved "https://registry.yarnpkg.com/xmldom/-/xmldom-0.1.27.tgz#d501f97b3bdb403af8ef9ecc20573187aadac0e9"
+  integrity sha1-1QH5ezvbQDr4757MIFcxh6rawOk=
 
 xtend@^4.0.0, xtend@~4.0.1:
   version "4.0.1"
