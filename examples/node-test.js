@@ -11,8 +11,6 @@ fc.getCredentials().then( cfg => {
 function croak(msg){
     batch.abort(`
         ${msg}
-        To run this test, you must edit the file 
-        ./examples/solid-credentials.json.
     `);
      process.exit()
 }

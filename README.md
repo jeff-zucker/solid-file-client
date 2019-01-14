@@ -131,11 +131,11 @@ fileClient.checkSession().then( session => {
 
 ## File Methods
 
-**createFile(**URL,contentType**)**
+**createFile(**URL,content,contentType**)**
 
 ```javascript
-fileClient.createFile(newFile).then(success => {
-  console.log(`Created file ${newFile}.`);
+fileClient.createFile(newFile).then( fileCreated => {
+  console.log(`Created file ${fileCreated}.`);
 }, err => console.log(err) );
 
 ```
@@ -144,7 +144,7 @@ This method creates a new empty file.
 The contentType should be specified either in the URL's extension or in
 the contentType parameter, but not both.
 
-NOTE : if the file already exists, the solid.community server (and others) will create an additional file with a prepended numerical ID so if you don't want that to happen, use updateFile() which will first delete the file if it exists, and then add the new file.
+NOTE : if the file already exists, the solid.community server (and others) will create an additional file with a prepended numerical ID so if you don't want that to happen, use updateFile() which will first delete the file if it exists, and then add the new file. If you do want to create the additional file, you can retrieve it's name, including the prepended numerical ID in the return from createFile() as shown above with the "fileCreated" parameter.
 
 **readFile(**URL**)**
 
@@ -307,5 +307,11 @@ fileClient.fetch( url, request ).then( results => {
      // do something with results
 }, err => console.log(err) );
 ```
+
+## Acknowledgements
+
+Many thanks for patches and issues from https://github.com/linonetwo, 
+https://github.com/scenaristeur, https://github.com/bourgeoua.
+ 
 
 **copyright (c) 2018 Jeff Zucker** may be freely used with MIT license

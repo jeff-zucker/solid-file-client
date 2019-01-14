@@ -146,8 +146,10 @@ if(typeof(window)==="undefined"){
   };
   if( typeof(contentType)!="undefined" || typeof(window)!="undefined") 
        request.headers["Content-Type"] = contentType;
-    fetch(parentFolder, request).then( res => {
-      resolve(res)
+    solid.auth.fetch(parentFolder, request).then( res => {
+      var location = res.headers.get('location')
+      var file = location.substr(location.lastIndexOf('/') + 1)
+      resolve( parentFolder+file );
   },err=>{reject(err)});
  });
 }
