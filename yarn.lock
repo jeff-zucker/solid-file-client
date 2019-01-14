@@ -5786,6 +5786,11 @@ readdirp@^2.0.0:
     micromatch "^3.1.10"
     readable-stream "^2.0.2"
 
+readline-sync@^1.4.9:
+  version "1.4.9"
+  resolved "https://registry.yarnpkg.com/readline-sync/-/readline-sync-1.4.9.tgz#3eda8e65f23cd2a17e61301b1f0003396af5ecda"
+  integrity sha1-PtqOZfI80qF+YTAbHwADOWr17No=
+
 realpath-native@^1.0.0:
   version "1.0.2"
   resolved "https://registry.yarnpkg.com/realpath-native/-/realpath-native-1.0.2.tgz#cd51ce089b513b45cf9b1516c82989b51ccc6560"
@@ -6225,12 +6230,13 @@ snapdragon@^0.8.1:
     source-map-resolve "^0.5.0"
     use "^3.1.0"
 
-solid-auth-cli@^0.1.2:
-  version "0.1.2"
-  resolved "https://registry.yarnpkg.com/solid-auth-cli/-/solid-auth-cli-0.1.2.tgz#34824b807a5974d60458a326e0982574d1f32de0"
-  integrity sha512-ZKmS4Q1Wi43NtZ3NxeWtX0t8mOhc3PKuY9Qnn5mvz97qPokK9SpagE2gwexUOivH4Vb0iQIPyzFuy2P02wBZNA==
+solid-auth-cli@^0.1.3:
+  version "0.1.3"
+  resolved "https://registry.yarnpkg.com/solid-auth-cli/-/solid-auth-cli-0.1.3.tgz#24f7b3a17ec06644935f25e98ae11c72a54a84ff"
+  integrity sha512-QktbNi8x4hYmCMjqpPnx5zWc7a72c3un67F4LO2Z4HHLEMT4oRTKpcrixENoNhuQ9Lbn7qIRsJnwiK53BzlVhQ==
   dependencies:
     "@solid/cli" "^0.1.0"
+    readline-sync "^1.4.9"
 
 solid-auth-client@^2.2.14, solid-auth-client@^2.2.3:
   version "2.2.14"
