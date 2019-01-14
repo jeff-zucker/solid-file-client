@@ -9,11 +9,7 @@
     "Solid",
     "Linked Data"
   ],
-  "bin": {
-    "sol": "./.bin/sol"
-  },
   "scripts": {
-    "sol": "./.bin/sol",
     "test": "jest --coverage",
     "clean": "rimraf dist coverage",
     "prepublish": "./cjs2esm && npm run test && npm run build",
