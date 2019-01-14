@@ -23,6 +23,7 @@
   "module": "lib/index.js",
   "browserslist": "> 0.25%, not dead",
   "dependencies": {
+    "@babel/code-frame": "^7.0.0",
     "@babel/runtime": "^7.2.0",
     "@solid/cli": "^0.1.0",
     "fs": "0.0.1-security",
