@@ -1,7 +1,6 @@
 if(typeof(window)==="undefined"){
     fc    = require('../src/index');
     batch = require('../src/batch');
-    $rdf  = require('rdflib')
 }
 let profile = 'https://jeffz.solid.community/profile/card'
 
@@ -9,6 +8,7 @@ const common = function(cfg){ return [
     "Testing solid-file-client ... logging in ...",
     function(){
         fc.login(cfg.credentials).then( session =>{
+            console.log("logged in as "+session.webId)
             batch.ok("login")
         }, err => { batch.abort("Test aborted : "+err); });
     },
@@ -84,10 +84,10 @@ const common = function(cfg){ return [
     function(){
         var subj = profile + "#me"
         var pred = 'http://xmlns.com/foaf/0.1/name'
-        fc.fetchAndParse( subj ).then( graph => {
-            subj=$rdf.sym(subj)
-            pred=$rdf.sym(pred)
-            var name = graph.any(subj,pred).value
+        fc.fetchAndParse( subj ).then( kb => {
+            subj=kb.sym(subj)
+            pred=kb.sym(pred)
+            var name = kb.any(subj,pred).value
             if(name==="Jeff Zucker") batch.ok("fetch and parse");
             else batch.fail("fecthed and parse : fetched but bad parse");
          }, err => batch.fail("fetch and parse "+err) ) ;
@@ -100,10 +100,8 @@ const common = function(cfg){ return [
     function(){
         fc.logout().then( ()=> {
             fc.checkSession().then( session => {
-                if(session) 
-                  batch.fail("still connected after logout")
-                else batch.ok("logout");
-            }, err => batch.fail(err) );
+                batch.fail("still connected after logout")
+            }, err => batch.ok("checkSession returns err if not connected") );
         }, err => fail(err) );
     },
 ]
