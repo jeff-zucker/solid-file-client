@@ -125,7 +125,8 @@ if(typeof(window)==="undefined"){
 
 /*cjs*/ async function checkSession() {
     const session = await solid.auth.currentSession();
-    return session;
+    if(session) return session;
+    else throw new Error("No current session!");
 }
 /*cjs*/ async function login(credentials) {
   const session = await solid.auth.currentSession();
