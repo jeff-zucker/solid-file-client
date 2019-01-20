@@ -311,7 +311,7 @@ fileClient.fetch( url, request ).then( results => {
 ## Acknowledgements
 
 Many thanks for patches and issues from https://github.com/linonetwo, 
-https://github.com/scenaristeur, https://github.com/bourgeoua.
+https://github.com/scenaristeur, https://github.com/bourgeoa.
  
 
 **copyright (c) 2018 Jeff Zucker** may be freely used with MIT license
