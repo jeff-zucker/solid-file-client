@@ -3,12 +3,6 @@ import * as fileClient from '../lib';
 
 const profile = 'https://jeffz.solid.community/profile/card#me';
 
-test('checkSession() should return null when not logged in', () => {
-    return fileClient.checkSession().then( session => {
-        let got = ( !session ) ? 1 : 0;
-        return expect(got).toEqual(1);
-    }, err => { console.log(err); return; });
-});
 test('Use readFile() to get data from a public profile', () => {
     return fileClient.readFile(profile).then( text => {
         let got = (text.match(/Jeff Zucker/)) ? 1 : 0;

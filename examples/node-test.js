@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-const fc  = require('../dist/console');
+const fc  = require('../src');
 var batch = require('../src/batch');
 
 fc.getCredentials().then( cfg => {

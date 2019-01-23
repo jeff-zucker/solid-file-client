@@ -124,14 +124,20 @@ if(typeof(window)==="undefined"){
 }
 
 /*cjs*/ async function checkSession() {
-    const session = await solid.auth.currentSession();
-    if(session) return session;
+    var sess = await solid.auth.currentSession();
+    if(sess) return sess;
     else throw new Error("No current session!");
 }
 /*cjs*/ async function login(credentials) {
-  const session = await solid.auth.currentSession();
-  if (!session) await solid.auth.login(credentials);
-  else return session;
+  var session
+  try {
+     session = await solid.auth.currentSession();
+     if(session) return session;
+  }
+  catch(err) {
+      session = await solid.auth.login(credentials);
+      return session;
+  }
 }
 /*cjs*/ async function add(parentFolder, url, content, contentType) {
  return new Promise((resolve, reject)=>{
@@ -244,10 +250,12 @@ if(typeof(window)==="undefined"){
     return true;
 }
 
-/*cjs*/ async function downloadFile(url,fn) {
+/*cjs*/ async function downloadFile(url,localPath) {
   if(typeof(window)!="undefined") return doWin(url)
   return new Promise((resolve, reject)=>{
     fetch(url,{encoding:null}).then( content => {
+        if( !localPath.match(/\/$/) ) localPath += "/"
+        let fn = localPath + url.replace(/.*\//,'') 
         try { 
             fs.writeFileSync(fn,content);
             resolve(fn);
