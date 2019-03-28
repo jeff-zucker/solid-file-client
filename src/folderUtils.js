@@ -123,7 +123,7 @@ const folderType = 'folder';
   const stats = getStats(graph, url);
   const fullName = url.replace(/\/$/, '');
   const name = fullName.replace(/.*\//, '');
-  const parent = fullName.replace(name, '');
+  const parent = fullName.substr(0, fullname.lastIndexOf("/"))+"/";
   return {
     type: folderType,
     name,
