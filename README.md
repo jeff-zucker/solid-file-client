@@ -178,7 +178,7 @@ the same or a different Solid server.  Use the full URL, including file
 name, to both the old and new parameters. 
 
 ```javascript
-fileClient.copy(old,new).then(success => {
+fileClient.copyFile(old,new).then(success => {
   console.log(`Copied ${old} to ${new}.`);
 }, err => console.log(err) );
 ```
