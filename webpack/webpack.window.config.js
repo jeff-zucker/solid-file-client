@@ -20,4 +20,9 @@ module.exports = {
   module: _module,
   plugins: [new CleanWebpackPlugin([outputDir])],
   devtool,
+  externals: {
+    rdflib : 'rdflib',
+    solidAuthClient : 'solid-auth-client',
+    solidAuthCli : 'solid-auth-cli'
+  },
 };

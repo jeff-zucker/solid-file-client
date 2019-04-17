@@ -210,7 +210,7 @@ if(typeof(window)==="undefined"){
 /*cjs*/ async function readFolder(url){
     if (url.substr(-1) != '/') url += '/';
     return new Promise((resolve, reject)=>{
-       fetch(url).then( folderRDF => {
+       fetch(url, { headers: { "Accept": "text/turtle" } }).then( folderRDF => {
             folderUtils.text2graph( folderRDF, url,'text/turtle').then(graph=>{
                    resolve( folderUtils.processFolder(graph, url, folderRDF) );
             },err=>reject(err));
