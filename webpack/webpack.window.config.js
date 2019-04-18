@@ -22,7 +22,7 @@ module.exports = {
   devtool,
   externals: {
     rdflib : 'rdflib',
-    solidAuthClient : 'solid-auth-client',
-    solidAuthCli : 'solid-auth-cli'
+    'solid-auth-client' : 'solid-auth-client',
+    'solid-auth-cli' : 'null'
   },
 };
