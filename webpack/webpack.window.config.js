@@ -20,4 +20,7 @@ module.exports = {
   module: _module,
   plugins: [new CleanWebpackPlugin([outputDir])],
   devtool,
+  externals: {
+    'solid-auth-cli' : 'null'
+  },
 };
