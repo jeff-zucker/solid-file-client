@@ -24,7 +24,7 @@
   "browserslist": "> 0.25%, not dead",
   "dependencies": {
     "rdflib": "^0.20.1",
-    "solid-auth-cli": "^0.2.2",
+    "solid-auth-cli": "^0.2.3",
     "solid-auth-client": "^2.3.0"
   },
   "peerDependencies": {
