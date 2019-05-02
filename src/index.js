@@ -138,6 +138,8 @@ if(typeof(window)==="undefined"){
       session = await solid.auth.login(credentials);
       return session;
   }
+      session = await solid.auth.login(credentials);
+      return session;
 }
 /*cjs*/ async function add(parentFolder, url, content, contentType) {
  return new Promise((resolve, reject)=>{
