@@ -62,7 +62,7 @@ Opens a popup window that prompts for an IDP then lets you login.
 
 ```javascript
 fileClient.popupLogin().then( webId => {
-    else console.log( `Logged in as ${webId}.`)
+     console.log( `Logged in as ${webId}.`)
 }, err => console.log(err) );
 ```
 
@@ -118,7 +118,7 @@ should prompt for a password.
 **logout()**
 
 ```javascript
-fileClient.logout().then( console.log( `Bye now!` )
+fileClient.logout().then( console.log( `Bye now!` ))
 ```
 
 **checkSession()**
