@@ -4,9 +4,9 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width" />
     <title>solid-file-client in-browser example</title>
-<script src=
-   "https://solid.github.io/releases/rdflib.js/rdflib-0.12.2.min.js"
-></script>
+<!-- <script src="https://solid.github.io/releases/rdflib.js/rdflib-0.16.2.min.js"></script> -->
+<script src="https://cdn.jsdelivr.net/npm/rdflib@0.20.1/dist/rdflib.min.js"></script>
+<script src="https://solid.github.io/solid-auth-client/dist/solid-auth-client.bundle.js"></script>
 <script src="../dist/browser/solid-file-client.bundle.js"></script>
 <script src="../src/batch.js"></script>
 <script>
@@ -28,7 +28,7 @@ cfg = batch.getConfig({
 <script> batch.run( common(cfg) ); </script>
   </head>
   <body>
-This test runs in the browser's cosole, so please open dev-tools and choose
+This test runs in the browser's console, so please open dev-tools and choose
 "console" to watch.
   </body>
 </html>

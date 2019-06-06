@@ -21,6 +21,19 @@ module.exports = {
   plugins: [new CleanWebpackPlugin([outputDir])],
   devtool,
   externals: {
+  	'rdflib': {
+  		commonjs: 'rdflib',
+  		commonjs2: 'rdflib',
+  		amd: 'rdflib',
+  		root: '$rdf'
+  	},
+
+  	'solid-auth-client': {
+  		commonjs: 'solid-auth-client',
+  		commonjs2: 'solid-auth-client',
+  		amd: 'solid-auth-client',
+  		root: ['solid', 'auth']
+  	},
     'solid-auth-cli' : 'null'
   },
 };
