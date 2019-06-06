@@ -1,6 +1,6 @@
 #!/usr/bin/env node
-const fc  = require('../src');
-var batch = require('../src/batch');
+const fc  = require('../dist/node/solid-file-client.bundle');
+var batch = require('./batch');
 
 fc.getCredentials().then( cfg => {
     cfg = batch.getConfig(cfg);

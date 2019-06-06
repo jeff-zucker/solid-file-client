@@ -2,8 +2,8 @@
 /*
  * You must edit the file ./solid-credentials.json to run this test
  */
-const fc  = require('../src/index.js');
-var batch = require('../src/batch');
+const fc  = require('../dist/node/solid-file-client.bundle');
+var batch = require('./batch');
 fc.getCredentials().then( cfg => {
     if(!cfg.password) croak("no pass");
     cfg = batch.getConfig(cfg);

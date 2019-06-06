@@ -1,6 +1,6 @@
 if(typeof(window)==="undefined"){
-    fc    = require('../src/index');
-    batch = require('../src/batch');
+    fc    = require('../dist/node/solid-file-client.bundle');
+    batch = require('./batch');
 }
 let profile = 'https://jeffz.solid.community/profile/card'
 

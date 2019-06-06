@@ -7,10 +7,12 @@
 <script src=
    "https://solid.github.io/releases/rdflib.js/rdflib-0.12.2.min.js"
 ></script>
-<script src="../dist/browser/solid-file-client.bundle.js"></script>
-<script src="../src/batch.js"></script>
+<script src="./solid-auth-client/solid-auth-client.bundle.js"></script>
+<script src="../dist/window/solid-file-client.bundle.js"></script>
+<script src="./batch.js"></script>
 <script>
-fc = SolidFileClient;
+SolidFileClient.setRdflib($rdf)
+fc = new SolidFileClient(solid.auth);
 /*
    YOU MUST CHANGE THE IDP AND BASE (and optionally TEST)
    The script will create the test folder under the base location, 
@@ -28,7 +30,7 @@ cfg = batch.getConfig({
 <script> batch.run( common(cfg) ); </script>
   </head>
   <body>
-This test runs in the browser's cosole, so please open dev-tools and choose
+This test runs in the browser's console, so please open dev-tools and choose
 "console" to watch.
   </body>
 </html>

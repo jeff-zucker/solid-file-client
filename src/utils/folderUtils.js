@@ -1,27 +1,12 @@
-"use strict";
+import libraries from '../libraries'
 
 const folderType = 'folder';
 
-import * as $rdf from 'rdflib'; 
-
-// cjs-start
-/* 
-    const $rdf = require('rdflib')
-    exports.getStats = getStats;
-    exports.folderType = folderType;
-    exports.getFileType = getFileType;
-    exports.getFolderItems = getFolderItems;
-    exports.processFolder = processFolder;
-    exports.guessFileType = guessFileType;
-    exports.text2graph = text2graph;
-*/
-// cjs-end
-
-export function getStats(graph,subjectName) {
-  const subjectNode = $rdf.sym(subjectName);
-  const mod = $rdf.sym('http://purl.org/dc/terms/modified');
-  const size = $rdf.sym('http://www.w3.org/ns/posix/stat#size');
-  const mtime = $rdf.sym('http://www.w3.org/ns/posix/stat#mtime');
+/*cjs*/ function getStats(graph,subjectName) {
+  const subjectNode = libraries.rdflib.sym(subjectName);
+  const mod = libraries.rdflib.sym('http://purl.org/dc/terms/modified');
+  const size = libraries.rdflib.sym('http://www.w3.org/ns/posix/stat#size');
+  const mtime = libraries.rdflib.sym('http://www.w3.org/ns/posix/stat#mtime');
   let  modified = graph.any(subjectNode, mod, undefined);
   if(typeof(modified)==="undefined") return false;
   else modified = modified.value;
@@ -38,9 +23,9 @@ export function getStats(graph,subjectName) {
  * @param {string} url location of the folder
  * @returns {string} content mime-type of a file, If it's a folder, return 'folder', 'unknown' for not sure
  */
-export function getFileType(graph,url) {
-  const folderNode = $rdf.sym(url);
-  const isAnInstanceOfClass = $rdf.sym('http://www.w3.org/1999/02/22-rdf-syntax-ns#type');
+/*cjs*/ function getFileType(graph,url) {
+  const folderNode = libraries.rdflib.sym(url);
+  const isAnInstanceOfClass = libraries.rdflib.sym('http://www.w3.org/1999/02/22-rdf-syntax-ns#type');
   const types = graph.each(folderNode, isAnInstanceOfClass, undefined);
   for (const index in types) {
     const contentType = types[index].value;
@@ -51,11 +36,11 @@ export function getFileType(graph,url) {
   }
   return 'unknown';
 }
-export function getFolderItems(graph, subj) {
+/*cjs*/ function getFolderItems(graph, subj) {
         var contains = { folders : [], files   : [] }
         var itemsTmp = graph.each(
-            $rdf.sym(subj),
-            $rdf.sym('http://www.w3.org/ns/ldp#contains'),
+            libraries.rdflib.sym(subj),
+            libraries.rdflib.sym('http://www.w3.org/ns/ldp#contains'),
             undefined
         )
         // self.log("Got "+itemsTmp.length+" items")
@@ -120,7 +105,7 @@ export function getFolderItems(graph, subj) {
  * @param {string} content raw content of the folder's RDF (turtle) representation,
  * @returns {Object} FolderData
  */
-export function processFolder(graph, url, content) {
+/*cjs*/ function processFolder(graph, url, content) {
   const items = getFolderItems(graph, url);
   const stats = getStats(graph, url);
   const fullName = url.replace(/\/$/, '');
@@ -139,7 +124,7 @@ export function processFolder(graph, url, content) {
     files: items.files,
   };
 }
-export function guessFileType(url) {
+/*cjs*/ function guessFileType(url) {
   const ext = url.replace(/.*\./, '');
   if (ext.match(/\/$/)) return folderType;
   if (ext.match(/(md|markdown)/)) return 'text/markdown';
@@ -164,7 +149,7 @@ export function guessFileType(url) {
  * @param {string} contentType Content-Type of the request
  * @returns {$rdf.IndexedFormula} a $rdf.graph() database instance with parsed RDF
  */
-export async function text2graph(text,url,contentType){
+/*cjs*/ async function text2graph(text,url,contentType){
     return new Promise((resolve, reject)=>{
         contentType = contentType || guessFileType(url)
         var graph=$rdf.graph();
@@ -177,5 +162,7 @@ export async function text2graph(text,url,contentType){
     })
 }
 
-
-
+export default {
+  guessFileType,
+  processFolder,
+}
