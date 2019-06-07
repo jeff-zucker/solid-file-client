@@ -28,6 +28,7 @@ class SolidFileClient extends SolidApi {
     constructor(auth) {
         super(auth.fetch.bind(auth))
         this._auth = auth
+        this.response = {}
     }
 
     /**
@@ -86,6 +87,31 @@ class SolidFileClient extends SolidApi {
     logout() {
         return this._auth.logout()
     }
+
+    _err (e) {
+      this.response = {
+        ok : false,
+        status : 500,
+        statusText : e
+      }
+    }
+
+    err(msg){
+      console.log(msg+" : "+this.response.status+" "+this.response.statusText)
+    }
+
+    async readFile( url ){
+      return new Promise( resolve => {
+        super.get(url).then( res => {
+          this.response = res
+          if(!res.ok) { resolve() }
+          res.text().then( txt => {
+            resolve(txt)
+          },e=>{ this._err(e); resolve() })
+        },e=>{ this._err(e); resolve() })
+      })
+    }
+
 
     /**
      * Fetch an item and parse it
