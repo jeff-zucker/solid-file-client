@@ -8,7 +8,7 @@ JZ 2019-06-07 10:44 PDT
   * ran npm audit fix --force to get rid of downstream vulnerabilities
   * temporarily removed npm run test so things can install
 
-JZ 2019-06-07
+JZ 2019-06-07 13:30 PDT
   * modified this file to track our changes
   * revised error handling as described on github $43
   * added readFile() and test for it
