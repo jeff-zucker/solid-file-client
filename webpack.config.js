@@ -29,6 +29,14 @@ const window = {
             },
         ],
     },
+    externals: {
+	  	'rdflib': {
+	  		commonjs: 'rdflib',
+	  		commonjs2: 'rdflib',
+	  		amd: 'rdflib',
+	  		root: '$rdf'
+	  	},
+	 },
 }
 
 // Configurations specific to the node build
@@ -37,7 +45,7 @@ const node = {
     output: {
         ...common.output,
         path: path.resolve(__dirname, 'dist', 'node'),
-        libraryTarget: 'commonjs2',
+        libraryTarget: 'umd'   // 'commonjs2',
     },
 }
 
