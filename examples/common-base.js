@@ -1,13 +1,14 @@
 if(typeof(window)==="undefined"){
-    fc    = require('../src/index');
-    batch = require('../src/batch');
+    fc    = require('../dist/node/solid-file-client.bundle');
+    batch = require('./batch');
 }
 let profile = 'https://jeffz.solid.community/profile/card'
 
 const common = function(cfg){ return [
     "Testing solid-file-client ... logging in ...",
     function(){
-        fc.login(cfg.credentials).then( session =>{
+        // fc.login(cfg.credentials).then( session =>{
+        fc.popupLogin().then(session => {
             console.log("logged in as "+session.webId)
             batch.ok("login")
         }, err => { batch.abort("Test aborted : "+err); });

@@ -11,24 +11,18 @@
   ],
   "scripts": {
     "test": "jest --coverage",
-    "clean": "rimraf dist coverage",
-    "prepublish": "./cjs2esm && npm run test && npm run build",
-    "watch": "babel --watch lib --out-dir js",
-    "build": "npm run clean && npm run build:window && npm run build:main",
-    "build:main": "mkdir ./dist/console && cp ./src/* ./dist/console/.",
-    "build:window": "webpack --config=./webpack/webpack.window.config.js -p"
+    "prepublish": "npm run test && npm run build",
+    "watch": "webpack --watch",
+    "build": "webpack"
   },
-  "main": "dist/console/index.js",
-  "browser": "dist/browser/solid-file-client.bundle.js",
+  "main": "dist/node/solid-file-client.bundle.js",
+  "browser": "dist/window/solid-file-client.bundle.js",
   "module": "lib/index.js",
   "browserslist": "> 0.25%, not dead",
-  "dependencies": {
-    "rdflib": "^0.20.1",
-    "solid-auth-cli": "^0.2.3",
-    "solid-auth-client": "^2.3.0"
-  },
   "peerDependencies": {
     "@babel/runtime": "^7.2.0",
+    "rdflib": "^0.20.1",
+    "solid-auth-cli": "^0.2.3",
     "solid-auth-client": "^2.3.0"
   },
   "devDependencies": {
@@ -43,7 +37,6 @@
     "babel-loader": "^8.0.0-beta.6",
     "build-esm": "^4.2.0",
     "chai": "^4.2.0",
-    "clean-webpack-plugin": "^1.0.0",
     "eslint": "^5.9.0",
     "eslint-config-airbnb": "^17.1.0",
     "eslint-config-prettier": "^3.3.0",
@@ -60,8 +53,6 @@
     "jest": "^23.6.0",
     "mocha": "^5.2.0",
     "regenerator-runtime": "^0.13.1",
-    "replace-in-file-webpack-plugin": "^1.0.6",
-    "rimraf": "^2.6.2",
     "webpack": "^4.27.1",
     "webpack-cli": "^3.1.2"
   }
