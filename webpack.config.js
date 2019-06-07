@@ -45,7 +45,7 @@ const node = {
     output: {
         ...common.output,
         path: path.resolve(__dirname, 'dist', 'node'),
-        libraryTarget: 'umd'   // 'commonjs2',
+        libraryTarget: 'commonjs2',
     },
 }
 
