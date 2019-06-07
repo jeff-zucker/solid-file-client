@@ -11,7 +11,7 @@
   ],
   "scripts": {
     "test": "jest --coverage",
-    "prepublish": "npm run test && npm run build",
+    "prepublish": "npm run build",
     "watch": "webpack --watch",
     "build": "webpack"
   },
@@ -33,7 +33,7 @@
     "@babel/runtime": "^7.4.5",
     "babel-core": "^7.0.0-bridge.0",
     "babel-eslint": "^10.0.1",
-    "babel-jest": "^23.6.0",
+    "babel-jest": "^24.8.0",
     "babel-loader": "^8.0.0-beta.6",
     "build-esm": "^4.2.0",
     "chai": "^4.2.0",
@@ -50,7 +50,7 @@
     "eslint-plugin-prettier": "^3.0.0",
     "eslint-plugin-react": "^7.11.1",
     "flow-bin": "^0.87.0",
-    "jest": "^23.6.0",
+    "jest": "^24.8.0",
     "mocha": "^5.2.0",
     "regenerator-runtime": "^0.13.1",
     "webpack": "^4.27.1",
