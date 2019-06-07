@@ -1,12 +1,10 @@
-import libraries from '../libraries'
-
 const folderType = 'folder';
 
 /*cjs*/ function getStats(graph,subjectName) {
-  const subjectNode = libraries.rdflib.sym(subjectName);
-  const mod = libraries.rdflib.sym('http://purl.org/dc/terms/modified');
-  const size = libraries.rdflib.sym('http://www.w3.org/ns/posix/stat#size');
-  const mtime = libraries.rdflib.sym('http://www.w3.org/ns/posix/stat#mtime');
+  const subjectNode = $rdf.sym(subjectName);
+  const mod = $rdf.sym('http://purl.org/dc/terms/modified');
+  const size = $rdf.sym('http://www.w3.org/ns/posix/stat#size');
+  const mtime = $rdf.sym('http://www.w3.org/ns/posix/stat#mtime');
   let  modified = graph.any(subjectNode, mod, undefined);
   if(typeof(modified)==="undefined") return false;
   else modified = modified.value;
@@ -24,8 +22,8 @@ const folderType = 'folder';
  * @returns {string} content mime-type of a file, If it's a folder, return 'folder', 'unknown' for not sure
  */
 /*cjs*/ function getFileType(graph,url) {
-  const folderNode = libraries.rdflib.sym(url);
-  const isAnInstanceOfClass = libraries.rdflib.sym('http://www.w3.org/1999/02/22-rdf-syntax-ns#type');
+  const folderNode = $rdf.sym(url);
+  const isAnInstanceOfClass = $rdf.sym('http://www.w3.org/1999/02/22-rdf-syntax-ns#type');
   const types = graph.each(folderNode, isAnInstanceOfClass, undefined);
   for (const index in types) {
     const contentType = types[index].value;
@@ -39,8 +37,8 @@ const folderType = 'folder';
 /*cjs*/ function getFolderItems(graph, subj) {
         var contains = { folders : [], files   : [] }
         var itemsTmp = graph.each(
-            libraries.rdflib.sym(subj),
-            libraries.rdflib.sym('http://www.w3.org/ns/ldp#contains'),
+            $rdf.sym(subj),
+            $rdf.sym('http://www.w3.org/ns/ldp#contains'),
             undefined
         )
         // self.log("Got "+itemsTmp.length+" items")

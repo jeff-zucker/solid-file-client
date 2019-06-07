@@ -29,6 +29,14 @@ const window = {
             },
         ],
     },
+    externals: {
+	  	'rdflib': {
+	  		commonjs: 'rdflib',
+	  		commonjs2: 'rdflib',
+	  		amd: 'rdflib',
+	  		root: '$rdf'
+	  	},
+	 },
 }
 
 // Configurations specific to the node build

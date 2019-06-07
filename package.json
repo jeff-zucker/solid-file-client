@@ -20,7 +20,6 @@
   "module": "lib/index.js",
   "browserslist": "> 0.25%, not dead",
   "peerDependencies": {
-    "@babel/runtime": "^7.2.0",
     "rdflib": "^0.20.1",
     "solid-auth-cli": "^0.2.3",
     "solid-auth-client": "^2.3.0"
@@ -31,6 +30,7 @@
     "@babel/plugin-transform-flow-strip-types": "^7.2.0",
     "@babel/plugin-transform-runtime": "^7.2.0",
     "@babel/preset-env": "^7.2.0",
+    "@babel/runtime": "^7.4.5",
     "babel-core": "^7.0.0-bridge.0",
     "babel-eslint": "^10.0.1",
     "babel-jest": "^23.6.0",
