@@ -29,3 +29,12 @@ OA 2019-06-08 03:00 PDT
     to match this behavior, createFolder now rejects if parent doesn't exists
     (this will probably be discussed and changed in the future)
   * fixed deleteFolderContents and added one test for it
+
+OA 2019-06-08 01:00 PDT
+  * changed `prepublish` to `prepublishOnly`
+    so it doesn't trigger on npm install
+  * added `test:watch` script
+  * added `build:dev` script
+  * removed `watch` script
+  * removed eslint and other unused dev-dependencies
+
