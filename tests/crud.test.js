@@ -74,9 +74,8 @@ const fc = new FileClient(auth);
 
 async function readFolder(url) {
   let res = await fc.readFolder(url)
-//  if(!res) return 404
-//  if(!res.ok) return res.status
-//  else return res.body.files[0].url
+  if(!res.ok) return res.status
+  else return res.body.files[0].url
 }
 async function readFile(url) {
   let res = await fc.readFile(url)
