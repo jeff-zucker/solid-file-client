@@ -22,9 +22,8 @@ class SolidAPI {
    * api.createFolder('https:/.../foo/bar/')
    *   .then(response => console.log(`Created: ${response.url}`))
    */
-  constructor (fetch,rdflib) {
+  constructor (fetch) {
     this._fetch = fetch
-    this._rdflib = rdflib
   }
 
 
@@ -50,6 +49,7 @@ class SolidAPI {
       method: 'GET',
       ...options,
     })
+      .then(this._assertResponseOk)
   }
 
   /**
@@ -63,6 +63,7 @@ class SolidAPI {
       method: 'DELETE',
       ...options,
     })
+      .then(this._assertResponseOk)
   }
 
   /**
@@ -76,6 +77,7 @@ class SolidAPI {
       method: 'POST',
       ...options,
     })
+      .then(this._assertResponseOk)
   }
 
   /**
@@ -89,6 +91,7 @@ class SolidAPI {
       method: 'PUT',
       ...options,
     })
+      .then(this._assertResponseOk)
   }
 
   /**
@@ -102,6 +105,7 @@ class SolidAPI {
       method: 'PATCH',
       ...options,
     })
+      .then(this._assertResponseOk)
   }
 
   /**
@@ -115,6 +119,7 @@ class SolidAPI {
       method: 'HEAD',
       ...options,
     })
+      .then(this._assertResponseOk)
   }
 
   /**
@@ -128,6 +133,7 @@ class SolidAPI {
       method: 'OPTIONS',
       ...options,
     })
+      .then(this._assertResponseOk)
   }
 
   /**
@@ -136,8 +142,9 @@ class SolidAPI {
    * @returns {Promise<boolean>}
    */
   async itemExists (url) {
-    return this.options(url)
-      .then(response => response.ok)
+    return this.head(url)
+      .then(() => true)
+      .catch(() => false)
   }
 
   /**
@@ -190,15 +197,17 @@ class SolidAPI {
   /**
    * Create a folder if it doesn't exist
    * @param {string} url
-   * @returns {Promise<Response>} Response of options request if it already existed, else of creation request
+   * @returns {Promise<Response>} Response of HEAD request if it already existed, else of creation request
    */
   async createFolder (url) {
-    const response = await this.options(url)
-    if (response.ok) {
-      return response
-    }
+    return this.head(url)
+      .catch(response => {
+        if (response.status !== 404) {
+          throw response
+        }
 
-    return this.createItem(url, '', 'text/turtle', LINK.CONTAINER)
+        return this.createItem(url, '', 'text/turtle', LINK.CONTAINER)
+      })
   }
 
   /**
@@ -228,14 +237,14 @@ class SolidAPI {
    * @returns {FolderData}
    */
   async readFolder (url) {
-    const response = await this.get(url)
+    const response = await this.get(url).catch(res => res)
     if(!response.ok) return response
     const text = await response.text()
-    const graph = await text2graph(text, url, 'text/turtle',this._rdflib)
+    const graph = await text2graph(text, url, 'text/turtle')
     return {
       ok : true,
       status : 200,
-      body : processFolder(graph, url, text,this._rdflib)
+      body : processFolder(graph, url, text)
     }
   }
 
@@ -262,7 +271,7 @@ class SolidAPI {
    * @returns {Promise<Response>} Resolves with the response from the top level folder created
    */
   async copyFolder (from, to, { overwrite } = { overwrite: false }) {
-    const { folders, files } = await this.readFolder(from)
+    const { body: { folders, files } } = await this.readFolder(from).then(this._assertResponseOk)
 
     const folderResponse = await this.createFolder(to)
     const promises = [
@@ -297,8 +306,8 @@ class SolidAPI {
    * @param {string} url
    * @returns {Promise<Response[]>} Resolves with an array of the responses for the deletion of all direct children of the folder
    */
-  deleteFolderContents (url) {
-    const { folders, files } = this.readFolder(url)
+  async deleteFolderContents (url) {
+    const { body: { folders, files } } = await this.readFolder(url).then(this._assertResponseOk)
 
     const promises = [
       ...folders.map(({ url: folderUrl }) => this.deleteFolderRecursively(folderUrl)),
@@ -342,6 +351,19 @@ class SolidAPI {
   rename (url, newName, options) {
     const to = getParentUrl(url) + newName + (areFolders(url) ? '/' : '')
     return this.move(url, to, options)
+  }
+
+  /**
+   * Throw error if response.ok is set to false
+   * @param {Response} response
+   * @returns {Reponse} same response
+   * @throws {Response}
+   */
+  _assertResponseOk(response) {
+    if (!response.ok) {
+      throw response
+    }
+    return response
   }
 }
 

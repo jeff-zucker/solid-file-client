@@ -9,12 +9,22 @@ const common = {
         library: 'SolidFileClient',
         libraryExport: 'default',
     },
+    externals: {
+        'solid-auth-cli': 'null',
+        'rdflib': {
+            commonjs: 'rdflib',
+            commonjs2: 'rdflib',
+            amd: 'rdflib',
+            root: '$rdf'
+        },
+    },
     devtool: 'source-map',
 }
 
 // Configurations specific to the window build
 const window = {
     ...common,
+    name: 'window',
     output: {
         ...common.output,
         path: path.resolve(__dirname, 'dist', 'window'),
@@ -29,19 +39,12 @@ const window = {
             },
         ],
     },
-    externals: {
-	  	'rdflib': {
-	  		commonjs: 'rdflib',
-	  		commonjs2: 'rdflib',
-	  		amd: 'rdflib',
-	  		root: '$rdf'
-	  	},
-	 },
 }
 
 // Configurations specific to the node build
 const node = {
     ...common,
+    name: 'node',
     output: {
         ...common.output,
         path: path.resolve(__dirname, 'dist', 'node'),

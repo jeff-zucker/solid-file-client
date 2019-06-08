@@ -1,5 +1,4 @@
 import auth from '../node_modules/solid-auth-cli';
-import $rdf from '../node_modules/rdflib';
 import FC   from '../dist/node/solid-file-client.bundle.js'
 
 const base   = "file://" + process.cwd()
@@ -7,7 +6,9 @@ const folder = base + "/test-folder/"
 const file   = folder + "test.ttl"
 const expectedText = "<> a <#test>."
 
-const fc = new FC(auth,$rdf);
+const fc = new FC(auth);
+
+beforeAll(() => fc.deleteFolder(folder))
 
   /* createFolder()
   */
