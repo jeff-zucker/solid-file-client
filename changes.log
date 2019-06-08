@@ -20,3 +20,12 @@ JZ 2019-06-07 18:30 PDT
   * created many tests
   * added testing back into the build process
   
+OA 2019-06-08 03:00 PDT
+  * separated test folder into test-folder/solid-api and test-folder/easy
+    to make sure they don't interfere with each other
+    test-folder automatically gets cleared before each test run (see setup.js)
+  * folderUtils now imports rdflib instead of passing it around
+  * all "advanced" API methods except for fetch now throw if !response.ok
+    to match this behavior, createFolder now rejects if parent doesn't exists
+    (this will probably be discussed and changed in the future)
+  * fixed deleteFolderContents and added one test for it

@@ -18,7 +18,7 @@
   "main": "dist/node/solid-file-client.bundle.js",
   "browser": "dist/window/solid-file-client.bundle.js",
   "module": "lib/index.js",
-  "browserslist": "> 0.25%, not dead",
+  "browserslist": ["> 0.25%", "not dead"],
   "peerDependencies": {
     "rdflib": "^0.20.1",
     "solid-auth-cli": "^0.2.3",
