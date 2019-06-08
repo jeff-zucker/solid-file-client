@@ -25,8 +25,8 @@ class SolidFileClient extends SolidApi {
      * Crete a new SolidFileClient
      * @param {SolidAuthClient} auth 
      */
-    constructor(auth,rdflib) {
-        super(auth.fetch.bind(auth),rdflib)
+    constructor(auth) {
+        super(auth.fetch.bind(auth))
         this._auth = auth
         this.response = {}
     }
@@ -115,7 +115,15 @@ class SolidFileClient extends SolidApi {
           res.text().then( txt => {
             resolve(txt)
           },e=>{ resolve(this._err(e)) })
-        },e=>{  resolve(this._err(e)) })
+        },e=>{
+          // Resolve with 404 if the file doesn't exist
+          if (e.status && e.status === 404) {
+            resolve(e)
+          }
+          else {
+            resolve(this._err(e)) 
+          }
+        })
       })
     }
 

@@ -16,7 +16,7 @@
     <script src="../../dist/window/solid-file-client.bundle.js"></script>
     <script>
         async function main() {
-            const fileClient = new SolidFileClient(solid.auth);
+            const fileClient = new SolidFileClient(solid.auth, $rdf);
             const webId = await fileClient.popupLogin()
             console.log(`Logged in as ${webId}`)
             const cardResponse = await fileClient.get(webId)

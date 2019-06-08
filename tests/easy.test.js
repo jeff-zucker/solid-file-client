@@ -1,18 +1,18 @@
 import auth from '../node_modules/solid-auth-cli';
-import $rdf from '../node_modules/rdflib';
 import FC   from '../dist/node/solid-file-client.bundle.js'
 
 const base   = "file://" + process.cwd()
-const folder = base + "/test-folder/"
+const folder = base + "/test-folder/easy/"
 const file   = folder + "test.ttl"
 const expectedText = "<> a <#test>."
 
-const fc = new FC(auth,$rdf);
+const fc = new FC(auth);
 
+beforeAll(() => fc.createFolder(folder))
   /* createFolder()
   */
   test('createFolder',()=>{ return expect(
-    testApi("createFolder",folder)
+    testApi("createFolder", folder + "create-folder-test/")
   ).resolves.toBe(201) });
 
   /* createFile()
@@ -37,7 +37,7 @@ const fc = new FC(auth,$rdf);
   */
   test('createFolder with non-existant parent returns 404',()=>{ return expect(
     testApi("createFolder",folder+"/junk/bad/bad")
-  ).resolves.toBe(404) });
+  ).rejects.toBe(404) });
 
   /* readFile() on non-existant resource
   */
@@ -68,6 +68,11 @@ async function readFile(url) {
   else return res.status
 }
 async function testApi(method,url,content) {
-  let res = await fc[method](url,content)
-  return res.status
+  try {
+    let res = await fc[method](url,content)
+    return res.status
+  }
+  catch (e) {
+    throw e.status
+  }
 }
