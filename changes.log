@@ -20,3 +20,10 @@ JZ 2019-06-07 18:30 PDT
   * created many tests
   * added testing back into the build process
   
+OA 2019-06-08 01:00 PDT
+  * changed `prepublish` to `prepublishOnly`
+    so it doesn't trigger on npm install
+  * added `test:watch` script
+  * added `build:dev` script
+  * removed `watch` script
+  * removed eslint and other unused dev-dependencies

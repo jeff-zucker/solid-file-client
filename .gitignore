@@ -11,6 +11,7 @@ node_modules/
 .nyc_output
 coverage/
 dist/
+test-folder/
 examples/cred.json
 .bin/test
 .bin/cred.json
