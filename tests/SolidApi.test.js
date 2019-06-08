@@ -3,7 +3,7 @@ import $rdf from 'rdflib';
 import SolidApi from '../src/SolidApi'
 
 const base = "file://" + process.cwd()
-const folder = base + "/test-folder/solid-api/"
+const folder = base + "/test-folder/SolidApi/"
 const inexistentFolder = folder + "inexistent/"
 
 const api = new SolidApi(auth.fetch.bind(auth), $rdf);

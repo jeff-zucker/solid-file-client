@@ -18,8 +18,6 @@
   },
   "main": "dist/node/solid-file-client.bundle.js",
   "browser": "dist/window/solid-file-client.bundle.js",
-  "module": "lib/index.js",
-  "browserslist": ["> 0.25%", "not dead"],
   "module": "src/index.js",
   "browserslist": "> 0.25%, not dead",
   "peerDependencies": {

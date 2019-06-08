@@ -2,16 +2,21 @@
 // https://jestjs.io/docs/en/configuration.html
 
 module.exports = {
+
+  // The test environment that will be used for testing
+  // added by Jeff
+  testEnvironment: "node",
+
+  // added by Otto
+  globalSetup: "./tests/setup.js",
+
   // All imported modules in your tests should be mocked automatically
   // automock: false,
 
-  // The test environment that will be used for testing
-  testEnvironment: "node",
-
   // An array of regexp pattern strings that are matched against all test paths, matched tests are skipped
-   testPathIgnorePatterns: [
-     "/node_modules/"
-   ],
+  // testPathIgnorePatterns: [
+  //   "/node_modules/"
+  // ],
 
   // Stop running tests after `n` failures
   // bail: 0,
@@ -183,6 +188,3 @@ module.exports = {
   // Whether to use watchman for file crawling
   // watchman: true,
 };
-module.exports = {
-  globalSetup: "./tests/setup.js",
-}

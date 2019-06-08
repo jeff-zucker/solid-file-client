@@ -1,7 +1,7 @@
 import SolidApi from './SolidApi'
-import folderUtils from './utils/folderUtils';
+//import folderUtils from './utils/folderUtils';
 
-const { guessFileType } = folderUtils
+//const { guessFileType } = folderUtils
 
 /** TODO
  * @typedef {Object} Session
@@ -23,10 +23,10 @@ const { guessFileType } = folderUtils
 class SolidFileClient extends SolidApi {
     /**
      * Crete a new SolidFileClient
-     * @param {SolidAuthClient} auth 
+     * @param {SolidAuthClient,RdfLib} auth, rdflib
      */
-    constructor(auth) {
-        super(auth.fetch.bind(auth))
+    constructor(auth,rdflib) {
+        super(auth.fetch.bind(auth),rdflib)
         this._auth = auth
         this.response = {}
     }
@@ -45,30 +45,29 @@ class SolidFileClient extends SolidApi {
         return this._auth.login(credentials)
     }
 
+
     /**
      * Open a popup prompting the user to login
      * @returns {Promise<string>} resolves with the webId after a successful login
      */
-    async popupLogin() {
+    async popupLogin(popupUri) {
         let session = await this._auth.currentSession()
         if (!session) {
-            const popupUri = 'https://solid.community/common/popup.html'
-            session = await this._auth.popupLogin({ popupUri })
+            popupUri = popupUri || 'https://solid.community/common/popup.html'
+            if(typeof window === "undefined")
+                session = await this._auth.login( popupUri )
+            else
+                session = await this._auth.popupLogin({ popupUri })
         }
         return session.webId
     }
 
     /**
      * Return the currently active session if available
-     * @returns {Session}
-     * @throws if not logged in
+     * @returns {Session} or undefined if not logged in
      */
     async checkSession() {
-        const session = await this._auth.currentSession()
-        if (!session) {
-            throw new Error('No session available')
-        }
-        return session
+        return await this._auth.currentSession()
     }
 
     /**
@@ -88,17 +87,16 @@ class SolidFileClient extends SolidApi {
         return this._auth.logout()
     }
 
-    _err (e) {
-      return {
-        ok : false,
-        status : 500,
-        statusText : e
-      }
-    }
 
-    err(msg){
-      console.log(msg+" : "+this.response.status+" "+this.response.statusText)
-    }
+/*
+updateFile
+copyFile
+copyFolder
+fetchAndParse
+upload
+download
+*/
+
 
     /**
      * Fetch an item and reurn content as text,json,or blob as needed
@@ -107,23 +105,19 @@ class SolidFileClient extends SolidApi {
      * @returns {Promise<string|object|blob}
      */
     async readFile( url ){
-      return new Promise( resolve => {
+      return new Promise( async (resolve) => {
         /* TO DO : use _fetch_resolved() to send text(), json() or blob()
         */
-        super.get(url).then( res => {
-          if(!res.ok) { resolve(res) }
-          res.text().then( txt => {
-            resolve(txt)
-          },e=>{ resolve(this._err(e)) })
-        },e=>{
-          // Resolve with 404 if the file doesn't exist
-          if (e.status && e.status === 404) {
-            resolve(e)
+        let res = await this.get(url).catch(e=>{resolve(e)})
+        if(!res.ok) return resolve(res)
+        let txt= await res.text()
+        return resolve(
+          { 
+            ok:true,
+            status:200,
+            body:txt
           }
-          else {
-            resolve(this._err(e)) 
-          }
-        })
+        )
       })
     }
 
@@ -136,7 +130,7 @@ class SolidFileClient extends SolidApi {
      */
     async fetchAndParse(url, contentType) {
         if (!contentType) {
-            contentType = guessFileType(url)
+            contentType = this.folderUtils.guessFileType(url)
         }
   
         const response = await this.fetch(url)
@@ -146,6 +140,15 @@ class SolidFileClient extends SolidApi {
         // TODO: Parse response
         return response
     }
+
+    _err (e) {
+      return {
+        ok : false,
+        status : 500,
+        statusText : e
+      }
+    }
+
 }
 
 export default SolidFileClient

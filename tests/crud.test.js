@@ -1,14 +1,15 @@
-import auth from '../node_modules/solid-auth-cli';
-import FC   from '../dist/node/solid-file-client.bundle.js'
+import auth       from 'solid-auth-cli';
+import $rdf       from 'rdflib';
+import FileClient from '../'
 
 const base   = "file://" + process.cwd()
-const folder = base + "/test-folder/"
+const parent = base   + "/test-folder/"
+const folder = parent + "easy/"
 const file   = folder + "test.ttl"
 const expectedText = "<> a <#test>."
 
-const fc = new FC(auth);
+const fc = new FileClient(auth);
 
-beforeAll(() => fc.deleteFolder(folder))
 
   /* createFolder()
   */
@@ -52,6 +53,7 @@ beforeAll(() => fc.deleteFolder(folder))
     readFolder("https://example.com/badurl/")
   ).resolves.toBe(404) });
 
+
   /* deleteFolder() on non-empty folder
   */
   test('deleteFolder on non-empty folder returns 409',()=>{ return expect(
@@ -64,7 +66,7 @@ beforeAll(() => fc.deleteFolder(folder))
     testApi("delete",file)
   ).resolves.toBe(200) });
 
-  /* deleteFolder() on non-empty folder
+  /* deleteFolder()
   */
   test('deleteFolder',()=>{ return expect(
     testApi("delete",folder)
@@ -72,8 +74,9 @@ beforeAll(() => fc.deleteFolder(folder))
 
 async function readFolder(url) {
   let res = await fc.readFolder(url)
-  if(!res.ok) return res.status
-  else return res.body.files[0].url
+//  if(!res) return 404
+//  if(!res.ok) return res.status
+//  else return res.body.files[0].url
 }
 async function readFile(url) {
   let res = await fc.readFile(url)
@@ -81,6 +84,11 @@ async function readFile(url) {
   else return res.body
 }
 async function testApi(method,url,content) {
-  let res = await fc[method](url,content)
-  return res.status
+  try {
+    let res = await fc[method](url,content)
+    return res.status
+  }
+  catch(e) {
+    return e.status
+  }
 }
