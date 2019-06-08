@@ -12,3 +12,11 @@ JZ 2019-06-07 13:30 PDT
   * modified this file to track our changes
   * revised error handling as described on github $43
   * added readFile() and test for it
+
+JZ 2019-06-07 18:30 PDT
+  * revised errors again
+  * hooked up $rdf (it was hard to get it into folderUtils)
+  * modified SolidApi.readFolder
+  * created many tests
+  * added testing back into the build process
+  

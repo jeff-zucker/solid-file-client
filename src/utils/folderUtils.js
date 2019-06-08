@@ -1,10 +1,10 @@
 const folderType = 'folder';
 
-/*cjs*/ function getStats(graph,subjectName) {
-  const subjectNode = $rdf.sym(subjectName);
-  const mod = $rdf.sym('http://purl.org/dc/terms/modified');
-  const size = $rdf.sym('http://www.w3.org/ns/posix/stat#size');
-  const mtime = $rdf.sym('http://www.w3.org/ns/posix/stat#mtime');
+/*cjs*/ function getStats(graph,subjectName,rdflib) {
+  const subjectNode = rdflib.sym(subjectName);
+  const mod = rdflib.sym('http://purl.org/dc/terms/modified');
+  const size = rdflib.sym('http://www.w3.org/ns/posix/stat#size');
+  const mtime = rdflib.sym('http://www.w3.org/ns/posix/stat#mtime');
   let  modified = graph.any(subjectNode, mod, undefined);
   if(typeof(modified)==="undefined") return false;
   else modified = modified.value;
@@ -17,13 +17,13 @@ const folderType = 'folder';
 
 /** A type used internally to indicate we are handling a folder */
 /**
- * @param {$rdf.IndexedFormula} graph a $rdf.graph() database instance
+ * @param {rdflib.IndexedFormula} graph a rdflib.graph() database instance
  * @param {string} url location of the folder
  * @returns {string} content mime-type of a file, If it's a folder, return 'folder', 'unknown' for not sure
  */
-/*cjs*/ function getFileType(graph,url) {
-  const folderNode = $rdf.sym(url);
-  const isAnInstanceOfClass = $rdf.sym('http://www.w3.org/1999/02/22-rdf-syntax-ns#type');
+/*cjs*/ function getFileType(graph,url,rdflib) {
+  const folderNode = rdflib.sym(url);
+  const isAnInstanceOfClass = rdflib.sym('http://www.w3.org/1999/02/22-rdf-syntax-ns#type');
   const types = graph.each(folderNode, isAnInstanceOfClass, undefined);
   for (const index in types) {
     const contentType = types[index].value;
@@ -34,19 +34,19 @@ const folderType = 'folder';
   }
   return 'unknown';
 }
-/*cjs*/ function getFolderItems(graph, subj) {
+/*cjs*/ function getFolderItems(graph, subj,rdflib) {
         var contains = { folders : [], files   : [] }
         var itemsTmp = graph.each(
-            $rdf.sym(subj),
-            $rdf.sym('http://www.w3.org/ns/ldp#contains'),
+            rdflib.sym(subj),
+            rdflib.sym('http://www.w3.org/ns/ldp#contains'),
             undefined
         )
         // self.log("Got "+itemsTmp.length+" items")
         for(let i=0;i<itemsTmp.length;i++){
              var item = itemsTmp[i];
              var newItem = {}
-             newItem.type = getFileType( graph, item.value )
-             var stats = getStats(graph,item.value)
+             newItem.type = getFileType( graph, item.value,rdflib )
+             var stats = getStats(graph,item.value,rdflib)
              newItem.modified = stats.modified
              newItem.size = stats.size
              newItem.mtime = stats.mtime
@@ -72,7 +72,7 @@ const folderType = 'folder';
 /*
  function getFolderItems(graph, subjectName) {
   var contains = {files:[],folders:[]};
-  const items = graph.each($rdf.sym(subjectName), $rdf.sym('http://www.w3.org/ns/ldp#contains'), undefined);
+  const items = graph.each(rdflib.sym(subjectName), rdflib.sym('http://www.w3.org/ns/ldp#contains'), undefined);
 
   for (let i = 0; i < items.length; i += 1) {
     const item = items[i];
@@ -98,14 +98,14 @@ const folderType = 'folder';
 }
 */
 /**
- * @param {$rdf.IndexedFormula} graph a $rdf.graph() database instance
+ * @param {rdflib.IndexedFormula} graph a rdflib.graph() database instance
  * @param {string} url location of the folder
  * @param {string} content raw content of the folder's RDF (turtle) representation,
  * @returns {Object} FolderData
  */
-/*cjs*/ function processFolder(graph, url, content) {
-  const items = getFolderItems(graph, url);
-  const stats = getStats(graph, url);
+/*cjs*/ function processFolder(graph, url, content,rdflib) {
+  const items = getFolderItems(graph, url,rdflib);
+  const stats = getStats(graph, url,rdflib);
   const fullName = url.replace(/\/$/, '');
   const name = fullName.replace(/.*\//, '');
   const parent = fullName.substr(0, fullName.lastIndexOf("/"))+"/";
@@ -142,17 +142,17 @@ const folderType = 'folder';
 }
 
 /**
- * @param {string} text RDF text that can be passed to $rdf.parse()
+ * @param {string} text RDF text that can be passed to rdflib.parse()
  * @param {*} content the request body
  * @param {string} contentType Content-Type of the request
- * @returns {$rdf.IndexedFormula} a $rdf.graph() database instance with parsed RDF
+ * @returns {rdflib.IndexedFormula} a rdflib.graph() database instance with parsed RDF
  */
-/*cjs*/ async function text2graph(text,url,contentType){
+/*cjs*/ async function text2graph(text,url,contentType,rdflib){
     return new Promise((resolve, reject)=>{
         contentType = contentType || guessFileType(url)
-        var graph=$rdf.graph();
+        var graph=rdflib.graph();
         try{
-            $rdf.parse(text,graph,url,contentType);
+            rdflib.parse(text,graph,url,contentType);
             resolve( graph );
         } catch(err){
             reject( err )
@@ -163,4 +163,5 @@ const folderType = 'folder';
 export default {
   guessFileType,
   processFolder,
+  text2graph,
 }

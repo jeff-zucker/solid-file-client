@@ -11,7 +11,7 @@
   ],
   "scripts": {
     "test": "jest --coverage",
-    "prepublish": "npm run build",
+    "prepublish": "npm test && npm run build",
     "watch": "webpack --watch",
     "build": "webpack"
   },

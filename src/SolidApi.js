@@ -22,9 +22,12 @@ class SolidAPI {
    * api.createFolder('https:/.../foo/bar/')
    *   .then(response => console.log(`Created: ${response.url}`))
    */
-  constructor (fetch) {
+  constructor (fetch,rdflib) {
     this._fetch = fetch
+    this._rdflib = rdflib
   }
+
+
 
   /**
    * Fetch a resource with the passed fetch method
@@ -226,9 +229,14 @@ class SolidAPI {
    */
   async readFolder (url) {
     const response = await this.get(url)
+    if(!response.ok) return response
     const text = await response.text()
-    const graph = await text2graph(text, url, 'text/turtle')
-    return processFolder(graph, url, text)
+    const graph = await text2graph(text, url, 'text/turtle',this._rdflib)
+    return {
+      ok : true,
+      status : 200,
+      body : processFolder(graph, url, text,this._rdflib)
+    }
   }
 
   /**

@@ -25,8 +25,8 @@ class SolidFileClient extends SolidApi {
      * Crete a new SolidFileClient
      * @param {SolidAuthClient} auth 
      */
-    constructor(auth) {
-        super(auth.fetch.bind(auth))
+    constructor(auth,rdflib) {
+        super(auth.fetch.bind(auth),rdflib)
         this._auth = auth
         this.response = {}
     }
@@ -89,7 +89,7 @@ class SolidFileClient extends SolidApi {
     }
 
     _err (e) {
-      this.response = {
+      return {
         ok : false,
         status : 500,
         statusText : e
@@ -100,15 +100,22 @@ class SolidFileClient extends SolidApi {
       console.log(msg+" : "+this.response.status+" "+this.response.statusText)
     }
 
+    /**
+     * Fetch an item and reurn content as text,json,or blob as needed
+     * @param {string} url
+     * @param {string} [contentType]
+     * @returns {Promise<string|object|blob}
+     */
     async readFile( url ){
       return new Promise( resolve => {
+        /* TO DO : use _fetch_resolved() to send text(), json() or blob()
+        */
         super.get(url).then( res => {
-          this.response = res
-          if(!res.ok) { resolve() }
+          if(!res.ok) { resolve(res) }
           res.text().then( txt => {
             resolve(txt)
-          },e=>{ this._err(e); resolve() })
-        },e=>{ this._err(e); resolve() })
+          },e=>{ resolve(this._err(e)) })
+        },e=>{  resolve(this._err(e)) })
       })
     }
 
