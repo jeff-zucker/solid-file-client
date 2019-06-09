@@ -10,7 +10,6 @@ const expectedText = "<> a <#test>."
 
 const fc = new FileClient(auth);
 
-
   /* createFolder()
   */
   test('createFolder',()=>{ return expect(
@@ -72,10 +71,13 @@ const fc = new FileClient(auth);
     testApi("delete",folder)
   ).resolves.toBe(200) });
 
+async function fetchAndParse(url) {
+  let res = fc.fetchAnd
+}
 async function readFolder(url) {
   let res = await fc.readFolder(url)
-  if(!res.ok) return res.status
-  else return res.body.files[0].url
+  if(res.ok) return res.body.files[0].url
+  return res.status
 }
 async function readFile(url) {
   let res = await fc.readFile(url)

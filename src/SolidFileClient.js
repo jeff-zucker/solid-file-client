@@ -1,7 +1,7 @@
 import SolidApi from './SolidApi'
-//import folderUtils from './utils/folderUtils';
+import folderUtils from './utils/folderUtils';
 
-//const { guessFileType } = folderUtils
+const { guessFileType } = folderUtils
 
 /** TODO
  * @typedef {Object} Session
@@ -25,8 +25,8 @@ class SolidFileClient extends SolidApi {
      * Crete a new SolidFileClient
      * @param {SolidAuthClient,RdfLib} auth, rdflib
      */
-    constructor(auth,rdflib) {
-        super(auth.fetch.bind(auth),rdflib)
+    constructor(auth) {
+        super(auth.fetch.bind(auth))
         this._auth = auth
         this.response = {}
     }
@@ -104,21 +104,30 @@ download
      * @param {string} [contentType]
      * @returns {Promise<string|object|blob}
      */
-    async readFile( url ){
-      return new Promise( async (resolve) => {
-        /* TO DO : use _fetch_resolved() to send text(), json() or blob()
-        */
-        let res = await this.get(url).catch(e=>{resolve(e)})
-        if(!res.ok) return resolve(res)
-        let txt= await res.text()
-        return resolve(
-          { 
-            ok:true,
-            status:200,
-            body:txt
+    async readFile(url,request){
+      return new Promise(resolve=>{
+        this.fetch(url,request).then( (res) => {
+          if(!res.ok) { resolve(res)  }
+          let type = res.headers.get('content-type')
+          if(type.match(/(image|audio|video)/)){
+            res.buffer().then( blob => {
+              resolve(blob)
+            })
           }
-        )
+          else if(res.text) {
+            res.text().then( text => {
+              return resolve( {ok:true, status:200, body:text } )
+            }).catch( err =>{resolve(err)} )
+          }
+          else resolve(res)
+        }).catch( err => {resolve(err)} )
       })
+    }
+
+    async getFolder(url,options){
+      let res = this.readFolder(url,options).catch(e=>{return 88})
+      if(typeof res=="undefined") return 77
+      return res
     }
 
 

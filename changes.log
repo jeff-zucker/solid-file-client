@@ -38,3 +38,11 @@ OA 2019-06-08 01:00 PDT
   * removed `watch` script
   * removed eslint and other unused dev-dependencies
 
+JZ 2019-06-08 16:30 PDT
+  * more tests
+  * modified test imports (diffs between require & import made $rdf hard to see)
+
+JZ 2019-06-08 18:30 PDT
+  * refactored readFile to use fetch rather than get
+  * modified testApi to catch error status
+  * all tests pass now
