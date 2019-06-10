@@ -67,19 +67,19 @@ beforeAll( async () => {
   /* deleteFolder() on non-empty folder
   */
   test('deleteFolder on non-empty folder returns 409',()=>{ return expect(
-    testInterface("delete",folder)
+    testInterface("deleteFolder",folder)
   ).resolves.toBe(409) });
 
   /* deleteFile()
   */
   test('deleteFile',()=>{ return expect(
-    testInterface("delete",file)
+    testInterface("deleteFile",file)
   ).resolves.toBe(200) });
 
   /* deleteFolder()
   */
   test('deleteFolder',()=>{ return expect(
-    testInterface("delete",folder)
+    testInterface("deleteFolder",folder)
   ).resolves.toBe(200) });
 
 async function readFolder(url) {
