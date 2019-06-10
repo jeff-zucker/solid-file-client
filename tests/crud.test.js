@@ -6,7 +6,7 @@ let fc_interface = "response"
 // let fc_interface = "catch"
 
 const fc = fc_interface==="response"
-  ? new FileClient(auth,{responseInterface:true})
+  ? new FileClient(auth,{throwsErrors:false})
   : new FileClient(auth)
 
 const base   = "file://" + process.cwd()

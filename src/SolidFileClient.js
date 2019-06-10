@@ -3,6 +3,8 @@ import SolidApi from './SolidApi'
 import folderUtils from './utils/folderUtils';
 
 const { guessFileType, text2graph } = folderUtils
+const defaultInitOptions = { throwErrors:true }
+const defaultPopupUri = 'https://solid.community/common/popup.html'
 
 /** TODO
  * @typedef {Object} Session
@@ -17,41 +19,40 @@ const { guessFileType, text2graph } = folderUtils
  * @param {function(): Promise<any>} logout
  */
 
+
 /**
  * Class for working with the solid API
  * @extends SolidApi
  */
 class SolidFileClient extends SolidApi {
+
     /**
      * Crete a new SolidFileClient
      * @param {SolidAuthClient,RdfLib} auth, rdflib
      */
-    constructor(auth,responseInterface) {
+    constructor(auth, options = defaultInitOptions) {
         super(auth.fetch.bind(auth))
         this._auth = auth
-        this._responseInterface = responseInterface
+        this._throwErrors = options.throwErrors
         this.response = {}
     }
 
-async getLinks(url){
-  let iana    = 'http://www.iana.org/assignments/link-relations/'
-  let aclRel  = $rdf.sym(iana+"acl")
-  let metaRel = $rdf.sym(iana+"describedBy")
-  let store = $rdf.graph()
-  let fetcher = $rdf.fetcher(store,this._auth)
-  let r = await fetcher._fetch(url,{method:"HEAD"}).catch(e=>e)
-  if(!r.ok) return(r)
-  await fetcher.parseLinkHeader(r.headers.get('link'),$rdf.sym(url),url)
-  let acl  = store.any($rdf.sym(url),aclRel)
-  let meta = store.any($rdf.sym(url),metaRel)
-  return {
-    ok : true,
-    body : {
-    acl  : acl.value,
-    meta : meta.value
+    async getLinks(url){
+        let iana    = 'http://www.iana.org/assignments/link-relations/'
+        let aclRel  = $rdf.sym(iana+"acl")
+        let metaRel = $rdf.sym(iana+"describedBy")
+        let store   = $rdf.graph()
+        let fetcher = $rdf.fetcher(store,this._auth)
+        let r = await fetcher._fetch(url,{method:"HEAD"}).catch(e=>e)
+        if(!r.ok) return(r)
+        await fetcher.parseLinkHeader(r.headers.get('link'),$rdf.sym(url),url)
+        let acl  = store.any($rdf.sym(url),aclRel)
+        let meta = store.any($rdf.sym(url),metaRel)
+        return {
+            ok : true,
+          body : { acl:acl.value, meta:meta.value }
+        }
     }
-  }
-}
 
 
     /**
@@ -73,10 +74,9 @@ async getLinks(url){
      * Open a popup prompting the user to login
      * @returns {Promise<string>} resolves with the webId after a successful login
      */
-    async popupLogin(popupUri) {
+     async popupLogin(popupUri = defaultPopupUri) {
         let session = await this._auth.currentSession()
         if (!session) {
-            popupUri = popupUri || 'https://solid.community/common/popup.html'
             if(typeof window === "undefined")
                 session = await this._auth.login( popupUri )
             else
@@ -110,19 +110,20 @@ async getLinks(url){
         return this._auth.logout()
     }
 
+    /* TBD : refactor with await */
     /**
      * Fetch an item and reurn content as text,json,or blob as needed
      * @param {string} url
      * @param {string} [contentType]
      * @returns {Promise<string|object|blob}
      */
-    async readFile(url,request){
+     async readFile(url,request){
       let self=this
       return new Promise((resolve,reject)=>{
         this.fetch(url,request).then( (res) => {
           if(!res.ok) {
-            if(self._responseInterface) resolve(res)  
-            else reject(res)
+            if(self._throwErrors) reject(res)
+            else resolve(res)  
           }
           let type = res.headers.get('content-type')
           if(type.match(/(image|audio|video)/)){
@@ -141,10 +142,11 @@ async getLinks(url){
     }
 
     _isoErr(err){
-      if(this._responseInterface) return err
-      else throw err
+      if(this._throwErrors) throw err
+      else return err
     }
 
+    /* TBD : not at all ready yet */
     /**
      * Fetch an item and parse it
      * @param {string} url
@@ -173,7 +175,7 @@ async getLinks(url){
     }
 
     /* These methods return the uncaught SolidApi responses which fail on error
-       unless _responseInterface is set, in which case they trap errors
+       unless throwErros is set to false, in which case they trap errors
        and send either a success response or an error response.
     */
     async itemExists(url,options){ return super.itemExists(url,options) }
@@ -182,20 +184,21 @@ async getLinks(url){
     async createFolder(url,options){ return this._api("createFolder",url,options) }
     async createFile(url,options){ return this._api("createFile",url,options) }
 
-    async _api(method,url,options) {
-      if(!this._responseInterface) {
-        return super[method](url,options)
+
+    /* TBD : pass methods, not names of methods 
+    */
+    async _api(method,...args) {
+      if(this._throwErrors) {
+        return super[method](...args)
       }
       try {
-        let res = await super[method](url,options)
+        let res = await super[method](...args)
         return res
       }
       catch(e) {
         return e
       }
     }
-
-
 }
 
 export default SolidFileClient
