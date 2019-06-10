@@ -1,12 +1,12 @@
 ### Quick Start
 
-**Installing and Invoking**  [in the browser]() | [in nodejs]()
+* **Installing and Invoking**  [in the browser]() | [in nodejs]()
 
-**Choosing an error interface**  [catch interface]() |  [response interface]()
+* **Choosing an error interface**  [catch interface]() |  [response interface]()
 
-**Handling duplicates, .acl, and .meta** [duplicatesOk]() | [noLinks]()
+* **Handling duplicates, .acl, and .meta** [duplicatesOk]() | [noLinks]()
 
-**High-level methods**
+* **High-level methods**<pre>
 
   CONNECT   login, popupLogin, checkSession, logout
   CREATE    createFolder, createFile, copyFolder, copyFile
@@ -14,12 +14,14 @@
   UPDATE    updateFile, sparqlUpdate, move, rename
   DELETE    deleteFile, deleteFolder
   UTILITIES upload,download, getHead, getOptions, itemExists, getLinks
-
-**Low-level methods**
+</pre>
+* **Low-level methods**
 
   post, put, get, patch, delete 
+
   
-QUESTIONS
+### QUESTIONS FOR Alain and Otto
+
   * what other low-level methods should be in public documentation?
 
 NOTES :
