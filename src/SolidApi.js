@@ -239,13 +239,22 @@ class SolidAPI {
   async readFolder (url) {
     const response = await this.get(url).catch(res => res)
     if(!response.ok) return response
-    const text = await response.text()
-    const graph = await text2graph(text, url, 'text/turtle')
-    return {
-      ok : true,
-      status : 200,
-      body : processFolder(graph, url, text)
-    }
+    try {
+      const text = await response.text()
+      const graph = await text2graph(text, url, 'text/turtle')
+      return {
+        ok : true,
+        status : 200,
+        body : processFolder(graph, url, text)
+      }
+   }
+   catch(e){
+      throw {
+        ok : false,
+        status : 500,
+        statusText : "failed to parse folder turtle"
+      }
+   }
   }
 
   /**

@@ -46,3 +46,11 @@ JZ 2019-06-08 18:30 PDT
   * refactored readFile to use fetch rather than get
   * modified testApi to catch error status
   * all tests pass now
+
+JZ 2019-06-09 17:00 PDT
+  * made crud test work in both catch and response interfaces
+
+JZ 2019-06-09 19:00 PDT
+  * slight modification to SolidApi.readFolder to handle parse failures
+
+
