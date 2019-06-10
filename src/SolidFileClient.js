@@ -1,7 +1,8 @@
+import $rdf from 'rdflib'
 import SolidApi from './SolidApi'
 import folderUtils from './utils/folderUtils';
 
-const { guessFileType } = folderUtils
+const { guessFileType, text2graph } = folderUtils
 
 /** TODO
  * @typedef {Object} Session
@@ -31,6 +32,27 @@ class SolidFileClient extends SolidApi {
         this._responseInterface = responseInterface
         this.response = {}
     }
+
+async getLinks(url){
+  let iana    = 'http://www.iana.org/assignments/link-relations/'
+  let aclRel  = $rdf.sym(iana+"acl")
+  let metaRel = $rdf.sym(iana+"describedBy")
+  let store = $rdf.graph()
+  let fetcher = $rdf.fetcher(store,this._auth)
+  let r = await fetcher._fetch(url,{method:"HEAD"}).catch(e=>e)
+  if(!r.ok) return(r)
+  await fetcher.parseLinkHeader(r.headers.get('link'),$rdf.sym(url),url)
+  let acl  = store.any($rdf.sym(url),aclRel)
+  let meta = store.any($rdf.sym(url),metaRel)
+  return {
+    ok : true,
+    body : {
+    acl  : acl.value,
+    meta : meta.value
+    }
+  }
+}
+
 
     /**
      * Redirect the user to a login page
@@ -87,17 +109,6 @@ class SolidFileClient extends SolidApi {
     logout() {
         return this._auth.logout()
     }
-
-
-/*
-updateFile
-copyFile
-copyFolder
-fetchAndParse
-upload
-download
-*/
-
 
     /**
      * Fetch an item and reurn content as text,json,or blob as needed

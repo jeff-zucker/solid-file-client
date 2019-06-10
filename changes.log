@@ -53,4 +53,12 @@ JZ 2019-06-09 17:00 PDT
 JZ 2019-06-09 19:00 PDT
   * slight modification to SolidApi.readFolder to handle parse failures
 
+JZ 2019-06-09 22:00 PDT
+  * added getLinks() temporarily in SolidFileClient.js
+  * this does a head request using rdflib
+    then uses rdflib to parse the Link header
+    returns a hash containing the aboslute address of the .acl and .meta links
+  * the addresses can then be used to delete,copy,etc. the .acl and .meta files
+    using normal methods
+
 
