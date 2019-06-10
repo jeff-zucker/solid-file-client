@@ -134,19 +134,13 @@ class SolidFileClient extends SolidApi {
           else if(res.text) {
             res.text().then( text => {
               return resolve( {ok:true, status:200, body:text } )
-            }).catch( err =>{resolve(self._isoErr(err))} )
+            }).catch( err =>{resolve(self._err(err))} )
           }
           else resolve(res)
-        }).catch( err => {resolve(self._isoErr(err))} )
+        }).catch( err => {resolve(self._err(err))} )
       })
     }
 
-    _isoErr(err){
-      if(this._throwErrors) throw err
-      else return err
-    }
-
-    /* TBD : not at all ready yet */
     /**
      * Fetch an item and parse it
      * @param {string} url
@@ -154,16 +148,24 @@ class SolidFileClient extends SolidApi {
      * @returns {Promise<Object|RDFLIB.GRAPH}
      */
     async fetchAndParse(url, contentType) {
-        if (!contentType) {
-            contentType = this.folderUtils.guessFileType(url)
+      contentType = contentType || folderUtils.guessFileType(url) || "text/turtle"
+      if( contentType==='application/json' ){
+        try {
+          let res = await this.fetch(url).catch(e=>{return this._err(e)})
+          const obj = await JSON.parse(res);
+          return({
+              ok : true,
+            body : obj
+          })
         }
-  
-        const response = await this.fetch(url)
-        if (!response.ok) {
-            throw new Error(`Fetch for ${url} failed with status code ${response.status}: ${response.statusText}`)
-        }
-        // TODO: Parse response
-        return response
+        catch(e) { return this._err(e) }
+      }
+      let store = $rdf.graph()
+      let fetcher = $rdf.fetcher(store,this._auth)
+      await fetcher.load(url).catch(e=>{return this._err(e)})
+      return store
+        ? { ok:true, body:store }
+        : { ok:false }
     }
 
     _err (e) {
@@ -183,7 +185,7 @@ class SolidFileClient extends SolidApi {
     async deleteFolder(url,options){ return this._api("delete",url,options) }
     async createFolder(url,options){ return this._api("createFolder",url,options) }
     async createFile(url,options){ return this._api("createFile",url,options) }
-
+    
 
     /* TBD : pass methods, not names of methods 
     */

@@ -2,20 +2,21 @@ import auth       from 'solid-auth-cli';
 import $rdf       from 'rdflib';
 import FileClient from '../'
 
-let fc_interface = "response"
-// let fc_interface = "catch"
+let throwErrors = false
+// let throwErrors = true
 
-const fc = fc_interface==="response"
-  ? new FileClient(auth,{throwsErrors:false})
-  : new FileClient(auth)
+const fc = throwErrors
+  ? new FileClient(auth)
+  : new FileClient(auth,{throwErrors:false})
 
 const base   = "file://" + process.cwd()
 const parent = base   + "/test-folder/"
-const folder = parent + fc_interface+"/"
+const folder = parent + (throwErrors ? "throwErrorsTrue" : "throwErrorsFalse")+"/"
 const file   = folder + "test.ttl"
 const expectedText = "<> a <#test>."
 const badFile ="https://example.com/badurl"
 const badFolder= badFile+"/"
+const profile = "https://jeffz.solid.community/profile/card#me"
 
 beforeAll( async () => {
   await fc.deleteFolderRecursively(parent).catch(e=>e)
@@ -46,6 +47,12 @@ beforeAll( async () => {
   test('readFile',()=>{ return expect(
     readFile(file)
   ).resolves.toBe(expectedText) });
+
+  /* fetchAndParse()
+  */
+  test('readFile',()=>{ return expect(
+    fetchAndParse(profile)
+  ).resolves.toBe(true) });
 
   /* readFile() on non-existant resource
   */
@@ -89,44 +96,61 @@ beforeAll( async () => {
     testInterface("deleteFolder",folder)
   ).resolves.toBe(200) });
 
+async function fetchAndParse(profile) {
+  if(throwErrors){
+  }
+  else {
+    let res = await fc.fetchAndParse(profile,"text/turtle")
+    if(!res.ok) return false
+    let store = res.body
+    let subject = store.sym(profile)
+    let predicate = store.sym("http://xmlns.com/foaf/0.1/name")
+    let name = store.any(subject,predicate)
+    if(!name) return false
+    return  name.value.match("Jeff Zucker") ? true : false
+  }
+}
+
 async function itemExists(url) {
    return fc.itemExists(url)
 }
 async function readFolder(url) {
-  if(fc_interface==="response"){
-    let res = await fc.readFolder(url)
-    if(res.ok) return res.body.files[0].url
-    return res.status
-  }
-  else if(fc_interface==="catch"){
+  if(throwErrors){
     let res = await fc.readFolder(url).catch(e=>{return e.status})
     if(res.ok) return res.body.files[0].url
     return res.status  // ???? is not trapped by catch
   }
+  else {
+    let res = await fc.readFolder(url)
+    if(res.ok) return res.body.files[0].url
+    return res.status
+  }
 }
 async function readFile(url) {
-  if(fc_interface==="response"){
-    let res = await fc.readFile(url)
-    if(!res.ok) return res.status
-    else return res.body
-  }
-  else if(fc_interface==="catch"){
+  if(throwErrors){
     let res = await fc.get(url).catch(e=>{return e.status})
     if(res.ok) return await res.text()
     return res  //  ???? is not trapped by catch
   }
+  else {
+    let res = await fc.readFile(url)
+    if(!res.ok) return res.status
+    else return res.body
+  }
 }
 
 async function testInterface(method,url,content) {
-  if(fc_interface==="response"){
+  if(throwErrors){
+    try {
+      let res = await fc[method](url,content)
+      return res.status
+    }
+    catch(e) {
+      return e.status
+    }
+  }
+  else {
     let res = await fc[method](url,content)
     return res.status
-  }
-  try {
-    let res = await fc[method](url,content)
-    return res.status
-  }
-  catch(e) {
-    return e.status
   }
 }
