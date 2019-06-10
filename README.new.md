@@ -1,6 +1,6 @@
 ### Quick Start
 
-* **Installing and Invoking**  [in the browser]() | [in nodejs]()
+* **Installing and Invoking**  [in the browser](#installBrowser) | [in nodejs](#installNode)
 
 * **Choosing an error interface**  [catch interface]() |  [response interface]()
 
@@ -27,3 +27,7 @@
   * deleteFolder = recursive delete
   * updateFile = replace file
   * sparqlUpdate = patch with sparql params
+
+### <a href="" name="installBrowser">Installing and Invoking in the Browser</a>
+
+### <a href="" name="installNode">Installing and Invoking in NodeJS</a>
