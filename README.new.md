@@ -6,7 +6,7 @@
 
 * **Handling duplicates, .acl, and .meta** [duplicatesOk]() | [noLinks]()
 
-* **High-level methods**<pre>  CONNECT   login, popupLogin, checkSession, logout
+* **High-level methods**<pre>CONNECT   login, popupLogin, checkSession, logout
   CREATE    createFolder, createFile, copyFolder, copyFile
   READ      readFolder, readFile, fetchAndParse
   UPDATE    updateFile, sparqlUpdate, move, rename
