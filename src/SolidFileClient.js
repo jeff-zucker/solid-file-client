@@ -176,6 +176,7 @@ async getLinks(url){
        unless _responseInterface is set, in which case they trap errors
        and send either a success response or an error response.
     */
+    async itemExists(url,options){ return super.itemExists(url,options) }
     async deleteFile(url,options){ return this._api("delete",url,options) }
     async deleteFolder(url,options){ return this._api("delete",url,options) }
     async createFolder(url,options){ return this._api("createFolder",url,options) }

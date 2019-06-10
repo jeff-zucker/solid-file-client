@@ -2,8 +2,8 @@ import auth       from 'solid-auth-cli';
 import $rdf       from 'rdflib';
 import FileClient from '../'
 
-//let fc_interface = "response"
-let fc_interface = "catch"
+let fc_interface = "response"
+// let fc_interface = "catch"
 
 const fc = fc_interface==="response"
   ? new FileClient(auth,{responseInterface:true})
@@ -14,6 +14,8 @@ const parent = base   + "/test-folder/"
 const folder = parent + fc_interface+"/"
 const file   = folder + "test.ttl"
 const expectedText = "<> a <#test>."
+const badFile ="https://example.com/badurl"
+const badFolder= badFile+"/"
 
 beforeAll( async () => {
   await fc.deleteFolderRecursively(parent).catch(e=>e)
@@ -45,24 +47,29 @@ beforeAll( async () => {
     readFile(file)
   ).resolves.toBe(expectedText) });
 
-  /* createFolder() with non-existant parent
-  */
-  test('createFolder with non-existant parent returns 404',()=>{ return expect(
-    testInterface("createFolder",folder+"/junk/bad/bad")
-  ).resolves.toBe(404) });
-
   /* readFile() on non-existant resource
   */
   test('readFile on non-existant URL returns 404',()=>{ return expect(
-    readFile("https://example.com/badurl")
+    readFile(badFile)
   ).resolves.toBe(404) });
 
   /* readFolder() on non-existant resource
   */
   test('readFolder on non-exitant folder returns 404',()=>{ return expect(
-    readFolder("https://example.com/badurl/")
+    readFolder(badFolder)
   ).resolves.toBe(404) });
 
+  /* itemExists returns true on existing resource
+  */
+  test('itemExists returns true on existing resource',()=>{ return expect(
+    itemExists(folder)
+  ).resolves.toBe(true) });
+
+  /* itemExists returns false on non-existing resource
+  */
+  test('itemExists returns true on existing resource',()=>{ return expect(
+    itemExists(badFolder)
+  ).resolves.toBe(false) });
 
   /* deleteFolder() on non-empty folder
   */
@@ -82,6 +89,9 @@ beforeAll( async () => {
     testInterface("deleteFolder",folder)
   ).resolves.toBe(200) });
 
+async function itemExists(url) {
+   return fc.itemExists(url)
+}
 async function readFolder(url) {
   if(fc_interface==="response"){
     let res = await fc.readFolder(url)
