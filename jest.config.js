@@ -3,12 +3,14 @@
 
 module.exports = {
 
-  // The test environment that will be used for testing
-  // added by Jeff
+// added by Jeff
   testEnvironment: "node",
+  collectCoverageFrom: ["src/**/*.js"],
 
-  // added by Otto
+// added by Otto
   globalSetup: "./tests/setup.js",
+
+// not used
 
   // All imported modules in your tests should be mocked automatically
   // automock: false,

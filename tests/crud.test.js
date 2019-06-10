@@ -2,24 +2,35 @@ import auth       from 'solid-auth-cli';
 import $rdf       from 'rdflib';
 import FileClient from '../'
 
+//let fc_interface = "response"
+let fc_interface = "catch"
+
+const fc = fc_interface==="response"
+  ? new FileClient(auth,{responseInterface:true})
+  : new FileClient(auth)
+
 const base   = "file://" + process.cwd()
 const parent = base   + "/test-folder/"
-const folder = parent + "easy/"
+const folder = parent + fc_interface+"/"
 const file   = folder + "test.ttl"
 const expectedText = "<> a <#test>."
 
-const fc = new FileClient(auth);
+beforeAll( async () => {
+  await fc.deleteFolderRecursively(parent).catch(e=>e)
+  await fc.createFolder(parent).catch(e=>e)
+})
+
 
   /* createFolder()
   */
   test('createFolder',()=>{ return expect(
-    testApi("createFolder",folder)
+    testInterface("createFolder",folder)
   ).resolves.toBe(201) });
 
   /* createFile()
   */
   test('createFile',()=>{ return expect(
-    testApi('createFile',file,expectedText)
+    testInterface('createFile',file,expectedText)
   ).resolves.toBe(201) });
 
   /* readFolder()
@@ -37,7 +48,7 @@ const fc = new FileClient(auth);
   /* createFolder() with non-existant parent
   */
   test('createFolder with non-existant parent returns 404',()=>{ return expect(
-    testApi("createFolder",folder+"/junk/bad/bad")
+    testInterface("createFolder",folder+"/junk/bad/bad")
   ).resolves.toBe(404) });
 
   /* readFile() on non-existant resource
@@ -56,35 +67,51 @@ const fc = new FileClient(auth);
   /* deleteFolder() on non-empty folder
   */
   test('deleteFolder on non-empty folder returns 409',()=>{ return expect(
-    testApi("delete",folder)
+    testInterface("delete",folder)
   ).resolves.toBe(409) });
 
   /* deleteFile()
   */
   test('deleteFile',()=>{ return expect(
-    testApi("delete",file)
+    testInterface("delete",file)
   ).resolves.toBe(200) });
 
   /* deleteFolder()
   */
   test('deleteFolder',()=>{ return expect(
-    testApi("delete",folder)
+    testInterface("delete",folder)
   ).resolves.toBe(200) });
 
-async function fetchAndParse(url) {
-  let res = fc.fetchAnd
-}
 async function readFolder(url) {
-  let res = await fc.readFolder(url)
-  if(res.ok) return res.body.files[0].url
-  return res.status
+  if(fc_interface==="response"){
+    let res = await fc.readFolder(url)
+    if(res.ok) return res.body.files[0].url
+    return res.status
+  }
+  else if(fc_interface==="catch"){
+    let res = await fc.readFolder(url).catch(e=>{return e.status})
+    if(res.ok) return res.body.files[0].url
+    return res.status  // ???? is not trapped by catch
+  }
 }
 async function readFile(url) {
-  let res = await fc.readFile(url)
-  if(!res.ok) return res.status
-  else return res.body
+  if(fc_interface==="response"){
+    let res = await fc.readFile(url)
+    if(!res.ok) return res.status
+    else return res.body
+  }
+  else if(fc_interface==="catch"){
+    let res = await fc.get(url).catch(e=>{return e.status})
+    if(res.ok) return await res.text()
+    return res  //  ???? is not trapped by catch
+  }
 }
-async function testApi(method,url,content) {
+
+async function testInterface(method,url,content) {
+  if(fc_interface==="response"){
+    let res = await fc[method](url,content)
+    return res.status
+  }
   try {
     let res = await fc[method](url,content)
     return res.status

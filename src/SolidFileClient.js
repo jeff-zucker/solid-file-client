@@ -25,9 +25,10 @@ class SolidFileClient extends SolidApi {
      * Crete a new SolidFileClient
      * @param {SolidAuthClient,RdfLib} auth, rdflib
      */
-    constructor(auth) {
+    constructor(auth,responseInterface) {
         super(auth.fetch.bind(auth))
         this._auth = auth
+        this._responseInterface = responseInterface
         this.response = {}
     }
 
@@ -105,9 +106,13 @@ download
      * @returns {Promise<string|object|blob}
      */
     async readFile(url,request){
-      return new Promise(resolve=>{
+      let self=this
+      return new Promise((resolve,reject)=>{
         this.fetch(url,request).then( (res) => {
-          if(!res.ok) { resolve(res)  }
+          if(!res.ok) {
+            if(self._responseInterface) resolve(res)  
+            else reject(res)
+          }
           let type = res.headers.get('content-type')
           if(type.match(/(image|audio|video)/)){
             res.buffer().then( blob => {
@@ -117,19 +122,17 @@ download
           else if(res.text) {
             res.text().then( text => {
               return resolve( {ok:true, status:200, body:text } )
-            }).catch( err =>{resolve(err)} )
+            }).catch( err =>{resolve(self._isoErr(err))} )
           }
           else resolve(res)
-        }).catch( err => {resolve(err)} )
+        }).catch( err => {resolve(self._isoErr(err))} )
       })
     }
 
-    async getFolder(url,options){
-      let res = this.readFolder(url,options).catch(e=>{return 88})
-      if(typeof res=="undefined") return 77
-      return res
+    _isoErr(err){
+      if(this._responseInterface) return err
+      else throw err
     }
-
 
     /**
      * Fetch an item and parse it
@@ -157,6 +160,28 @@ download
         statusText : e
       }
     }
+
+    /* These methods return the uncaught SolidApi responses which fail on error
+       unless _responseInterface is set, in which case they trap errors
+       and send either a success response or an error response.
+    */
+    async delete(url,options){ return this._api("delete",url,options) }
+    async createFolder(url,options){ return this._api("createFolder",url,options) }
+    async createFile(url,options){ return this._api("createFile",url,options) }
+
+    async _api(method,url,options) {
+      if(!this._responseInterface) {
+        return super[method](url,options)
+      }
+      try {
+        let res = await super[method](url,options)
+        return res
+      }
+      catch(e) {
+        return e
+      }
+    }
+
 
 }
 
