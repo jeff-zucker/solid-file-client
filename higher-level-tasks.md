@@ -25,7 +25,8 @@ I will use the word "shim" to mean the SolidFileClient method that calls the app
         * inbox, maybe
     * how to handle write methods
         * this is complex, more here later
-    * how should folder trees work? copy(A,B) entirely replaces B with A? OR merges them, replacing B with A as needed?
+    * how should folder trees work? copy(A,B) entirely replaces B with A? 
+      OR merges them, replacing B with A as needed?
 
 ## Shims TBD
     move
