@@ -61,4 +61,8 @@ JZ 2019-06-09 22:00 PDT
   * the addresses can then be used to delete,copy,etc. the .acl and .meta files
     using normal methods
 
-
+OA 2019-06-11 03:00 PDT
+  * to be consistent fetch now throws if response.ok is set to false
+    I've updated methods in SolidFileClient to use get and handle thrown errors
+  * added some tests for SolidApi
+  * added tests for apiUtils 

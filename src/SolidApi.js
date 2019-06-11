@@ -36,6 +36,7 @@ class SolidAPI {
    */
   fetch (url, options) {
     return this._fetch(url, options)
+      .then(this._assertResponseOk)
   }
 
   /**
@@ -49,7 +50,6 @@ class SolidAPI {
       method: 'GET',
       ...options,
     })
-      .then(this._assertResponseOk)
   }
 
   /**
@@ -63,7 +63,6 @@ class SolidAPI {
       method: 'DELETE',
       ...options,
     })
-      .then(this._assertResponseOk)
   }
 
   /**
@@ -77,7 +76,6 @@ class SolidAPI {
       method: 'POST',
       ...options,
     })
-      .then(this._assertResponseOk)
   }
 
   /**
@@ -91,7 +89,6 @@ class SolidAPI {
       method: 'PUT',
       ...options,
     })
-      .then(this._assertResponseOk)
   }
 
   /**
@@ -105,7 +102,6 @@ class SolidAPI {
       method: 'PATCH',
       ...options,
     })
-      .then(this._assertResponseOk)
   }
 
   /**
@@ -119,7 +115,6 @@ class SolidAPI {
       method: 'HEAD',
       ...options,
     })
-      .then(this._assertResponseOk)
   }
 
   /**
@@ -133,7 +128,6 @@ class SolidAPI {
       method: 'OPTIONS',
       ...options,
     })
-      .then(this._assertResponseOk)
   }
 
   /**

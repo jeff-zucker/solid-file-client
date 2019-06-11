@@ -120,11 +120,7 @@ class SolidFileClient extends SolidApi {
      async readFile(url,request){
       let self=this
       return new Promise((resolve,reject)=>{
-        this.fetch(url,request).then( (res) => {
-          if(!res.ok) {
-            if(self._throwErrors) reject(res)
-            else resolve(res)  
-          }
+        this.get(url,request).then( (res) => {
           let type = res.headers.get('content-type')
           if(type.match(/(image|audio|video)/)){
             res.buffer().then( blob => {
