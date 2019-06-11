@@ -4,7 +4,7 @@ I propose calling the two kinds of methods "high-level" and "low-level".  The hi
 will always by default
 
  * replace rather than create duplicates
- * delete associated .acl and .meta files.
+ * copy, move, and delete associated .acl and .meta files.
  * return contents as a string, blob, or object; but never as a readableStream
 
 Whereas , in low-level methods, the first two are optional and the third (almost?) always returns a readableStream
