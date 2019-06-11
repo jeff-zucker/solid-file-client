@@ -40,3 +40,27 @@ Note : items in blue have been implemented and are in the tests
   readFile      returns content as a string or a blob depending on file type
   fetchAndParse returns content as an rdflib graph object or a JSON object depending on file type
   get           returns content as a readable stream
+
+# readFile(url)
+
+Fetches a resource at the given URL and
+returns its contents 
+
+
+/* readFile(url)
+*/
+
+The readFile method fetches a local or remote resource and,
+when successful, returns the resource's content as a string
+or, in the case of images, and other binary files, a blob.
+
+  let res = await fileClient.readFile(url)
+  if(!res.ok) show_err(res)
+  else show( res.body )
+
+To fetch and return a parsed graph of RDF content, see fetchAndParse()
+
+To fetch and return the content as a ReadableStream, see getFile().  
+
+                       
+  

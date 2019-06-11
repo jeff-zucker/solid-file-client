@@ -11,19 +11,13 @@ const fc = throwErrors
 
 const base   = "file://" + process.cwd()
 const parent = base   + "/test-folder/"
-const folder = parent + (throwErrors ? "throwErrorsTrue" : "throwErrorsFalse")+"/"
+const folder = parent + (throwErrors ? "throwErrors" : "default")+"/"
 const file   = folder + "test.ttl"
 const expectedText = "<> a <#test>."
 const expectedText2 = "<> a <#revisedtest>."
 const badFile ="https://example.com/badurl"
 const badFolder= badFile+"/"
 const profile = "https://jeffz.solid.community/profile/card#me"
-
-beforeAll( async () => {
-  await fc.deleteFolderRecursively(parent).catch(e=>e)
-  await fc.createFolder(parent).catch(e=>e)
-})
-
 
   /* createFolder()
   */
@@ -159,10 +153,10 @@ async function readFile(url) {
   }
 }
 
-async function testInterface(method,url,content) {
+async function testInterface(method,...args) {
   if(throwErrors){
     try {
-      let res = await fc[method](url,content)
+      let res = await fc[method](...args)
       return res.status
     }
     catch(e) {
@@ -170,7 +164,7 @@ async function testInterface(method,url,content) {
     }
   }
   else {
-    let res = await fc[method](url,content)
+    let res = await fc[method](...args)
     return res.status
   }
 }
