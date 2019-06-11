@@ -10,14 +10,14 @@ Note : items in blue have been implemented and are in the tests
 
 * **High-level methods**<pre>**CONNECT**   [login](), [popupLogin](), [checkSession](), [logout]()
   **CREATE**    [createFolder](), [createFile](), [copyFolder], [copyFile]
-  **READ**      [readFolder](), [readFile](), [fetchAndParse]
-  **UPDATE**    [updateFile], [sparqlUpdate], [move], [rename]
+  **READ**      [readFolder](), [readFile](), [fetchAndParse]()
+  **UPDATE**    [updateFile](), [sparqlUpdate], [move]()
   **DELETE**    [deleteFile](), [deleteFolder](), [deleteFolderRecursively]
-  **UTILITIES** [upload],[download], [itemExists]()</pre>
+  **UTILITIES** [getHead], [getLinks], [itemExists]()</pre>
 
 * **Low-level methods**
 
-  post, put, get, patch, delete, head, options, getLinks
+  post, put, get, patch, delete, options
 
   
 ### QUESTIONS FOR Alain and Otto
