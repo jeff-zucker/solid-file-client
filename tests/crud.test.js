@@ -6,8 +6,8 @@ let throwErrors = false
 // let throwErrors = true
 
 const fc = throwErrors
-  ? new FileClient(auth)
-  : new FileClient(auth,{throwErrors:false})
+  ? new FileClient(auth,{throwErrors:true})
+  : new FileClient(auth)
 
 const base   = "file://" + process.cwd()
 const parent = base   + "/test-folder/"

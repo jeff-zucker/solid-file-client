@@ -3,7 +3,7 @@ import SolidApi from './SolidApi'
 import folderUtils from './utils/folderUtils';
 
 const { guessFileType, text2graph } = folderUtils
-const defaultInitOptions = { throwErrors:true }
+const defaultInitOptions = { throwErrors:false }
 const defaultPopupUri = 'https://solid.community/common/popup.html'
 
 /** TODO
