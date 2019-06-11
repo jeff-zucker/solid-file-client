@@ -32,7 +32,7 @@ const getParentUrl = url => {
  */
 const getItemName = url => {
     url = removeSlashesAtEnd(url)
-    return url.substr(url.lastIndexOf('/'))
+    return url.substr(url.lastIndexOf('/') + 1)
 }
 
 /**

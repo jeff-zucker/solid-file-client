@@ -119,11 +119,7 @@ async getLinks(url){
     async readFile(url,request){
       let self=this
       return new Promise((resolve,reject)=>{
-        this.fetch(url,request).then( (res) => {
-          if(!res.ok) {
-            if(self._responseInterface) resolve(res)  
-            else reject(res)
-          }
+        this.get(url,request).then( (res) => {
           let type = res.headers.get('content-type')
           if(type.match(/(image|audio|video)/)){
             res.buffer().then( blob => {
@@ -156,12 +152,15 @@ async getLinks(url){
             contentType = this.folderUtils.guessFileType(url)
         }
   
-        const response = await this.fetch(url)
-        if (!response.ok) {
-            throw new Error(`Fetch for ${url} failed with status code ${response.status}: ${response.statusText}`)
+        try {
+          const response = await this.get(url)
+          // TODO: Parse response
+          return response
         }
-        // TODO: Parse response
-        return response
+        catch (e) {
+          return this._isoErr(e)
+          // throw new Error(`Fetch for ${url} failed with status code ${response.status}: ${response.statusText}`)
+        }
     }
 
     _err (e) {
