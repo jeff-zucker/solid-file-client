@@ -1,4 +1,4 @@
-#Tasks for "high-level" methods of solid-file-client v1.0.0
+# Tasks for "high-level" methods of solid-file-client v1.0.0
 
 I propose calling the two kinds of methods "high-level" and "low-level".  The high-level methods
 will always by default replace rather than create duplicates, delete associated .acl and .meta files.
@@ -11,50 +11,50 @@ finishing the high-level methods.
 
 These are high-level methods as I see them
 
-  createFolder, createFile, readFolder, readFile, fetchAndParse, updateFile, move,
-  copyFile, copyFolder, deleteFolder,  deleteFile, deleteFolderRecursively,
-  getHead, getLinks, itemExists, login, popupLogin, checkSession, logout
+    createFolder, createFile, readFolder, readFile, fetchAndParse, updateFile, move,
+    copyFile, copyFolder, deleteFolder,  deleteFile, deleteFolderRecursively,
+    getHead, getLinks, itemExists, login, popupLogin, checkSession, logout
 
 
 I will use the word "shim" to mean the SolidFileClient method that calls the appropriate SolidApi method(s) and sends responses using the appropriate interface (throwErrors or not)
 
 ## Points needing deciding
 
-  * resources to protect from deletion
-   * profile, settings, and root yes
-   * inbox, maybe
-  * how to handle write methods
-   * this is complex, more here later
-  * how should folder trees work? copy(A,B) entirely replaces B with A? OR merges them, replacing B with A as needed?
+    * resources to protect from deletion
+        * profile, settings, and root yes
+        * inbox, maybe
+    * how to handle write methods
+        * this is complex, more here later
+    * how should folder trees work? copy(A,B) entirely replaces B with A? OR merges them, replacing B with A as needed?
 
 ## Shims TBD
-  move
-  getHead
-  getLinks
-  copyFile
-  copyFolder
-  deleteFolderRecursively
-  .acl and .meta options when implemented
+    move
+    getHead
+    getLinks
+    copyFile
+    copyFolder
+    deleteFolderRecursively
+    .acl and .meta options when implemented
 
 ## Shims done, tests TBD
-  createFolder(preExistingFolder)
-  createFile(preExistingFile)
-  copyFile(preExistingFile)
-  copyFolder(preExistingFolder)
+    createFolder(preExistingFolder)
+    createFile(preExistingFile)
+    copyFile(preExistingFile)
+    copyFolder(preExistingFolder)
 
 ## Shims done and Tests passed in both interfaces
-  login
-  popupLogin
-  checkSession
-  logout
-  createFolder
-  createFile
-  readFolder, readFolder(nonExistingFolder), 
-  readFile, readFile(nonExistingFile)
-  fetchAndParse
-  updateFile
-  deleteFolder(), deleteFolder(nonEmptyFolder)
-  delete(file)
-  itemExists, itemExists(nonExistingItem)
+    login
+    popupLogin
+    checkSession
+    logout
+    createFolder
+    createFile
+    readFolder, readFolder(nonExistingFolder), 
+    readFile, readFile(nonExistingFile)
+    fetchAndParse
+    updateFile
+    deleteFolder(), deleteFolder(nonEmptyFolder)
+    delete(file)
+    itemExists, itemExists(nonExistingItem)
 
 ## Documentation TBD
