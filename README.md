@@ -11,7 +11,7 @@ Note : items in blue have been implemented and are in the tests
 * **High-level methods**<pre>**CONNECT**   [login](), [popupLogin](), [checkSession](), [logout]()
   **CREATE**    [createFolder](), [createFile](), [copyFolder], [copyFile]
   **READ**      [readFolder](), [readFile](), fetchAndParse()
-  **UPDATE**    [updateFile], [sparqlUpdate], [move], [rename]
+  **UPDATE**    [updateFile](), [sparqlUpdate], [move], [rename]
   **DELETE**    [deleteFile](), [deleteFolder](), [deleteFolderRecursively]
   **UTILITIES** [upload],[download], [itemExists]()</pre>
 

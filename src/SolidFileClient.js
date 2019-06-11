@@ -181,10 +181,14 @@ class SolidFileClient extends SolidApi {
        and send either a success response or an error response.
     */
     async itemExists(url,options){ return super.itemExists(url,options) }
+    async createFile(url,content,contentType){ return this._api("createFile",url,content,contentType) }
+    async updateFile(url,content,contentType){ 
+      if( await this.itemExists(url) ){ await this.delete(url) }
+      return this._api("createFile",url,content,contentType) 
+    }
     async deleteFile(url,options){ return this._api("delete",url,options) }
     async deleteFolder(url,options){ return this._api("delete",url,options) }
     async createFolder(url,options){ return this._api("createFolder",url,options) }
-    async createFile(url,options){ return this._api("createFile",url,options) }
     
 
     /* TBD : pass methods, not names of methods 
