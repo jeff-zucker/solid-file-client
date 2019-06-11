@@ -58,3 +58,5 @@ I will use the word "shim" to mean the SolidFileClient method that calls the app
     itemExists, itemExists(nonExistingItem)
 
 ## Documentation TBD
+
+All of it.
