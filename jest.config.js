@@ -11,7 +11,7 @@ module.exports = {
   // coveragePathIgnorePatterns: [
   //   "/node_modules/"
   // ],
-  coveragePathIgnorePatterns: [  "/node_modules/", "src" ],
+  coveragePathIgnorePatterns: [  "/node_modules/" ],
 
 
 // added by Otto

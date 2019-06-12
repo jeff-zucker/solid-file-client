@@ -27,7 +27,7 @@ I will use the word "shim" to mean the SolidFileClient method that calls the app
 
 ## Points needing deciding
 
-  (see [the github issue on write methods](https://github.com/jeff-zucker/solid-file-client/issues/49)
+  (see [the github issue on write methods](https://github.com/jeff-zucker/solid-file-client/issues/49))
 
 
 ## Shims & Tests TBD

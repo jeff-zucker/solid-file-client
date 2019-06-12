@@ -1,6 +1,7 @@
 import auth from '../node_modules/solid-auth-cli';
 import $rdf from '../node_modules/rdflib';
-import FC   from '../dist/node/solid-file-client.bundle.js'
+//import FC   from '../dist/node/solid-file-client.bundle.js'
+import FC   from '../src/index.js'
 
 const base   = "file://" + process.cwd()
 const folder = base + "/test-folder/"
