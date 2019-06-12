@@ -43,15 +43,12 @@ class SolidFileClient extends SolidApi {
         let metaRel = $rdf.sym(iana+"describedBy")
         let store   = $rdf.graph()
         let fetcher = $rdf.fetcher(store,this._auth)
-        let r = await fetcher._fetch(url,{method:"HEAD"}).catch(e=>e)
-        if(!r.ok) return(r)
+        let r = await fetcher._fetch(url,{method:"HEAD"}).catch(e=>{return this._err(e)})
+        if(!r.ok) return(this._err(r))
         await fetcher.parseLinkHeader(r.headers.get('link'),$rdf.sym(url),url)
         let acl  = store.any($rdf.sym(url),aclRel)
         let meta = store.any($rdf.sym(url),metaRel)
-        return {
-            ok : true,
-          body : { acl:acl.value, meta:meta.value }
-        }
+        return this._ok( { acl:acl.value, meta:meta.value } )
     }
 
 
@@ -149,26 +146,35 @@ class SolidFileClient extends SolidApi {
         try {
           let res = await this.fetch(url).catch(e=>{return this._err(e)})
           const obj = await JSON.parse(res);
-          return({
-              ok : true,
-            body : obj
-          })
+          return(
+            this._throwErrors ? obj : { ok : true, body : obj }
+          )
         }
         catch(e) { return this._err(e) }
       }
       let store = $rdf.graph()
       let fetcher = $rdf.fetcher(store,this._auth)
       await fetcher.load(url).catch(e=>{return this._err(e)})
-      return store
-        ? { ok:true, body:store }
-        : { ok:false }
+      if(this._throwErrors) return store
+      else return store ? { ok:true, body:store } : { ok:false }
     }
 
     _err (e) {
-      return {
+      let err = {
         ok : false,
-        status : 500,
-        statusText : e
+        status : e.status || 500,
+        statusText : e.statusText || e
+      }
+      if(this._throwErrors) throw err
+      else return err
+    }
+    _ok (b) {
+      if(this._throwErrors)  return b
+      else return {
+        ok : true,
+        status :  200,
+        statusText : "OK",
+        body : b
       }
     }
 
@@ -176,8 +182,11 @@ class SolidFileClient extends SolidApi {
        unless throwErros is set to false, in which case they trap errors
        and send either a success response or an error response.
     */
-    async itemExists(url,options){ return super.itemExists(url,options) }
-    async createFile(url,content,contentType){ return this._api("createFile",url,content,contentType) }
+    async do(method,...args){ return super[method](url,options) }
+    async getHead(url,options){ return super.head(url,options) }
+    async createFile(url,content,contentType){ 
+      return this._api("createFile",url,content,contentType) 
+    }
     async updateFile(url,content,contentType){ 
       if( await this.itemExists(url) ){ await this.delete(url) }
       return this._api("createFile",url,content,contentType) 

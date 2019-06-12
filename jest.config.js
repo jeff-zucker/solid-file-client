@@ -5,7 +5,14 @@ module.exports = {
 
 // added by Jeff
   testEnvironment: "node",
-  collectCoverageFrom: ["src/**/*.js"],
+  // collectCoverageFrom: ["src/*.js"],
+
+  // An array of regexp pattern strings used to skip coverage collection
+  // coveragePathIgnorePatterns: [
+  //   "/node_modules/"
+  // ],
+  coveragePathIgnorePatterns: [  "/node_modules/", "src" ],
+
 
 // added by Otto
   globalSetup: "./tests/setup.js",
@@ -40,11 +47,6 @@ module.exports = {
 
   // The directory where Jest should output its coverage files
   // coverageDirectory: null,
-
-  // An array of regexp pattern strings used to skip coverage collection
-  // coveragePathIgnorePatterns: [
-  //   "/node_modules/"
-  // ],
 
   // A list of reporter names that Jest uses when writing coverage reports
   // coverageReporters: [

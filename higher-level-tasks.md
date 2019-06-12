@@ -41,14 +41,20 @@ I will use the word "shim" to mean the SolidFileClient method that calls the app
     * copy(A,B) entirely replaces B with A? 
     * OR merges them, replacing B with A as needed?
 
-## Shims TBD
+
+## Shims & Tests TBD
+    
     move
-    getHead
-    getLinks
     copyFile
     copyFolder
     deleteFolderRecursively
-    .acl and .meta options when implemented
+    .acl and .meta copy/delete
+
+## Refactor Shims to dual-interface TBD
+    login
+    popupLogin
+    checkSession
+    logout
 
 ## Shims done, tests TBD
     createFolder(preExistingFolder)
@@ -70,6 +76,8 @@ I will use the word "shim" to mean the SolidFileClient method that calls the app
     deleteFolder(), deleteFolder(nonEmptyFolder)
     delete(file)
     itemExists, itemExists(nonExistingItem)
+    getHead
+    getLinks
 
 ## Documentation TBD
 

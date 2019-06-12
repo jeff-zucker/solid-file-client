@@ -2,8 +2,8 @@ import auth       from 'solid-auth-cli';
 import $rdf       from 'rdflib';
 import FileClient from '../'
 
-let throwErrors = false
-// let throwErrors = true
+//let throwErrors = false
+let throwErrors = true
 
 const fc = throwErrors
   ? new FileClient(auth,{throwErrors:true})
@@ -55,6 +55,19 @@ const profile = "https://jeffz.solid.community/profile/card#me"
     updateFile(file,expectedText2)
   ).resolves.toBe(true) });
 
+  /* getHead()
+  */
+  test('getHead()',()=>{ return expect(
+    getHead(file)
+  ).resolves.toBe(true) });
+
+  /* getLinks()
+  */
+  test('getLinks()',()=>{ return expect(
+    getLinks(file)
+  ).resolves.toBe(true) });
+
+
   /* readFile() on non-existant resource
   */
   test('readFile on non-existant URL returns 404',()=>{ return expect(
@@ -102,6 +115,12 @@ const profile = "https://jeffz.solid.community/profile/card#me"
 
 async function updateFile(url,content){
   if(throwErrors){
+    try {
+      let res = await fc.updateFile(url,content);
+      res = await fc.readFile(url)
+      return res.body===content ? true : false
+    }
+    catch (e) { return false }
   }
   else {
     let res = await fc.updateFile(url,content);
@@ -111,8 +130,46 @@ async function updateFile(url,content){
     return res.body===content ? true : false
   }
 }
+async function getHead(url) {
+  if(throwErrors){
+    try {
+      let res = await fc.getHead(url)
+      if(res) return true
+    }
+    catch (e) { return false }
+  }
+  else {
+    let res = await fc.getHead(url)
+    if(res.ok) return true
+    return false
+  }
+}
+async function getLinks(url) {
+  if(throwErrors){
+    try {
+      let links = await fc.getLinks(url)
+      if(links.acl===url+".acl") return true
+      return false
+    }
+    catch (e) { return false }
+  }
+  else {
+    let res = await fc.getLinks(url)
+    if(res.body.acl===url+".acl") return true
+    return false
+  }
+}
 async function fetchAndParse(profile) {
   if(throwErrors){
+    try {
+      let store = await fc.fetchAndParse(profile,"text/turtle")
+      let subject = store.sym(profile)
+      let predicate = store.sym("http://xmlns.com/foaf/0.1/name")
+      let name = store.any(subject,predicate)
+      if(!name) return false
+      return  name.value.match("Jeff Zucker") ? true : false
+    }
+    catch (e) { return e }
   }
   else {
     let res = await fc.fetchAndParse(profile,"text/turtle")
