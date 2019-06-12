@@ -73,5 +73,10 @@ OA 2019-06-11 03:00 PDT
   * added some tests for SolidApi
   * added tests for apiUtils 
 
-JZ 2019-06-12 10:00 AM
+JZ 2019-06-12 10:00 PDT
   * removed the BeforeAll calls from crud.test.js
+
+JZ 2019-06-12 30:00 PDT
+  * added shims and tests for getHead and getLinks
+  * made throwErrors and default interface tests run in tandem
+

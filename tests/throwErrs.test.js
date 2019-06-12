@@ -2,8 +2,8 @@ import auth       from 'solid-auth-cli';
 import $rdf       from 'rdflib';
 import FileClient from '../'
 
-let throwErrors = false
-//let throwErrors = true
+//let throwErrors = false
+let throwErrors = true
 
 const fc = throwErrors
   ? new FileClient(auth,{throwErrors:true})
