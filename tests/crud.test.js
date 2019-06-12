@@ -1,6 +1,6 @@
 import auth       from 'solid-auth-cli';
 import $rdf       from 'rdflib';
-import FileClient from '../'
+import FileClient from '../src/index'
 
 let throwErrors = false
 //let throwErrors = true
