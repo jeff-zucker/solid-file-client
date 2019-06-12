@@ -58,12 +58,11 @@ class SolidFileClient extends SolidApi {
      * @returns {Promise<Session>}
      */
     async login(credentials) {
-        const session = await this._auth.currentSession()
-        if (session) {
-            return session
+        let session = await this._auth.currentSession()
+        if (!session) {
+            session = await this._auth.login(credentials)
         }
-
-        return this._auth.login(credentials)
+        return session.webId
     }
 
 
@@ -82,12 +81,27 @@ class SolidFileClient extends SolidApi {
         return session.webId
     }
 
+
+    /*  POSSIBLY NOT BACKWARDS-COMPATIBLE : now return webId not session
+          note currentSession() returns session
+               checkSession returns webId
+    */
     /**
-     * Return the currently active session if available
+     * Return the currently active webId if available
      * @returns {Session} or undefined if not logged in
      */
-    async checkSession() {
-        return await this._auth.currentSession()
+    async checkSession() { 
+        let session = await this._auth.currentSession()
+        if(session) return session.webId
+        else return undefined
+    }
+
+    /**
+     * Return the currently active webId if available
+     * @returns {Session} or undefined if not logged in
+     */
+    async currentSession() { 
+        return this._auth.currentSession()
     }
 
     /**

@@ -5,14 +5,12 @@ module.exports = {
 
 // added by Jeff
   testEnvironment: "node",
-  // collectCoverageFrom: ["src/*.js"],
+  // collectCoverageFrom: ["src/**/*.js"],
 
   // An array of regexp pattern strings used to skip coverage collection
   // coveragePathIgnorePatterns: [
   //   "/node_modules/"
   // ],
-  coveragePathIgnorePatterns: [  "/node_modules/" ],
-
 
 // added by Otto
   globalSetup: "./tests/setup.js",

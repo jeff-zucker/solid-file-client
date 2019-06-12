@@ -1,14 +1,9 @@
 import auth from '../node_modules/solid-auth-cli';
-import $rdf from '../node_modules/rdflib';
-//import FC   from '../dist/node/solid-file-client.bundle.js'
 import FC   from '../src/index.js'
 
-const base   = "file://" + process.cwd()
-const folder = base + "/test-folder/"
-const file   = folder + "test.ttl"
-const expectedText = "<> a <#test>."
+const myWebId="https://jeffz.solid.community/profile/card#me"
 
-const fc = new FC(auth,$rdf);
+const fc = new FC(auth)
 
   /* login()
   */
@@ -42,18 +37,23 @@ const fc = new FC(auth,$rdf);
 
 
 async function login() {
-  let session = await fc.login()
-  if(session) return true
-  else return false
+  let webId = await fc.login()
+  if(webId && webId===myWebId) return true
+  else return webId
 }
 async function popupLogin() {
-  let session = await fc.popupLogin()
-  if(session) return true
+  let webId = await fc.popupLogin()
+  if ( webId && webId===myWebId) return true
   else return false
 }
 async function checkSession() {
-  let session = await fc.checkSession()
-  if(session) return true
+  let webId = await fc.checkSession()
+  if ( webId && webId===myWebId) return true
+  else return false
+}
+async function currentSession() {
+  let wsession = await fc.currentSession()
+  if ( session && session.webId===myWebId) return true
   else return false
 }
 async function getCredentials() {
@@ -67,3 +67,6 @@ async function logout() {
   if(session) return false
   else return true
 }
+
+
+

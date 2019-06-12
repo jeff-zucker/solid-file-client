@@ -39,12 +39,6 @@ I will use the word "shim" to mean the SolidFileClient method that calls the app
     .acl and .meta copy/delete
     recursive creation of folders
 
-## Refactor Shims to dual-interface TBD
-    login
-    popupLogin
-    checkSession
-    logout
-
 ## Shims done, tests TBD
     createFolder(preExistingFolder)
     createFile(preExistingFile)
@@ -52,6 +46,10 @@ I will use the word "shim" to mean the SolidFileClient method that calls the app
     copyFolder(preExistingFolder)
 
 ## Shims done and Tests passed in both interfaces
+    login
+    popupLogin
+    checkSession
+    logout
     createFolder
     createFile
     readFolder, readFolder(nonExistingFolder), 
