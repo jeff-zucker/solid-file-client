@@ -27,19 +27,7 @@ I will use the word "shim" to mean the SolidFileClient method that calls the app
 
 ## Points needing deciding
 
-* resources to protect from deletion
-
-    * profile, settings, and root yes
-    * inbox, maybe
-
-* how to handle write methods
-
-    * this is complex, more here later
-
-* how should folder trees work? 
-
-    * copy(A,B) entirely replaces B with A? 
-    * OR merges them, replacing B with A as needed?
+  (see [the github issue on write methods](https://github.com/jeff-zucker/solid-file-client/issues/49)
 
 
 ## Shims & Tests TBD
