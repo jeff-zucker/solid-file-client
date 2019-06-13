@@ -1,28 +1,18 @@
-const fs = require("fs")
-const rimraf = require("rimraf");
+import { RootFolder } from './utils/TestFolderGenerator'
 
-const testContainerFolder = "./test-folder"
+const base = "file://" + process.cwd()
+const testContainer = new RootFolder(base, 'test-folder')
 
-function setup() {
-  return new Promise((resolve, reject) => {
-    // Remove the test folder
-    rimraf(testContainerFolder, err => {
-      try {
-        if (err) {
-          throw err
-        }
-        // Create an empty test folder
-        fs.mkdirSync(testContainerFolder)
-        return resolve()
-      }
-      catch (e) {
-        console.error("Error in setup.js: Couldn't reset test-folder")
-        console.trace()
-        console.error(e)
-        return reject(e)
-      }
-    })
-  })
+async function setup() {
+  try {
+    await testContainer.reset({ dryRun: false })
+  }
+  catch (e) {
+    console.error("Error in setup.js: Couldn't reset test-folder")
+    console.trace()
+    console.error(e)
+    throw e
+  }
 }
 
 export default setup
