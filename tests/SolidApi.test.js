@@ -1,39 +1,29 @@
 import auth from 'solid-auth-cli';
 import SolidApi from '../src/SolidApi'
 import apiUtils from '../src/utils/apiUtils'
+import { Folder, File, RootFolder } from './utils/TestFolderGenerator'
 
 const { LINK } = apiUtils
 
-const base = "file://" + process.cwd()
-const folder = base + "/test-folder/SolidApi/"
-const inexistentFolder = folder + "inexistent/"
-const inexistentFile = folder + "inexistent.abc"
-const turtleFile = folder + "turtle.ttl"
-const turtleFileContents = "<> a <#test>."
+const base = "file://" + process.cwd() + "/test-folder/"
+const container = new RootFolder(base, "SolidApi")
+const inexistentFolder = container.url + "inexistent/"
+const inexistentFile = container.url + "inexistent.abc"
 
 const api = new SolidApi(auth.fetch.bind(auth));
 
-// Create container
-beforeAll(() => api.createFolder(folder))
-beforeAll(() => api.createFile(turtleFile, turtleFileContents, 'text/turtle'))
+// Reset container
+beforeAll(() => container.reset())
 
 describe('core methods', () => {
-  const coreFolder = folder + "core/"
-  const coreFile = coreFolder + "turtle.ttl"
-  const content = "<> a <#test>."
+  const coreFile = new File("turtle.ttl", "<> a <#test>.")
   const contentType = "text/turtle"
 
-  const resetCoreFolder = async () => {
-    if (await api.itemExists(coreFolder)) {
-      await api.deleteFolderContents(coreFolder)
-    }
-    else {
-      await api.createFolder(coreFolder)
-    }
-    await api.createFile(coreFile, content, contentType)
-  }
+  const coreFolder = new RootFolder(container, 'core', [
+    coreFile
+  ])
 
-  beforeAll(resetCoreFolder)
+  beforeAll(() => coreFolder.reset())
 
   describe('getters', () => {
     const getters = {
@@ -43,30 +33,31 @@ describe('core methods', () => {
       // [Not yet supported by solid-auth-cli] options: api.options.bind(api),
     }
     for (const [name, method] of Object.entries(getters)) {
-      test(`${name} resolves with 200 for folder`, () => resolvesWithStatus(method(coreFolder), 200))
-      test(`${name} resolves with 200 for file`, () => resolvesWithStatus(method(coreFile), 200))
-      test(`${name} resolves with Content-Type text/turtle for folder`, () => resolvesWithHeader(method(coreFolder), "Content-Type", contentType))
-      test(`${name} resolves with Content-Type ${contentType} for file`, () => resolvesWithHeader(method(coreFile), "Content-Type", contentType))
+      test(`${name} resolves with 200 for folder`, () => resolvesWithStatus(method(coreFolder.url), 200))
+      test(`${name} resolves with 200 for file`, () => resolvesWithStatus(method(coreFile.url), 200))
+      test(`${name} resolves with Content-Type text/turtle for folder`, () => resolvesWithHeader(method(coreFolder.url), "Content-Type", contentType))
+      test(`${name} resolves with Content-Type ${contentType} for file`, () => resolvesWithHeader(method(coreFile.url), "Content-Type", contentType))
       test(`${name} rejects with 404 for inexistent folder`, () => rejectsWithStatus(method(inexistentFolder), 404))
       test(`${name} rejects with 404 for inexistent file`, () => rejectsWithStatus(method(inexistentFile), 404))
     }
   })
   
   describe('creators', () => {
-    const dataFolder = coreFolder + "post/"
-    const fileName = "post.ttl"
-    const fileUrl = dataFolder + fileName
-    const folderName = "folder/"
+    const usedFolder = new Folder('used-folder')
+    const usedFile = new File('used.ttl')
+
+    const postFolder = new RootFolder(coreFolder, 'post', [
+      usedFolder,
+      usedFile,
+    ])
+  
+    const newFile = "post.ttl"
+    const newFileUrl = postFolder.url + newFile
+    const newFolder = "folder/"
     const nestedFolderName = "nested/"
-    const nestedFolderUrl = dataFolder + "inexistent/path/" + nestedFolderName
+    const nestedFolderUrl = postFolder.url + "inexistent/path/" + nestedFolderName
     const nestedFileName = "nested.ttl"
-    const nestedFileurl = nestedFolderUrl + nestedFileName
-    const nestedFileUrl = dataFolder + "nested/inexisting/path/"
-    const folderUrl = dataFolder + folderName
-    const usedFileName = "used.ttl"
-    const usedFileUrl = dataFolder + usedFileName
-    const usedFolderName = "used-folder/"
-    const usedFolderUrl = dataFolder + usedFolderName
+
 
     const getPostOptions = (name) => {
       return {
@@ -77,41 +68,63 @@ describe('core methods', () => {
       }
     }
 
-    beforeAll(() => api.createFolder(dataFolder))
-    beforeEach(() => api.delete(fileUrl).catch(() => {}))
-    beforeEach(() => api.delete(folderUrl).catch(() => {}))
-    beforeEach(() => api.delete(nestedFolderUrl).catch(() => {}))
-    beforeEach(() => api.delete(nestedFileUrl).catch(() => {}))
-    beforeEach(() => api.post(dataFolder, getPostOptions(usedFileName)).catch(() => {}))
-    beforeEach(() => api.post(dataFolder, getPostOptions(usedFolderName)).catch(() => {}))
+    beforeEach(() => postFolder.reset({ dryRun: false }))
 
-    test('post resolves with 201 creating a new folder', () => resolvesWithStatus(api.post(dataFolder, getPostOptions(folderName)), 201))
-    test('post resolves with 201 creating a new file', () => resolvesWithStatus(api.post(dataFolder, getPostOptions(fileName)), 201))
+    test('post resolves with 201 creating a new folder', () => resolvesWithStatus(api.post(postFolder.url, getPostOptions(newFolder)), 201))
+    test('post resolves with 201 creating a new file', () => resolvesWithStatus(api.post(postFolder.url, getPostOptions(newFile)), 201))
     test('post rejects with 404 on inexistent container', () => rejectsWithStatus(api.post(nestedFolderUrl, getPostOptions(nestedFileName)), 404))
     // TODO: [Add when supported by solid-rest] test('post resolves with 201 writing to the location of an existing folder', () => resolvesWithStatus(api.post(dataFolder, getPostOptions(usedFolderName)), 201))
     // TODO: [Add when supported by solid-rest] test('post resolves with 201 writing to the location of an existing file', () => resolvesWithHeader(api.post(dataFolder, getPostOptions(usedFileName)), 201))
 
-    test('put resolves with 201 creating a new file', () => resolvesWithStatus(api.put(fileUrl), 201))
-    test('put resolves with 201 overwriting a file', () => resolvesWithStatus(api.put(usedFileUrl), 201))
+    test('put resolves with 201 creating a new file', () => resolvesWithStatus(api.put(newFileUrl), 201))
+    test('put resolves with 201 overwriting a file', () => resolvesWithStatus(api.put(usedFile.url), 201))
     // TODO: [Add when supported by solid-rest] test('put resolves with 201 creating a nested files', () => resolvesWithStatus(api.put(nestedFileUrl), 201))
   })
 })
 
 describe('composed methods', () => {
+  const composedFolder = new RootFolder(container, 'composed')
+  beforeAll(() => composedFolder.reset())
+
   describe('itemExists', () => {
-    test('itemExists resolves with true on existing file', () => expect(api.itemExists(turtleFile)).resolves.toBe(true))
-    test('itemExists resolves with true on existing folder', () => expect(api.itemExists(folder)).resolves.toBe(true))
+    // test('itemExists resolves with true on existing file', () => expect(api.itemExists(turtleFile)).resolves.toBe(true))
+    test('itemExists resolves with true on existing folder', () => expect(api.itemExists(container.url)).resolves.toBe(true))
     test('itemExists resolves with false on inexistent file', () => expect(api.itemExists(inexistentFile)).resolves.toBe(false))
     test('itemExists resolves with true on inexistent folder', () => expect(api.itemExists(inexistentFolder)).resolves.toBe(false))
   })
 
+  describe('delete', () => {
+    const childFile = new File('child-file.ttl')
+    const parentFile = new File('parent-file.ttl')
+    const grandChild = new Folder('grand-child')
+    const childOne = new Folder('child-one', [
+      grandChild,
+      childFile,
+    ])
+    const childTwo = new Folder('child-two')
+    const parentFolder = new Folder('parent', [
+      childOne,
+      childTwo,
+      parentFile,
+    ])
+    const deleteFolder = new RootFolder(composedFolder, 'delete', [
+      parentFolder,
+    ])
+
+    beforeEach(() => deleteFolder.reset())
+
+    describe('deleteFolderContents', () => {
+      // test.only('resolves with array on folder with contents', () => expect(api.deleteFolderContents(parentFolder.url)).resolves.toBe(expect.any(Array)))
+      test('resolves with empty array on folder without contents', () => expect(api.deleteFolderContents(grandChild.url)).resolves.toHaveLength(0))
+    })
+  })
   // TODO: Add remaining methods...
 })
 
 
 /**
  * @param {Promise<Response>} promise 
- * @param {number} status https://jestjs.io/docs/en/setup-teardown
+ * @param {number} status
  */
 function resolvesWithStatus(promise, status) {
   return expect(promise).resolves.toHaveProperty('status', status)
