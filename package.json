@@ -25,7 +25,7 @@
   ],
   "peerDependencies": {
     "rdflib": "^0.20.1",
-    "solid-auth-cli": "^1.0.0",
+    "solid-auth-cli": "^1.0.1",
     "solid-auth-client": "^2.3.0"
   },
   "devDependencies": {
@@ -43,7 +43,7 @@
     "rdflib": "^0.20.1",
     "regenerator-runtime": "^0.13.1",
     "rimraf": "^2.6.3",
-    "solid-auth-cli": "^1.0.0",
+    "solid-auth-cli": "^1.0.1",
     "webpack": "^4.27.1",
     "webpack-cli": "^3.1.2"
   }
