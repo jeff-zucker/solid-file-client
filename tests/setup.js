@@ -1,22 +1,28 @@
-import auth from 'solid-auth-cli';
-import SolidFileClient from '../src/index'
+const fs = require("fs")
+const rimraf = require("rimraf");
 
-const base = "file://" + process.cwd()
-const testContainerFolder = base + "/test-folder/"
-const fileClient = new SolidFileClient(auth)
+const testContainerFolder = "./test-folder"
 
-async function setup() {
-  try {
-    if (!(await fileClient.itemExists(testContainerFolder))) {
-      await fileClient.createFolder(testContainerFolder)
-    }
-    await fileClient.deleteFolderContents(testContainerFolder)
-  }
-  catch (e) {
-    console.error('Error while setting up the test cases')
-    console.error(e)
-    throw e
-  }
+function setup() {
+  return new Promise((resolve, reject) => {
+    // Remove the test folder
+    rimraf(testContainerFolder, err => {
+      try {
+        if (err) {
+          throw err
+        }
+        // Create an empty test folder
+        fs.mkdirSync(testContainerFolder)
+        return resolve()
+      }
+      catch (e) {
+        console.error("Error in setup.js: Couldn't reset test-folder")
+        console.trace()
+        console.error(e)
+        return reject(e)
+      }
+    })
+  })
 }
 
 export default setup
