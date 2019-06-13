@@ -1,6 +1,5 @@
 import auth       from 'solid-auth-cli';
-import $rdf       from 'rdflib';
-import FileClient from '../src/index'
+import FileClient from '../src/index.js'
 
 let throwErrors = false
 //let throwErrors = true
@@ -116,9 +115,9 @@ const profile = "https://jeffz.solid.community/profile/card#me"
 async function updateFile(url,content){
   if(throwErrors){
     try {
-      let res = await fc.updateFile(url,content);
+      await fc.updateFile(url,content);
       res = await fc.readFile(url)
-      return res.body===content ? true : false
+      return res===content ? true : false
     }
     catch (e) { return false }
   }

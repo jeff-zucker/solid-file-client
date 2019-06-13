@@ -140,7 +140,9 @@ class SolidFileClient extends SolidApi {
           }
           else if(res.text) {
             res.text().then( text => {
-              return resolve( {ok:true, status:200, body:text } )
+                res.body = text;
+                if(this._throwErrors) return resolve(res.body) 
+                else return resolve( res )
             }).catch( err =>{resolve(self._err(err))} )
           }
           else resolve(res)
