@@ -1,116 +1,134 @@
 import auth       from 'solid-auth-cli';
 import FileClient from '../src/index.js'
 
-let throwErrors = false
-//let throwErrors = true
+let cfg
+
+// choose error interface (throw/response)
+   let throwErrors = false
+// let throwErrors = true
+
+// choose the storage type 
+  let scheme = "app://ls"
+//let scheme = "file://" 
+//let scheme = "https://" 
 
 const fc = throwErrors
   ? new FileClient(auth,{throwErrors:true})
   : new FileClient(auth)
 
-const base   = "file://" + process.cwd()
-const parent = base   + "/test-folder/"
-const folder = parent + (throwErrors ? "throwErrors" : "default")+"/"
-const file   = folder + "test.ttl"
-const expectedText = "<> a <#test>."
-const expectedText2 = "<> a <#revisedtest>."
-const badFile ="https://example.com/badurl"
-const badFolder= badFile+"/"
-const profile = "https://jeffz.solid.community/profile/card#me"
 
-  /* createFolder()
-  */
+async function getBase( scheme ){
+  let base
+  if( scheme.match("app:") ) { base = scheme }
+  if( scheme.match("file:") ){ base = scheme + process.cwd() }
+  if( scheme.match("https:") ){
+    let session = await auth.login()
+    let webId = session.webId
+    if(! webId ) throw "Couldn't login!"
+    base = webId.replace("/profile/card#me",'')+"/public"
+  }
+  return base
+}
+
+beforeAll(async () => {
+  cfg = await getConfig(scheme)
+  if(! await fc.itemExists(cfg.parent) ) await fc.createFolder( cfg.parent )
+  console.log(cfg.parent)
+})
+
+  // createFolder()
+  //
   test('createFolder',()=>{ return expect(
-    testInterface("createFolder",folder)
+    testInterface("createFolder",cfg.folder)
   ).resolves.toBe(201) });
 
-  /* createFile()
-  */
+  // createFile()
+  //
   test('createFile',()=>{ return expect(
-    testInterface('createFile',file,expectedText)
+    testInterface('createFile',cfg.file,cfg.expectedText)
   ).resolves.toBe(201) });
 
-  /* readFolder()
-  */
+  // readFolder()
+  //
   test('readFolder',()=>{ return expect(
-    readFolder(folder)
-  ).resolves.toBe(file) });
+    readFolder(cfg.folder)
+  ).resolves.toBe(cfg.file) });
 
-  /* readFile()
-  */
+  // readFile()
+  //
   test('readFile',()=>{ return expect(
-    readFile(file)
-  ).resolves.toBe(expectedText) });
+    readFile(cfg.file)
+  ).resolves.toBe(cfg.expectedText) });
 
-  /* fetchAndParse()
-  */
+  // fetchAndParse()
+  //
   test('fetchAndParse',()=>{ return expect(
-    fetchAndParse(profile)
+    fetchAndParse(cfg.profile)
   ).resolves.toBe(true) });
 
-  /* updateFile()
-  */
+  // updateFile()
+  //
   test('updateFile',()=>{ return expect(
-    updateFile(file,expectedText2)
+    updateFile(cfg.file,cfg.expectedText2)
   ).resolves.toBe(true) });
 
-  /* getHead()
-  */
+  // getHead()
+  //
   test('getHead()',()=>{ return expect(
-    getHead(file)
+    getHead(cfg.file)
   ).resolves.toBe(true) });
 
-  /* getLinks()
-  */
+  // getLinks()
+  //
   test('getLinks()',()=>{ return expect(
-    getLinks(file)
+    getLinks(cfg.file)
   ).resolves.toBe(true) });
 
 
-  /* readFile() on non-existant resource
-  */
+  // readFile() on non-existant resource
+  //
   test('readFile on non-existant URL returns 404',()=>{ return expect(
-    readFile(badFile)
+    readFile(cfg.badFile)
   ).resolves.toBe(404) });
 
-  /* readFolder() on non-existant resource
-  */
+  // readFolder() on non-existant resource
+  //
   test('readFolder on non-exitant folder returns 404',()=>{ return expect(
-    readFolder(badFolder)
+    readFolder(cfg.badFolder)
   ).resolves.toBe(404) });
 
-  /* itemExists returns true on existing resource
-  */
+  // itemExists returns true on existing resource
+  //
   test('itemExists returns true on existing resource',()=>{ return expect(
-    itemExists(folder)
+    itemExists(cfg.folder)
   ).resolves.toBe(true) });
 
-  /* itemExists returns false on non-existing resource
-  */
+  // itemExists returns false on non-existing resource
+  //
   test('itemExists returns true on existing resource',()=>{ return expect(
-    itemExists(badFolder)
+    itemExists(cfg.badFolder)
   ).resolves.toBe(false) });
 
-  /* deleteFolder() on non-empty folder
-  */
+  // deleteFolder() on non-empty folder
+  //
   test('deleteFolder on non-empty folder returns 409',()=>{ return expect(
-    testInterface("deleteFolder",folder)
+    testInterface("deleteFolder",cfg.folder)
   ).resolves.toBe(409) });
 
-  /* deleteFile()
-  */
+  // deleteFile()
+  //
   test('deleteFile',()=>{ return expect(
-    testInterface("deleteFile",file)
+    testInterface("deleteFile",cfg.file)
   ).resolves.toBe(200) });
 
-  /* deleteFolder()
-  */
+  // deleteFolder()
+  //
   test('deleteFolder',()=>{ return expect(
-    testInterface("deleteFolder",folder)
+    testInterface("deleteFolder",cfg.folder)
   ).resolves.toBe(200) });
+
 
 /* END OF TEST */
-
 
 async function updateFile(url,content){
   if(throwErrors){
@@ -208,7 +226,6 @@ async function readFile(url) {
     else return res.body
   }
 }
-
 async function testInterface(method,...args) {
   if(throwErrors){
     try {
@@ -222,5 +239,22 @@ async function testInterface(method,...args) {
   else {
     let res = await fc[method](...args)
     return res.status
+  }
+}
+async function getConfig(scheme){
+  let base    = await getBase(scheme)
+  let parent  = base   + "/test-folder/"
+  let folder  = parent + (throwErrors ? "throwErrors" : "default")+"/"
+  let badFile ="https://example.com/badurl"
+  return {
+    base:      base,
+    parent:    parent,
+    folder:    folder,
+    file:      folder + "test.ttl",
+    badFile:   badFile,
+    badFolder: badFile+"/",
+    expectedText:  "<> a <#test>.",
+    expectedText2: "<> a <#revisedtest>.",
+    profile: "https://jeffz.solid.community/profile/card#me"
   }
 }
