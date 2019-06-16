@@ -70,7 +70,10 @@ describe('core methods', () => {
 
     beforeEach(() => postFolder.reset({ dryRun: false }))
 
-    test('post resolves with 400 creating a new folder', () => rejectsWithStatus(api.post(postFolder.url, getPostOptions(newFolder)), 400))
+    test('post resolves with 201 creating a new folder with valid slug', () => resolvesWithStatus(api.post(postFolder.url, getPostOptions(newFolder)), 201))
+    let invalidOptions = getPostOptions(newFolder)
+    invalidOptions.headers.slug += '/';
+    test('post resolves with 400 creating a new folder with invalid slug', () => rejectsWithStatus(api.post(postFolder.url, invalidOptions), 400))    
     test('post resolves with 201 creating a new file', () => resolvesWithStatus(api.post(postFolder.url, getPostOptions(newFile)), 201))
     test('post rejects with 404 on inexistent container', () => rejectsWithStatus(api.post(nestedFolderUrl, getPostOptions(nestedFileName)), 404))
     // TODO: [Add when supported by solid-rest] test('post resolves with 201 writing to the location of an existing folder', () => resolvesWithStatus(api.post(dataFolder, getPostOptions(usedFolderName)), 201))
