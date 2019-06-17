@@ -70,7 +70,10 @@ describe('core methods', () => {
 
     beforeEach(() => postFolder.reset({ dryRun: false }))
 
-    test('post resolves with 201 creating a new folder', () => resolvesWithStatus(api.post(postFolder.url, getPostOptions(newFolder)), 201))
+    test('post resolves with 201 creating a new folder with valid slug', () => resolvesWithStatus(api.post(postFolder.url, getPostOptions(newFolder)), 201))
+    let invalidOptions = getPostOptions(newFolder)
+    invalidOptions.headers.slug += '/';
+    test('post resolves with 400 creating a new folder with invalid slug', () => rejectsWithStatus(api.post(postFolder.url, invalidOptions), 400))    
     test('post resolves with 201 creating a new file', () => resolvesWithStatus(api.post(postFolder.url, getPostOptions(newFile)), 201))
     test('post rejects with 404 on inexistent container', () => rejectsWithStatus(api.post(nestedFolderUrl, getPostOptions(nestedFileName)), 404))
     // TODO: [Add when supported by solid-rest] test('post resolves with 201 writing to the location of an existing folder', () => resolvesWithStatus(api.post(dataFolder, getPostOptions(usedFolderName)), 201))
@@ -83,11 +86,14 @@ describe('core methods', () => {
 })
 
 describe('composed methods', () => {
-  const composedFolder = new RootFolder(container, 'composed')
+  const turtleFile = new File('composed.ttl')
+  const composedFolder = new RootFolder(container, 'composed', [
+  	turtleFile
+  ])
   beforeAll(() => composedFolder.reset())
 
   describe('itemExists', () => {
-    // test('itemExists resolves with true on existing file', () => expect(api.itemExists(turtleFile)).resolves.toBe(true))
+    test('itemExists resolves with true on existing file', () => expect(api.itemExists(turtleFile.url)).resolves.toBe(true))
     test('itemExists resolves with true on existing folder', () => expect(api.itemExists(container.url)).resolves.toBe(true))
     test('itemExists resolves with false on inexistent file', () => expect(api.itemExists(inexistentFile)).resolves.toBe(false))
     test('itemExists resolves with true on inexistent folder', () => expect(api.itemExists(inexistentFolder)).resolves.toBe(false))
