@@ -45,6 +45,13 @@ async function run(scheme){
 
   res = await postFile( cfg.folder, cfg.fi, cfg.text )
   ok( "201 post resource", res.status==201)
+/*
+  let rea = await GET( cfg.file )
+console.log(rea.headers.get("x-powered-by"))
+console.log(rea.headers.get("content-type"))
+console.log(rea.headers)
+process.exit()
+*/
 
   res = await postFile( cfg.folder,cfg.fi, cfg.text )
   ok( "201 post resource, resource found", res.status==201)
@@ -167,7 +174,7 @@ async function getConfig(scheme){
   let base    = await getBase(scheme)
   let pa    = "test-folder"
   let fo    = "node"
-  let fi    = "test-file"
+  let fi    = "test-file.ttl"
   let mi1   = "noSuchThing"
   let mi2   = "norThis"
   let deep1 = "deep"

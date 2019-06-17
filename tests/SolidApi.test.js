@@ -57,12 +57,14 @@ describe('core methods', () => {
     const nestedFolderName = "nested/"
     const nestedFolderUrl = postFolder.url + "inexistent/path/" + nestedFolderName
     const nestedFileName = "nested.ttl"
-
+    const usedFolderName = newFolder
+    const usedFileName = newFile
 
     const getPostOptions = (name) => {
+      let slugName = name.replace(/\/$/,'')
       return {
         headers: {
-          slug: name,
+          slug: slugName,
           link: name.endsWith('/') ? LINK.CONTAINER : LINK.RESOURCE
         }
       }
@@ -76,12 +78,17 @@ describe('core methods', () => {
     test('post resolves with 400 creating a new folder with invalid slug', () => rejectsWithStatus(api.post(postFolder.url, invalidOptions), 400))    
     test('post resolves with 201 creating a new file', () => resolvesWithStatus(api.post(postFolder.url, getPostOptions(newFile)), 201))
     test('post rejects with 404 on inexistent container', () => rejectsWithStatus(api.post(nestedFolderUrl, getPostOptions(nestedFileName)), 404))
-    // TODO: [Add when supported by solid-rest] test('post resolves with 201 writing to the location of an existing folder', () => resolvesWithStatus(api.post(dataFolder, getPostOptions(usedFolderName)), 201))
-    // TODO: [Add when supported by solid-rest] test('post resolves with 201 writing to the location of an existing file', () => resolvesWithHeader(api.post(dataFolder, getPostOptions(usedFileName)), 201))
+
+    // DONE?: [Add when supported by solid-rest] test('post resolves with 201 writing to the location of an existing folder', () => resolvesWithStatus(api.post(dataFolder, getPostOptions(usedFolderName)), 201))
+test('post resolves with 201 writing to the location of an existing folder', () => resolvesWithStatus(api.post(postFolder.url, getPostOptions(newFolder)), 201))
+
+    // DONE?: [Add when supported by solid-rest] test('post resolves with 201 writing to the location of an existing file', () => resolvesWithHeader(api.post(dataFolder, getPostOptions(usedFileName)), 201))
+test('post resolves with 201 writing to the location of an existing file', () => resolvesWithStatus(api.post(postFolder.url, getPostOptions(newFile)), 201))
 
     test('put resolves with 201 creating a new file', () => resolvesWithStatus(api.put(newFileUrl), 201))
     test('put resolves with 201 overwriting a file', () => resolvesWithStatus(api.put(usedFile.url), 201))
-    // TODO: [Add when supported by solid-rest] test('put resolves with 201 creating a nested files', () => resolvesWithStatus(api.put(nestedFileUrl), 201))
+
+    // TODO: [Add when supported by solid-rest] test('put resolves with 201 creating a nested files', () => resolvesWithStatus(api.put(nestedFileUrl), 201)) test('put resolves with 201 creating a nested files', () => resolvesWithStatus(api.put(nestedFileUrl), 201))
   })
 })
 
