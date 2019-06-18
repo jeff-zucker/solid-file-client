@@ -30,7 +30,7 @@ describe('core methods', () => {
       fetch: api.fetch.bind(api),
       get: api.get.bind(api),
       head: api.head.bind(api),
-      // [Not yet supported by solid-auth-cli] options: api.options.bind(api),
+      // TODO: [Add this when supported by solid-rest] options: api.options.bind(api),
     }
     for (const [name, method] of Object.entries(getters)) {
       test(`${name} resolves with 200 for folder`, () => resolvesWithStatus(method(coreFolder.url), 200))
@@ -58,39 +58,33 @@ describe('core methods', () => {
     const nestedFolderUrl = postFolder.url + "inexistent/path/" + nestedFolderName
     const nestedFileName = "nested.ttl"
     const nestedFileUrl = nestedFolderUrl + nestedFileName
-    const usedFolderName = newFolder
-    const usedFileName = newFile
 
     const getPostOptions = (name) => {
-      let slugName = name.replace(/\/$/,'')
+      const slug = name.replace(/\/$/,'')
+      const link = name.endsWith('/') ? LINK.CONTAINER : LINK.RESOURCE
       return {
         headers: {
-          slug: slugName,
-          link: name.endsWith('/') ? LINK.CONTAINER : LINK.RESOURCE
+          slug,
+          link,
         }
       }
     }
 
+    let invalidSlugOptions = getPostOptions(newFolder)
+    invalidSlugOptions.headers.slug += '/';
+
     beforeEach(() => postFolder.reset({ dryRun: false }))
 
     test('post resolves with 201 creating a new folder with valid slug', () => resolvesWithStatus(api.post(postFolder.url, getPostOptions(newFolder)), 201))
-    let invalidOptions = getPostOptions(newFolder)
-    invalidOptions.headers.slug += '/';
-    test('post resolves with 400 creating a new folder with invalid slug', () => rejectsWithStatus(api.post(postFolder.url, invalidOptions), 400))    
+    test('post resolves with 400 creating a new folder with invalid slug', () => rejectsWithStatus(api.post(postFolder.url, invalidSlugOptions), 400))    
     test('post resolves with 201 creating a new file', () => resolvesWithStatus(api.post(postFolder.url, getPostOptions(newFile)), 201))
     test('post rejects with 404 on inexistent container', () => rejectsWithStatus(api.post(nestedFolderUrl, getPostOptions(nestedFileName)), 404))
-
-    // DONE?: [Add when supported by solid-rest] test('post resolves with 201 writing to the location of an existing folder', () => resolvesWithStatus(api.post(dataFolder, getPostOptions(usedFolderName)), 201))
-test('post resolves with 201 writing to the location of an existing folder', () => resolvesWithStatus(api.post(postFolder.url, getPostOptions(newFolder)), 201))
-
-    // DONE?: [Add when supported by solid-rest] test('post resolves with 201 writing to the location of an existing file', () => resolvesWithHeader(api.post(dataFolder, getPostOptions(usedFileName)), 201))
-test('post resolves with 201 writing to the location of an existing file', () => resolvesWithStatus(api.post(postFolder.url, getPostOptions(newFile)), 201))
+    test('post resolves with 201 writing to the location of an existing folder', () => resolvesWithStatus(api.post(postFolder.url, getPostOptions(newFolder)), 201))
+    test('post resolves with 201 writing to the location of an existing file', () => resolvesWithStatus(api.post(postFolder.url, getPostOptions(newFile)), 201))
 
     test('put resolves with 201 creating a new file', () => resolvesWithStatus(api.put(newFileUrl), 201))
     test('put resolves with 201 overwriting a file', () => resolvesWithStatus(api.put(usedFile.url), 201))
-
-    // DONE? [Add when supported by solid-rest] test('put resolves with 201 creating a nested files', () => resolvesWithStatus(api.put(nestedFileUrl), 201)) 
-test('put resolves with 201 creating a nested files', () => resolvesWithStatus(api.put(nestedFileUrl), 201)) 
+    test('put resolves with 201 creating a nested files', () => resolvesWithStatus(api.put(nestedFileUrl), 201)) 
   })
 })
 
@@ -129,8 +123,16 @@ describe('composed methods', () => {
     beforeEach(() => deleteFolder.reset())
 
     describe('deleteFolderContents', () => {
-      // test.only('resolves with array on folder with contents', () => expect(api.deleteFolderContents(parentFolder.url)).resolves.toBe(expect.any(Array)))
+      test('resolved array contains one entry per deleted item', async () => {
+        const responses = await api.deleteFolderContents(parentFolder.url)
+        const names = responses.map(response => apiUtils.getItemName(response.headers.get('location')))
+        parentFolder.contents.forEach(item => expect(names).toContain(apiUtils.getItemName(item.url)))
+      })
       test('resolves with empty array on folder without contents', () => expect(api.deleteFolderContents(grandChild.url)).resolves.toHaveLength(0))
+      test('after deletion itemExists returns false on all contents', async () => {
+        await api.deleteFolderContents(parentFolder.url)
+        return parentFolder.contents.map(item => expect(api.itemExists(item.url)).resolves.toBe(false))
+      })
     })
   })
   // TODO: Add remaining methods...
