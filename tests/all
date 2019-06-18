@@ -45,13 +45,6 @@ async function run(scheme){
 
   res = await postFile( cfg.folder, cfg.fi, cfg.text )
   ok( "201 post resource", res.status==201)
-/*
-  let rea = await GET( cfg.file )
-console.log(rea.headers.get("x-powered-by"))
-console.log(rea.headers.get("content-type"))
-console.log(rea.headers)
-process.exit()
-*/
 
   res = await postFile( cfg.folder,cfg.fi, cfg.text )
   ok( "201 post resource, resource found", res.status==201)

@@ -79,8 +79,8 @@ describe('core methods', () => {
     test('post resolves with 400 creating a new folder with invalid slug', () => rejectsWithStatus(api.post(postFolder.url, invalidSlugOptions), 400))    
     test('post resolves with 201 creating a new file', () => resolvesWithStatus(api.post(postFolder.url, getPostOptions(newFile)), 201))
     test('post rejects with 404 on inexistent container', () => rejectsWithStatus(api.post(nestedFolderUrl, getPostOptions(nestedFileName)), 404))
-    test('post resolves with 201 writing to the location of an existing folder', () => resolvesWithStatus(api.post(postFolder.url, getPostOptions(newFolder)), 201))
-    test('post resolves with 201 writing to the location of an existing file', () => resolvesWithStatus(api.post(postFolder.url, getPostOptions(newFile)), 201))
+    test('post resolves with 201 writing to the location of an existing folder', () => resolvesWithStatus(api.post(postFolder.url, getPostOptions(usedFolder.name)), 201))
+    test('post resolves with 201 writing to the location of an existing file', () => resolvesWithStatus(api.post(postFolder.url, getPostOptions(usedFile.name)), 201))
 
     test('put resolves with 201 creating a new file', () => resolvesWithStatus(api.put(newFileUrl), 201))
     test('put resolves with 201 overwriting a file', () => resolvesWithStatus(api.put(usedFile.url), 201))
