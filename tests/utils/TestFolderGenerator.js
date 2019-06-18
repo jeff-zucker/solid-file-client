@@ -59,6 +59,23 @@ class TestFolderGenerator {
     await Promise.all(this.children.map(child => child.generate(options)))
   }
 
+  /**
+   * Loop through all contents of this item
+   * @param {function} callback
+   */
+  traverseContents(callback) {
+    this.children.forEach(child => child.traverse(callback))
+  }
+
+  /**
+   * Loop through all contents of this item and also trigger the callback for this item
+   * @param {function} callback 
+   */
+  traverse(callback) {
+    this.traverseContents(callback)
+    callback(this)
+  }
+
   async _generateFolder({ dryRun }) {
     if (dryRun) {
       console.log(`would generate: ${this.path}`)
@@ -109,6 +126,12 @@ class TestFolderGenerator {
       throw new Error("Can't compute path because basePath is not set")
     }
     return this.basePath + this.name
+  }
+
+  get contents() {
+    const contents = []
+    this.traverseContents(item => contents.push(item))
+    return contents
   }
 }
 

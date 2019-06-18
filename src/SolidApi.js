@@ -307,16 +307,19 @@ class SolidAPI {
   /**
    * Delete all folders and files inside a folder
    * @param {string} url
-   * @returns {Promise<Response[]>} Resolves with an array of the responses for the deletion of all direct children of the folder
+   * @returns {Promise<Response[]>} Resolves with a response for each deletion request
    */
   async deleteFolderContents (url) {
     const { body: { folders, files } } = await this.readFolder(url).then(this._assertResponseOk)
 
-    const promises = [
-      ...folders.map(({ url: folderUrl }) => this.deleteFolderRecursively(folderUrl)),
-      ...files.map(({ url: fileUrl }) => this.delete(fileUrl)),
-    ]
-    return Promise.all(promises)
+    const resolvedResponses = []
+    
+    await Promise.all([
+      ...folders.map(async ({ url: folderUrl }) => resolvedResponses.push(...(await this.deleteFolderRecursively(folderUrl)))),
+      ...files.map(async ({ url: fileUrl }) => resolvedResponses.push(await this.delete(fileUrl))),
+    ])
+
+    return resolvedResponses
   }
 
   /**
@@ -325,8 +328,11 @@ class SolidAPI {
    * @returns {Promise<Response>} Response for the top level folder
    */
   async deleteFolderRecursively (url) {
-    return this.deleteFolderContents(url)
-      .then(() => this.delete(url))
+    const resolvedResponses = []
+    resolvedResponses.push(...(await this.deleteFolderContents(url)))
+    resolvedResponses.unshift(await this.delete(url))
+
+    return resolvedResponses
   }
 
   /**
