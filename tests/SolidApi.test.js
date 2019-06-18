@@ -57,6 +57,7 @@ describe('core methods', () => {
     const nestedFolderName = "nested/"
     const nestedFolderUrl = postFolder.url + "inexistent/path/" + nestedFolderName
     const nestedFileName = "nested.ttl"
+    const nestedFileUrl = nestedFolderUrl + nestedFileName
     const usedFolderName = newFolder
     const usedFileName = newFile
 
@@ -88,7 +89,8 @@ test('post resolves with 201 writing to the location of an existing file', () =>
     test('put resolves with 201 creating a new file', () => resolvesWithStatus(api.put(newFileUrl), 201))
     test('put resolves with 201 overwriting a file', () => resolvesWithStatus(api.put(usedFile.url), 201))
 
-    // TODO: [Add when supported by solid-rest] test('put resolves with 201 creating a nested files', () => resolvesWithStatus(api.put(nestedFileUrl), 201)) test('put resolves with 201 creating a nested files', () => resolvesWithStatus(api.put(nestedFileUrl), 201))
+    // DONE? [Add when supported by solid-rest] test('put resolves with 201 creating a nested files', () => resolvesWithStatus(api.put(nestedFileUrl), 201)) 
+test('put resolves with 201 creating a nested files', () => resolvesWithStatus(api.put(nestedFileUrl), 201)) 
   })
 })
 
