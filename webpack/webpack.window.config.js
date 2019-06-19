@@ -21,6 +21,6 @@ module.exports = {
   plugins: [new CleanWebpackPlugin([outputDir])],
   devtool,
   externals: {
-    'solid-auth-cli' : 'null'
+    'solid-auth-cli' : 'solid-auth-cli'
   },
 };
