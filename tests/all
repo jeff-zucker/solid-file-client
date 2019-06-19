@@ -1,11 +1,11 @@
-const auth  = require("../../solid-auth-cli")
+const auth  = require("solid-auth-cli")
 const fetch = auth.fetch // OR solid-file-client.fetch OR solid-rest.fetch
 
 let [tests,fails,passes,res] = [0,0,0]
 
 async function main(){
-//  await run("app://ls")
-  await run("file://")
+  await run("app://ls")
+//  await run("file://")
 //  await run("https://")
 }
 main()
@@ -64,7 +64,6 @@ async function run(scheme){
 // if(!scheme.match("file:")){
   res = await PUT( cfg.deep+cfg.fi,cfg.text )
   ok("201 put resource, parent not found (recursive creation)",res.status==201)
-process.exit()
 // }
   res = await HEAD( cfg.file )
   ok("200 head",res.status==200 && res.headers.get("allow") )
