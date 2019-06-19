@@ -1,6 +1,6 @@
 {
   "name": "solid-file-client",
-  "version": "0.5.1",
+  "version": "0.5.2",
   "description": "A library for creating and managing files and folders in Solid data stores",
   "author": "Jeff Zucker",
   "license": "MIT",
@@ -23,6 +23,7 @@
   "module": "lib/index.js",
   "browserslist": "> 0.25%, not dead",
   "dependencies": {
+    "null-loader": "^2.0.0",
     "rdflib": "^0.20.1",
     "solid-auth-cli": "^0.2.6",
     "solid-auth-client": "^2.3.0"
