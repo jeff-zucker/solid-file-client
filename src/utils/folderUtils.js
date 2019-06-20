@@ -46,7 +46,7 @@ const folderType = 'folder';
         // self.log("Got "+itemsTmp.length+" items")
         for(let i=0;i<itemsTmp.length;i++){
              var item = itemsTmp[i];
-console.log(item.value)
+// console.log(item.value)
              var newItem = {}
              newItem.type = getFileType( graph, item.value,$rdf )
              var stats = getStats(graph,item.value,$rdf)
