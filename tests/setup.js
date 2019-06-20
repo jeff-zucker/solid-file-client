@@ -1,18 +1,30 @@
-import { RootFolder } from './utils/TestFolderGenerator'
-
-const base = "file://" + process.cwd()
-const testContainer = new RootFolder(base, 'test-folder')
+import { BaseFolder } from './utils/TestFolderGenerator'
+import { contextSetup, getTestContainer, getPrefix, prefixes } from './utils/contextSetup'
 
 async function setup() {
+  console.group('setup')
   try {
-    await testContainer.reset({ dryRun: false })
+    await contextSetup()
   }
   catch (e) {
-    console.error("Error in setup.js: Couldn't reset test-folder")
-    console.trace()
-    console.error(e)
+    console.error("Error in setup.js: Couldn't setup the context")
     throw e
   }
+
+  if (getPrefix() !== prefixes.memory) {
+    // Note: app://ls/ is not persistent and shared across multiple test files
+    // Therefore it needs to be initialized before each test somewhere else
+    try {
+      const testContainer = getTestContainer()
+      await testContainer.reset()
+    }
+    catch (e) {
+      console.error("Error in setup.js: Couldn't reset test-folder")
+      throw e
+    }
+  }
+  console.log('finished setup.js')
+  console.groupEnd()
 }
 
 export default setup

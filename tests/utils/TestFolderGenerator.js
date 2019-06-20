@@ -1,5 +1,22 @@
-const fs = require('fs')
-const rimraf = require('rimraf')
+const contextSetup = require('./contextSetup')
+const { default: SolidApi } = require('../../src/SolidApi')
+
+
+let _api
+
+/**
+ * Return the api for the current active context
+ * @returns {SolidApi}
+ */
+const getApi = () => {
+  if (!_api && contextSetup.isReady()) {
+    _api = new SolidApi(contextSetup.getFetch())
+  }
+  if (!_api) {
+    throw new Error("Tried to access api before the testing environment has been initialized")
+  }
+  return _api
+}
 
 /**
  * Class for creating test folder and file structures
@@ -13,10 +30,12 @@ class TestFolderGenerator {
    * @param {string} contentType 
    * @param {TestFolderGenerator[]} children 
    */
-  constructor(name, content, children) {
+  constructor(name, content, contentType, children) {
     this.name = name
     this.content = content
+    this.contentType = contentType
     this.children = children
+    this.basePath = ''
   }
 
   /**
@@ -34,10 +53,37 @@ class TestFolderGenerator {
    */
   async remove({ dryRun = false }) {
     if (dryRun) {
-      console.log(`would remove ${this.path}`)
-      return Promise.resolve()
+      console.log(`would remove ${this.url}`)
+      return
     }
-    return new Promise((resolve, reject) => rimraf(this.path, err => err ? reject(err) : resolve()))
+    try {
+      if (await this._exists()) {
+        await (this instanceof Folder ? this._removeFolder() : this._removeFile())
+      }
+    }
+    catch (e) {
+      console.error('Error within TestFolderGenerator.remove')
+      console.error(`remove was called with: ${this.url}`)
+      if (e && (e.url || e.headers && e.headers.get)) {
+        console.error(`error occurred for: ${e.url || e.headers.get('location')}`)
+      }
+      console.error(e)
+      console.error("Please check the TestFolderGenerator.remove method for errors")
+      console.trace()
+      throw e
+    }
+  }
+
+  _removeFolder() {
+    return getApi().deleteFolderRecursively(this.url)
+  }
+
+  _removeFile() {
+    return getApi().delete(this.url)
+  }
+
+  _exists() {
+    return getApi().itemExists(this.url)
   }
 
   /**
@@ -46,17 +92,34 @@ class TestFolderGenerator {
    * @param {object} options 
    */
   async generate(options = { dryRun: false }) {
-    try {
-      await ((this instanceof Folder) ? this._generateFolder(options) : this._generateFile(options))
+    if (options.dryRun) {
+      console.log(`would generate ${this.url}`)
+      return Promise.all(this.children.map(child => child.generate(options)))
     }
-    catch (err) {
-      // Don't throw if the item already exists
-      if (err.code !== 'EEXIST') {
-        throw err
+    try {
+      await (this instanceof Folder ? this._generateFolder() : this._generateFile())
+    }
+    catch (e) {
+      console.error("Error while generating items within TestFolderGenerator.generate")
+      console.error(`Couldn't create ${this.url}`)
+      if (e && (e.url || e.headers && e.headers.get)) {
+        console.error(`error occurred for: ${e.url || e.headers.get('location')}`)
       }
+      console.error(e)
+      console.error("Please check the createFolder/createFile method for errors")
+      console.trace()
+      throw e
     }
 
     await Promise.all(this.children.map(child => child.generate(options)))
+  }
+
+  _generateFolder() {
+    return getApi().createFolder(this.url)
+  }
+
+  _generateFile() {
+    return getApi().createFile(this.url, this.content, this.contentType)
   }
 
   /**
@@ -76,31 +139,22 @@ class TestFolderGenerator {
     callback(this)
   }
 
-  async _generateFolder({ dryRun }) {
-    if (dryRun) {
-      console.log(`would generate: ${this.path}`)
-      return Promise.resolve()
-    }
-    return new Promise((resolve, reject) => fs.mkdir(this.path, err => err ? reject(err) : resolve()))
-  }
-
-  async _generateFile({ dryRun }) {
-    if (dryRun) {
-      console.log(`would generate: ${this.path}`)
-      return Promise.resolve()
-    }
-    return new Promise((resolve, reject) => fs.writeFile(this.path, this.content, err => err ? reject(err) : resolve()))
-  }
-
   /**
    * 
    * @param {string|TestFolderGenerator} base - either url starting with file:// path starting with / or instance of TestFolderGenerator 
    */
-  setBase(base) {
+  setBasePath(base) {
     if (base instanceof TestFolderGenerator) {
-      base = base.url
-      if (!base) {
-        throw new Error('The TestFolderGenerator supplied for setBase must already have a basePath')
+      if (base instanceof Folder) {
+        // Set the base as parent of this folder
+        base = `${base.basePath}${base.name}`
+      }
+      else if (base instanceof File) {
+        // Put it into the same folder as the other file
+        base = base.basePath
+      }
+      else {
+        throw new Error('Invalid argument for setBasePath', base)
       }
     }
 
@@ -109,29 +163,30 @@ class TestFolderGenerator {
       this.basePath = this.basePath + '/'
     }
 
-    this.children.forEach(child => child.setBase(this.url))
-  }
-
-  get path() {
-    let path = this.url
-    
-    if (path.startsWith('file://')) {
-      path = path.substr('file://'.length)
-    }
-    return path
+    this.children.forEach(child => child.setBasePath(this))
   }
 
   get url() {
-    if (typeof this.basePath !== 'string') {
-      throw new Error("Can't compute path because basePath is not set")
-    }
-    return this.basePath + this.name
+    return contextSetup.getBaseUrl() + this.basePath + this.name
   }
 
   get contents() {
     const contents = []
     this.traverseContents(item => contents.push(item))
     return contents
+  }
+
+  toString() {
+    let str = this.name
+    if (this instanceof FolderPlaceholder || this instanceof FilePlaceholder) {
+      str = "[" + str + "]"
+    }
+    if (this.children.length) {
+      let contents = this.children.map(child => child.toString()).join("\n")
+      contents = contents.split("\n").map(str => "- " + str).join("\n")
+      str += "\n" + contents
+    }
+    return str
   }
 }
 
@@ -145,14 +200,14 @@ class Folder extends TestFolderGenerator {
     if (!name.endsWith('/')) {
       name = name + '/'
     }
-    super(name, '', children)
+    super(name, '', 'text/turtle', children)
   }
 }
 
 /**
- * Shortcut to creating a new folder and calling folder.setBase(base)
+ * Shortcut to creating a new folder and calling folder.setBasePath(base)
  */
-class RootFolder extends Folder {
+class BaseFolder extends Folder {
   /**
    * 
    * @param {string|TestFolderGenerator} base base path for all children
@@ -160,7 +215,7 @@ class RootFolder extends Folder {
    */
   constructor(base, name, children = []) {
     super(name, children)
-    this.setBase(base)
+    this.setBasePath(base)
   }
 }
 
@@ -168,16 +223,40 @@ class File extends TestFolderGenerator {
   /**
    * 
    * @param {string} name 
-   * @param {string} content 
+   * @param {string} [content] 
    * @param {string} [contentType] 
    */
-  constructor(name, content = "<> a <#test>.") {
-    super(name, content, [])
+  constructor(name, content = "<> a <#test>.", contentType = 'text/turtle') {
+    super(name, content, contentType, [])
+  }
+}
+
+/**
+ * Creates a placeholder for a folder which will be deleted on generate
+ * Use this if you want to make sure a folder doesn't exist
+ * Also useful for getting the url of a placeholder nested inside other folders
+ */
+class FolderPlaceholder extends Folder {
+  generate(...args) {
+    return this.remove(...args)
+  }
+}
+
+/**
+ * Creates a placeholder for a file which will be deleted on generate
+ * Use this if you want to make sure a file doesn't exist
+ * Also useful for getting the url of a placeholder nested inside other folders
+ */
+class FilePlaceholder extends File {
+  generate(...args) {
+    return this.remove(...args)
   }
 }
 
 module.exports = {
   Folder,
   File,
-  RootFolder,
+  BaseFolder,
+  FolderPlaceholder,
+  FilePlaceholder,
 }

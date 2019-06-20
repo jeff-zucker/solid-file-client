@@ -196,7 +196,14 @@ class SolidAPI {
   async createFolder (url) {
     return this.head(url)
       .catch(response => {
-        if (response.status !== 404) {
+        if (false) {
+          console.group('createFolder')
+          console.log(`url: ${url}`)
+          console.log(`status: ${response.status}`)
+          console.log(`headers.WWW: ${response.headers.get('WWW-Authenticate')}`)
+          console.groupEnd()
+        }
+        if (response.status !== 404 && response.status !== 401) {
           throw response
         }
 
@@ -311,7 +318,6 @@ class SolidAPI {
    */
   async deleteFolderContents (url) {
     const { body: { folders, files } } = await this.readFolder(url).then(this._assertResponseOk)
-
     const resolvedResponses = []
     
     await Promise.all([
