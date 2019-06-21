@@ -1,5 +1,5 @@
 // import { getParentUrl, getItemName, areFolders, areFiles, LINK } from './utils/apiUtils'
-import folderUtils from './utils/folderUtils';
+import folderUtils from './utils/folderUtils'
 import apiUtils from './utils/apiUtils'
 
 const { getParentUrl, getItemName, areFolders, areFiles, LINK } = apiUtils
@@ -26,8 +26,6 @@ class SolidAPI {
     this._fetch = fetch
   }
 
-
-
   /**
    * Fetch a resource with the passed fetch method
    * @param {string} url
@@ -48,7 +46,7 @@ class SolidAPI {
   get (url, options) {
     return this.fetch(url, {
       method: 'GET',
-      ...options,
+      ...options
     })
   }
 
@@ -61,7 +59,7 @@ class SolidAPI {
   delete (url, options) {
     return this.fetch(url, {
       method: 'DELETE',
-      ...options,
+      ...options
     })
   }
 
@@ -74,7 +72,7 @@ class SolidAPI {
   post (url, options) {
     return this.fetch(url, {
       method: 'POST',
-      ...options,
+      ...options
     })
   }
 
@@ -87,7 +85,7 @@ class SolidAPI {
   put (url, options) {
     return this.fetch(url, {
       method: 'PUT',
-      ...options,
+      ...options
     })
   }
 
@@ -100,7 +98,7 @@ class SolidAPI {
   patch (url, options) {
     return this.fetch(url, {
       method: 'PATCH',
-      ...options,
+      ...options
     })
   }
 
@@ -113,7 +111,7 @@ class SolidAPI {
   head (url, options) {
     return this.fetch(url, {
       method: 'HEAD',
-      ...options,
+      ...options
     })
   }
 
@@ -126,7 +124,7 @@ class SolidAPI {
   options (url, options) {
     return this.fetch(url, {
       method: 'OPTIONS',
-      ...options,
+      ...options
     })
   }
 
@@ -157,9 +155,9 @@ class SolidAPI {
       headers: {
         link,
         slug: name,
-        'Content-Type': contentType,
+        'Content-Type': contentType
       },
-      body: content,
+      body: content
     }
 
     return this.post(parentUrl, options)
@@ -180,9 +178,9 @@ class SolidAPI {
       headers: {
         link,
         slug: name,
-        'Content-Type': contentType,
+        'Content-Type': contentType
       },
-      body: content,
+      body: content
     }
 
     return this.put(parentUrl, options)
@@ -196,14 +194,7 @@ class SolidAPI {
   async createFolder (url) {
     return this.head(url)
       .catch(response => {
-        if (false) {
-          console.group('createFolder')
-          console.log(`url: ${url}`)
-          console.log(`status: ${response.status}`)
-          console.log(`headers.WWW: ${response.headers.get('WWW-Authenticate')}`)
-          console.groupEnd()
-        }
-        if (response.status !== 404 && response.status !== 401) {
+        if (response.status !== 404) {
           throw response
         }
 
@@ -239,23 +230,23 @@ class SolidAPI {
    */
   async readFolder (url) {
     const response = await this.get(url).catch(res => res)
-    if(!response.ok) return response
+    if (!response.ok) return response
     try {
       const text = await response.text()
       const graph = await text2graph(text, url, 'text/turtle')
       return {
-        ok : true,
-        status : 200,
-        body : processFolder(graph, url, text)
+        ok: true,
+        status: 200,
+        body: processFolder(graph, url, text)
       }
-   }
-   catch(e){
-      throw {
-        ok : false,
-        status : 500,
-        statusText : "failed to parse folder turtle"
+    } catch (e) {
+      const err = {
+        ok: false,
+        status: 500,
+        statusText: 'failed to parse folder turtle'
       }
-   }
+      throw err
+    }
   }
 
   /**
@@ -286,7 +277,7 @@ class SolidAPI {
     const folderResponse = await this.createFolder(to)
     const promises = [
       ...folders.map(({ name }) => this.copyFolder(`${from}${name}/`, `${to}${name}/`, { overwrite })),
-      ...files.map(({ name }) => this.copyFile(`${from}${name}`, `${to}${name}`, { overwrite })),
+      ...files.map(({ name }) => this.copyFile(`${from}${name}`, `${to}${name}`, { overwrite }))
     ]
 
     return Promise.all(promises)
@@ -319,10 +310,10 @@ class SolidAPI {
   async deleteFolderContents (url) {
     const { body: { folders, files } } = await this.readFolder(url).then(this._assertResponseOk)
     const resolvedResponses = []
-    
+
     await Promise.all([
       ...folders.map(async ({ url: folderUrl }) => resolvedResponses.push(...(await this.deleteFolderRecursively(folderUrl)))),
-      ...files.map(async ({ url: fileUrl }) => resolvedResponses.push(await this.delete(fileUrl))),
+      ...files.map(async ({ url: fileUrl }) => resolvedResponses.push(await this.delete(fileUrl)))
     ])
 
     return resolvedResponses
@@ -374,7 +365,7 @@ class SolidAPI {
    * @returns {Reponse} same response
    * @throws {Response}
    */
-  _assertResponseOk(response) {
+  _assertResponseOk (response) {
     if (!response.ok) {
       throw response
     }

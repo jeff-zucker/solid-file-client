@@ -2,7 +2,7 @@ import SolidApi from '../src/SolidApi'
 import apiUtils from '../src/utils/apiUtils'
 import { Folder, File, FolderPlaceholder, FilePlaceholder, BaseFolder } from './utils/TestFolderGenerator'
 import { getFetch, getTestContainer, contextSetup } from './utils/contextSetup'
-import { rejectsWithStatus, resolvesWithStatus, testIfHttps } from './utils/jestUtils';
+import { rejectsWithStatus, resolvesWithStatus, testIfHttps } from './utils/jestUtils'
 // import { resolvesWithHeader, resolvesWithStatus, rejectsWithStatus } from './utils/expectUtils'
 
 /** @type {SolidApi} */
@@ -14,7 +14,7 @@ const turtleFile = new File('turtle.ttl', '<> a <#test>.', 'text/turtle')
 const container = new BaseFolder(getTestContainer(), 'SolidApi-composed', [
   inexistentFile,
   inexistentFolder,
-  turtleFile,
+  turtleFile
 ])
 
 beforeAll(async () => {
@@ -39,23 +39,22 @@ describe('composed methods', () => {
     const emptyFolder = new Folder('empty')
     const childOne = new Folder('child-one', [
       emptyFolder,
-      childFile,
+      childFile
     ])
     const childTwo = new Folder('child-two')
     const parentFolder = new Folder('parent', [
       childOne,
       childTwo,
       parentFile,
-      filePlaceholder,
+      filePlaceholder
     ])
     const deleteFolder = new BaseFolder(container, 'delete', [
-      parentFolder,
+      parentFolder
     ])
 
     beforeEach(() => deleteFolder.reset())
 
     describe('delete', () => {
-
       describe('deleteFolderContents', () => {
         test('rejects with 404 on inexistent folder', () => rejectsWithStatus(api.deleteFolderContents(inexistentFolder.url), 404))
         test.todo('throws some kind of error when called on file')

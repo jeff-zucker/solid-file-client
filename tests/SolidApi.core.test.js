@@ -15,7 +15,7 @@ const turtleFile = new File('turtle.ttl', '<> a <#test>.', 'text/turtle')
 const container = new BaseFolder(getTestContainer(), 'SolidApi-core', [
   inexistentFile,
   inexistentFolder,
-  turtleFile,
+  turtleFile
 ])
 
 beforeAll(async () => {
@@ -25,19 +25,18 @@ beforeAll(async () => {
 })
 
 describe('core methods', () => {
-
   describe('getters', () => {
     const getters = {
       fetch: (...args) => api.fetch.bind(api)(...args),
       get: (...args) => api.get.bind(api)(...args),
-      head: (...args) => api.head.bind(api)(...args),
+      head: (...args) => api.head.bind(api)(...args)
       // TODO: [Add this when supported by solid-rest] options: (...args) => api.options.bind(api)(...args),
     }
     for (const [name, method] of Object.entries(getters)) {
       test(`${name} resolves with 200 for folder`, () => resolvesWithStatus(method(container.url), 200))
       test(`${name} resolves with 200 for file`, () => resolvesWithStatus(method(turtleFile.url), 200))
-      test(`${name} resolves with Content-Type text/turtle for folder`, () => resolvesWithHeader(method(container.url), "Content-Type", 'text/turtle'))
-      test(`${name} resolves with Content-Type text/turtle for file`, () => resolvesWithHeader(method(turtleFile.url), "Content-Type", 'text/turtle'))
+      test(`${name} resolves with Content-Type text/turtle for folder`, () => resolvesWithHeader(method(container.url), 'Content-Type', 'text/turtle'))
+      test(`${name} resolves with Content-Type text/turtle for file`, () => resolvesWithHeader(method(turtleFile.url), 'Content-Type', 'text/turtle'))
       test(`${name} rejects with 404 for inexistent folder`, () => rejectsWithStatus(method(inexistentFolder.url), 404))
       test(`${name} rejects with 404 for inexistent file`, () => rejectsWithStatus(method(inexistentFile.url), 404))
     }
@@ -48,12 +47,12 @@ describe('core methods', () => {
     const newFolderPlaceholder = new FolderPlaceholder('folder')
     const nestedFilePlaceholder = new FilePlaceholder('nested.ttl')
     const nestedFolderPlaceholder = new FolderPlaceholder('nested-folder', [
-      nestedFilePlaceholder,
+      nestedFilePlaceholder
     ])
 
     const usedFolder = new Folder('used-folder')
     const usedFile = new File('used.ttl')
-  
+
     const postFolder = new BaseFolder(container, 'post', [
       usedFolder,
       usedFile,
@@ -61,7 +60,7 @@ describe('core methods', () => {
       newFolderPlaceholder,
       new FolderPlaceholder('inexistent', [
         new FolderPlaceholder('path', [
-          nestedFolderPlaceholder,
+          nestedFolderPlaceholder
         ])
       ])
     ])
@@ -72,13 +71,13 @@ describe('core methods', () => {
       return {
         headers: {
           slug,
-          link,
+          link
         }
       }
     }
 
     let invalidSlugOptions = getPostOptions(newFolderPlaceholder.name)
-    invalidSlugOptions.headers.slug += '/';
+    invalidSlugOptions.headers.slug += '/'
 
     beforeEach(() => postFolder.reset())
 
@@ -99,10 +98,10 @@ describe('core methods', () => {
     const emptyFolder = new Folder('empty')
     const filledFolder = new Folder('filled', [
       file,
-      emptyFolder,
+      emptyFolder
     ])
     const deleteFolder = new BaseFolder(container, 'delete', [
-      filledFolder,
+      filledFolder
     ])
 
     beforeEach(() => deleteFolder.reset())

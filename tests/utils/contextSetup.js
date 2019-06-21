@@ -3,7 +3,7 @@ const auth = require('solid-auth-cli')
 const prefixes = {
   file: 'file://',
   memory: 'app://ls/',
-  https: 'https://',
+  https: 'https://'
 }
 
 // Create dummy variables which have to be overwritten in the setup
@@ -15,7 +15,7 @@ let hasBeenSetup = false
  * Setup the testing environment
  * Login the user if required
  */
-async function contextSetup() {
+async function contextSetup () {
   console.group('context setup')
   if (!Object.values(prefixes).includes(prefix)) {
     throw new Error(`TEST_PREFIX must be one of ${Object.values(prefixes).join(' ')}. Found: ${prefix}`)
@@ -26,7 +26,6 @@ async function contextSetup() {
   auth.fetch = testFetch
   hasBeenSetup = true
 
-
   if (prefix === prefixes.memory) {
     // Memory tests don't share a common storage, hence reset the container every time contextSetup is called
     await getTestContainer().reset()
@@ -35,7 +34,7 @@ async function contextSetup() {
   console.groupEnd()
 }
 
-function getTestContainer() {
+function getTestContainer () {
   if (!testContainer) {
     const { Folder } = require('./TestFolderGenerator')
     testContainer = new Folder('test-folder')
@@ -45,10 +44,10 @@ function getTestContainer() {
 
 /**
  * Get the base url for testFetch calls
- * @param {string} prefix 
+ * @param {string} prefix
  * @returns {Promise<string>}
  */
-async function getBaseUrl(prefix) {
+async function getBaseUrl (prefix) {
   let baseUrl
   switch (prefix) {
     case prefixes.file:
@@ -64,13 +63,12 @@ async function getBaseUrl(prefix) {
         await auth.login()
         console.log('Successfully logged in')
         if (!process.env.TEST_BASE_URL) {
-          throw new Error("Please specify the base url if you use the https prefix")
+          throw new Error('Please specify the base url if you use the https prefix')
         }
         // Expects something like https://test.solid.community/private/tests/
         baseUrl = process.env.TEST_BASE_URL
         baseUrl += baseUrl.endsWith('/') ? '' : '/'
-      }
-      catch (e) {
+      } catch (e) {
         console.error('Error while setting up the https base url')
         console.error(e)
         throw e
@@ -85,26 +83,18 @@ async function getBaseUrl(prefix) {
   return baseUrl
 }
 
-
-function createTestFetch(baseUrl, authFetch) {
+function createTestFetch (baseUrl, authFetch) {
   return async (url, options) => {
     if (!url.startsWith(baseUrl)) {
       throw new Error(`Prevent request to >${url}< because it doesn't start with the base url >${baseUrl}<`)
     }
     const res = await authFetch(url, options)
 
-    if (false) {
-      console.groupCollapsed(`testFetch: ${url} | ${JSON.stringify(options, null, 2)}`)
-      console.log('responding with...')
-      console.log(res)
-      console.groupEnd()
-    }
-
     return res
   }
 }
 
-function assertReady(getter) {
+function assertReady (getter) {
   if (!hasBeenSetup) {
     throw new Error("The context hasn't been set up yet")
   }
@@ -119,5 +109,5 @@ module.exports = {
   getBaseUrl: () => assertReady(() => baseUrl),
   getFetch: () => assertReady(() => testFetch),
   getAuth: () => assertReady(() => auth),
-  isReady: () => hasBeenSetup,
+  isReady: () => hasBeenSetup
 }

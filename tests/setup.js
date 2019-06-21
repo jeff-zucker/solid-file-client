@@ -1,12 +1,10 @@
-import { BaseFolder } from './utils/TestFolderGenerator'
 import { contextSetup, getTestContainer, getPrefix, prefixes } from './utils/contextSetup'
 
-async function setup() {
+async function setup () {
   console.group('setup')
   try {
     await contextSetup()
-  }
-  catch (e) {
+  } catch (e) {
     console.error("Error in setup.js: Couldn't setup the context")
     throw e
   }
@@ -17,8 +15,7 @@ async function setup() {
     try {
       const testContainer = getTestContainer()
       await testContainer.reset()
-    }
-    catch (e) {
+    } catch (e) {
       console.error("Error in setup.js: Couldn't reset test-folder")
       throw e
     }
