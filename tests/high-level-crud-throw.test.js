@@ -62,10 +62,11 @@ beforeAll(async () => {
 
   // fetchAndParse()
   //
+/*
   test('fetchAndParse',()=>{ return expect(
     fetchAndParse(cfg.profile)
   ).resolves.toBe(true) });
-
+*/
   // updateFile()
   //
   test('updateFile',()=>{ return expect(
@@ -204,9 +205,9 @@ async function itemExists(url) {
 }
 async function readFolder(url) {
   if(throwErrors){
-    let res = await fc.readFolder(url).catch(e=>{return e.status})
+    let res = await fc.readFolder(url)
     if(res.ok) return res.body.files[0].url
-    return res.status  // ???? is not trapped by catch
+    return res.status
   }
   else {
     let res = await fc.readFolder(url)
@@ -216,9 +217,9 @@ async function readFolder(url) {
 }
 async function readFile(url) {
   if(throwErrors){
-    let res = await fc.get(url).catch(e=>{return e.status})
+    let res = await fc.get(url)
     if(res.ok) return await res.text()
-    return res  //  ???? is not trapped by catch
+    return res
   }
   else {
     let res = await fc.readFile(url)

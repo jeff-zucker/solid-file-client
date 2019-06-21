@@ -62,10 +62,11 @@ beforeAll(async () => {
 
   // fetchAndParse()
   //
+/*
   test('fetchAndParse',()=>{ return expect(
     fetchAndParse(cfg.profile)
   ).resolves.toBe(true) });
-
+*/
   // updateFile()
   //
   test('updateFile',()=>{ return expect(
@@ -140,11 +141,13 @@ async function updateFile(url,content){
     catch (e) { return false }
   }
   else {
+try {
     let res = await fc.updateFile(url,content);
     if(!res.ok) return false
     res = await fc.readFile(url)
     if(!res.ok) return false
     return res.body===content ? true : false
+}catch(e){console.log}
   }
 }
 async function getHead(url) {

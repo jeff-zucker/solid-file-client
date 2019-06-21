@@ -2,7 +2,7 @@ import $rdf from 'rdflib'
 import SolidApi from './SolidApi'
 import folderUtils from './utils/folderUtils';
 
-const { guessFileType, text2graph } = folderUtils
+// const { guessFileType, text2graph } = folderUtils
 const defaultInitOptions = { throwErrors:false }
 const defaultPopupUri = 'https://solid.community/common/popup.html'
 
@@ -36,21 +36,6 @@ class SolidFileClient extends SolidApi {
         this._throwErrors = options.throwErrors
         this.response = {}
     }
-
-    async getLinks(url){
-        let iana    = 'http://www.iana.org/assignments/link-relations/'
-        let aclRel  = $rdf.sym(iana+"acl")
-        let metaRel = $rdf.sym(iana+"describedBy")
-        let store   = $rdf.graph()
-        let fetcher = $rdf.fetcher(store,this._auth)
-        let r = await fetcher._fetch(url,{method:"HEAD"}).catch(e=>{return this._err(e)})
-        if(!r.ok) return(this._err(r))
-        await fetcher.parseLinkHeader(r.headers.get('link'),$rdf.sym(url),url)
-        let acl  = store.any($rdf.sym(url),aclRel)
-        let meta = store.any($rdf.sym(url),metaRel)
-        return this._ok( { acl:acl.value, meta:meta.value } )
-    }
-
 
     /**
      * Redirect the user to a login page
@@ -131,8 +116,12 @@ class SolidFileClient extends SolidApi {
      async readFile(url,request){
       let self=this
       return new Promise((resolve,reject)=>{
-        this.get(url,request).then( (res) => {
-          let type = res.headers.get('content-type')
+        this.fetch(url,request).then( (res) => {
+          if(!res.ok) return this._err(res)
+          let type 
+          try{ type = res.headers.get('content-type') }catch(e){
+             console.log(e); process.exit()
+          }
           if(type.match(/(image|audio|video)/)){
             res.buffer().then( blob => {
               resolve(blob)
@@ -146,7 +135,7 @@ class SolidFileClient extends SolidApi {
             }).catch( err =>{resolve(self._err(err))} )
           }
           else resolve(res)
-        }).catch( err => {resolve(self._err(err))} )
+        }).catch( err => { resolve(self._err(err))} )
       })
     }
 
@@ -157,6 +146,9 @@ class SolidFileClient extends SolidApi {
      * @returns {Promise<Object|RDFLIB.GRAPH}
      */
     async fetchAndParse(url, contentType) {
+/* 
+  TBD: REFACTOR USING RDF-QUERY
+
       contentType = contentType || folderUtils.guessFileType(url) || "text/turtle"
       if( contentType==='application/json' ){
         try {
@@ -173,6 +165,7 @@ class SolidFileClient extends SolidApi {
       await fetcher.load(url).catch(e=>{return this._err(e)})
       if(this._throwErrors) return store
       else return store ? { ok:true, body:store } : { ok:false }
+*/
     }
 
     _err (e) {
