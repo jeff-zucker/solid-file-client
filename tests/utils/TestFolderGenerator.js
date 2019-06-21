@@ -123,18 +123,24 @@ class TestFolderGenerator {
   }
 
   /**
-   * Loop through all contents of this item
+   * Loop through all contents of this item (excluding placeholders)
    * @param {function} callback
    */
   traverseContents(callback) {
+    if (this instanceof FilePlaceholder || this instanceof FolderPlaceholder) {
+      return
+    }
     this.children.forEach(child => child.traverse(callback))
   }
 
   /**
-   * Loop through all contents of this item and also trigger the callback for this item
+   * Loop through all contents of this item and also trigger the callback for this item (excluding placeholders)
    * @param {function} callback 
    */
   traverse(callback) {
+    if (this instanceof FilePlaceholder || this instanceof FolderPlaceholder) {
+      return
+    }
     this.traverseContents(callback)
     callback(this)
   }

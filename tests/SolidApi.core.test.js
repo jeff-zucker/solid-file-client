@@ -2,9 +2,11 @@ import SolidApi from '../src/SolidApi'
 import apiUtils from '../src/utils/apiUtils'
 import { Folder, File, FolderPlaceholder, FilePlaceholder, BaseFolder } from './utils/TestFolderGenerator'
 import { getFetch, getTestContainer, contextSetup } from './utils/contextSetup'
-import { resolvesWithHeader, resolvesWithStatus, rejectsWithStatus } from './utils/expectUtils'
+import { resolvesWithHeader, resolvesWithStatus, rejectsWithStatus } from './utils/jestUtils'
 
 const { LINK } = apiUtils
+
+/** @type {SolidApi} */
 let api
 
 const inexistentFolder = new FolderPlaceholder('inexistent')
@@ -90,5 +92,35 @@ describe('core methods', () => {
     test('put resolves with 201 creating a new file', () => resolvesWithStatus(api.put(newFilePlaceholder.url), 201))
     test('put resolves with 201 overwriting a file', () => resolvesWithStatus(api.put(usedFile.url), 201))
     test('put resolves with 201 creating a nested files', () => resolvesWithStatus(api.put(nestedFilePlaceholder.url), 201))
+  })
+
+  describe('delete', () => {
+    const file = new File('turtle.tt')
+    const emptyFolder = new Folder('empty')
+    const filledFolder = new Folder('filled', [
+      file,
+      emptyFolder,
+    ])
+    const deleteFolder = new BaseFolder(container, 'delete', [
+      filledFolder,
+    ])
+
+    beforeEach(() => deleteFolder.reset())
+
+    test('delete rejects with 404 on an inexistent file', () => rejectsWithStatus(api.delete(inexistentFile.url), 404))
+    test('delete rejects with 404 on an inexistent folder', () => rejectsWithStatus(api.delete(inexistentFolder.url), 404))
+    test('delete resolves deleting a file and it does not exist afterwards', async () => {
+      await expect(api.delete(file.url)).resolves.toBeDefined()
+      return expect(api.itemExists(file.url)).resolves.toBe(false)
+    })
+    test.skip('delete resolves deleting an empty folder and it does not exist afterwards', async () => {
+      // TODO: Apparently the folder exists after deletion
+      await expect(api.delete(emptyFolder.url)).resolves.toBeDefined()
+      console.log('contents', await api.get(emptyFolder.url).then(res => res.text()))
+      return expect(api.itemExists(emptyFolder.url)).resolves.toBe(false)
+    })
+    test('delete rejects deleting a folder with contents inside it', async () => {
+      return rejectsWithStatus(api.delete(filledFolder.url), 409)
+    })
   })
 })

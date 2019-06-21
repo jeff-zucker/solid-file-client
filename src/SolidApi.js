@@ -264,7 +264,7 @@ class SolidAPI {
    * @param {string} from - Url where the file currently is
    * @param {string} to - Url where it should be copied to
    * @param {RequestOptions} [options]
-   * @returns {Promise<Response>}
+   * @returns {Promise<Response>} - Response from the new file created
    */
   async copyFile (from, to, { overwrite } = { overwrite: false }) {
     const response = await this.get(from)
