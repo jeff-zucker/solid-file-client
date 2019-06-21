@@ -69,12 +69,11 @@ test('readFile', () => {
 
 // fetchAndParse()
 //
-test('fetchAndParse', () => {
-  return expect(
+/*
+  test('fetchAndParse',()=>{ return expect(
     fetchAndParse(cfg.profile)
-  ).resolves.toBe(true)
-})
-
+  ).resolves.toBe(true) });
+*/
 // updateFile()
 //
 test('updateFile', () => {
@@ -197,35 +196,35 @@ async function getLinks (url) {
     return false
   }
 }
-async function fetchAndParse (profile) {
-  if (throwErrors) {
-    try {
-      let store = await fc.fetchAndParse(profile, 'text/turtle')
-      let subject = store.sym(profile)
-      let predicate = store.sym('http://xmlns.com/foaf/0.1/name')
-      let name = store.any(subject, predicate)
-      if (!name) return false
-      return !!name.value.match('Jeff Zucker')
-    } catch (e) { return e }
-  } else {
-    let res = await fc.fetchAndParse(profile, 'text/turtle')
-    if (!res.ok) return false
-    let store = res.body
-    let subject = store.sym(profile)
-    let predicate = store.sym('http://xmlns.com/foaf/0.1/name')
-    let name = store.any(subject, predicate)
-    if (!name) return false
-    return !!name.value.match('Jeff Zucker')
-  }
-}
+// async function fetchAndParse (profile) {
+//   if (throwErrors) {
+//     try {
+//       let store = await fc.fetchAndParse(profile, 'text/turtle')
+//       let subject = store.sym(profile)
+//       let predicate = store.sym('http://xmlns.com/foaf/0.1/name')
+//       let name = store.any(subject, predicate)
+//       if (!name) return false
+//       return !!name.value.match('Jeff Zucker')
+//     } catch (e) { return e }
+//   } else {
+//     let res = await fc.fetchAndParse(profile, 'text/turtle')
+//     if (!res.ok) return false
+//     let store = res.body
+//     let subject = store.sym(profile)
+//     let predicate = store.sym('http://xmlns.com/foaf/0.1/name')
+//     let name = store.any(subject, predicate)
+//     if (!name) return false
+//     return !!name.value.match('Jeff Zucker')
+//   }
+// }
 async function itemExists (url) {
   return fc.itemExists(url)
 }
 async function readFolder (url) {
   if (throwErrors) {
-    let res = await fc.readFolder(url).catch(e => { return e.status })
+    let res = await fc.readFolder(url)
     if (res.ok) return res.body.files[0].url
-    return res.status // ???? is not trapped by catch
+    return res.status
   } else {
     let res = await fc.readFolder(url)
     if (res.ok) return res.body.files[0].url
@@ -234,9 +233,9 @@ async function readFolder (url) {
 }
 async function readFile (url) {
   if (throwErrors) {
-    let res = await fc.get(url).catch(e => { return e.status })
+    let res = await fc.get(url)
     if (res.ok) return res.text()
-    return res //  ???? is not trapped by catch
+    return res
   } else {
     let res = await fc.readFile(url)
     if (!res.ok) return res.status

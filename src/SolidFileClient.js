@@ -2,7 +2,8 @@ import $rdf from 'rdflib'
 import SolidApi from './SolidApi'
 import folderUtils from './utils/folderUtils'
 
-const defaultInitOptions = { throwErrors: false }
+// const { guessFileType, text2graph } = folderUtils
+const defaultInitOptions = { throwErrors:false }
 const defaultPopupUri = 'https://solid.community/common/popup.html'
 
 /** TODO
@@ -27,28 +28,14 @@ class SolidFileClient extends SolidApi {
      * Crete a new SolidFileClient
      * @param {SolidAuthClient,RdfLib} auth, rdflib
      */
-  constructor (auth, options = defaultInitOptions) {
-    super(auth.fetch.bind(auth))
-    this._auth = auth
-    this._throwErrors = options.throwErrors
-    this.response = {}
-  }
+    constructor(auth, options = defaultInitOptions) {
+        super(auth.fetch.bind(auth))
+        this._auth = auth
+        this._throwErrors = options.throwErrors
+        this.response = {}
+    }
 
-  async getLinks (url) {
-    let iana = 'http://www.iana.org/assignments/link-relations/'
-    let aclRel = $rdf.sym(iana + 'acl')
-    let metaRel = $rdf.sym(iana + 'describedBy')
-    let store = $rdf.graph()
-    let fetcher = $rdf.fetcher(store, this._auth)
-    let r = await fetcher._fetch(url, { method: 'HEAD' }).catch(e => { return this._err(e) })
-    if (!r.ok) return (this._err(r))
-    await fetcher.parseLinkHeader(r.headers.get('link'), $rdf.sym(url), url)
-    let acl = store.any($rdf.sym(url), aclRel)
-    let meta = store.any($rdf.sym(url), metaRel)
-    return this._ok({ acl: acl.value, meta: meta.value })
-  }
-
-  /**
+    /**
      * Redirect the user to a login page
      * @param {Object} credentials
      * @returns {Promise<Session>}
@@ -123,42 +110,59 @@ class SolidFileClient extends SolidApi {
      * @param {string} [contentType]
      * @returns {Promise<string|object|blob}
      */
-  async readFile (url, request) {
-    let self = this
-    return new Promise((resolve, reject) => {
-      this.get(url, request).then((res) => {
-        let type = res.headers.get('content-type')
-        if (type.match(/(image|audio|video)/)) {
-          res.buffer().then(blob => {
-            resolve(blob)
-          })
-        } else if (res.text) {
-          res.text().then(text => {
-            res.body = text
-            if (this._throwErrors) return resolve(res.body)
-            else return resolve(res)
-          }).catch(err => { resolve(self._err(err)) })
-        } else resolve(res)
-      }).catch(err => { resolve(self._err(err)) })
-    })
-  }
+     async readFile(url,request){
+      let self=this
+      return new Promise((resolve,reject)=>{
+        this.fetch(url,request).then( (res) => {
+          if(!res.ok) return this._err(res)
+          let type 
+          try{ type = res.headers.get('content-type') }catch(e){
+             console.log(e); process.exit()
+          }
+          if(type.match(/(image|audio|video)/)){
+            res.buffer().then( blob => {
+              resolve(blob)
+            })
+          }
+          else if(res.text) {
+            res.text().then( text => {
+                res.body = text;
+                if(this._throwErrors) return resolve(res.body) 
+                else return resolve( res )
+            }).catch( err =>{resolve(self._err(err))} )
+          }
+          else resolve(res)
+        }).catch( err => { resolve(self._err(err))} )
+      })
+    }
 
-  /**
+    /**
      * Fetch an item and parse it
      * @param {string} url
      * @param {string} [contentType]
      * @returns {Promise<Object|RDFLIB.GRAPH}
      */
-  async fetchAndParse (url, contentType) {
-    contentType = contentType || folderUtils.guessFileType(url) || 'text/turtle'
-    if (contentType === 'application/json') {
-      try {
-        let res = await this.fetch(url).catch(e => { return this._err(e) })
-        const obj = await JSON.parse(res)
-        return (
-          this._throwErrors ? obj : { ok: true, body: obj }
-        )
-      } catch (e) { return this._err(e) }
+    async fetchAndParse(url, contentType) {
+/* 
+  TBD: REFACTOR USING RDF-QUERY
+
+      contentType = contentType || folderUtils.guessFileType(url) || "text/turtle"
+      if( contentType==='application/json' ){
+        try {
+          let res = await this.fetch(url).catch(e=>{return this._err(e)})
+          const obj = await JSON.parse(res);
+          return(
+            this._throwErrors ? obj : { ok : true, body : obj }
+          )
+        }
+        catch(e) { return this._err(e) }
+      }
+      let store = $rdf.graph()
+      let fetcher = $rdf.fetcher(store,this._auth)
+      await fetcher.load(url).catch(e=>{return this._err(e)})
+      if(this._throwErrors) return store
+      else return store ? { ok:true, body:store } : { ok:false }
+*/
     }
     let store = $rdf.graph()
     let fetcher = $rdf.fetcher(store, this._auth)

@@ -69,12 +69,11 @@ test('readFile', () => {
 
 // fetchAndParse()
 //
-test('fetchAndParse', () => {
-  return expect(
+/*
+  test('fetchAndParse',()=>{ return expect(
     fetchAndParse(cfg.profile)
-  ).resolves.toBe(true)
-})
-
+  ).resolves.toBe(true) });
+*/
 // updateFile()
 //
 test('updateFile', () => {
@@ -165,11 +164,13 @@ async function updateFile (url, content) {
       return res === content
     } catch (e) { return false }
   } else {
-    let res = await fc.updateFile(url, content)
-    if (!res.ok) return false
-    res = await fc.readFile(url)
-    if (!res.ok) return false
-    return res.body === content
+    try {
+      let res = await fc.updateFile(url, content)
+      if (!res.ok) return false
+      res = await fc.readFile(url)
+      if (!res.ok) return false
+      return res.body === content
+    } catch (e) { console.log(e) }
   }
 }
 async function getHead (url) {
@@ -197,27 +198,27 @@ async function getLinks (url) {
     return false
   }
 }
-async function fetchAndParse (profile) {
-  if (throwErrors) {
-    try {
-      let store = await fc.fetchAndParse(profile, 'text/turtle')
-      let subject = store.sym(profile)
-      let predicate = store.sym('http://xmlns.com/foaf/0.1/name')
-      let name = store.any(subject, predicate)
-      if (!name) return false
-      return !!name.value.match('Jeff Zucker')
-    } catch (e) { return e }
-  } else {
-    let res = await fc.fetchAndParse(profile, 'text/turtle')
-    if (!res.ok) return false
-    let store = res.body
-    let subject = store.sym(profile)
-    let predicate = store.sym('http://xmlns.com/foaf/0.1/name')
-    let name = store.any(subject, predicate)
-    if (!name) return false
-    return !!name.value.match('Jeff Zucker')
-  }
-}
+// async function fetchAndParse (profile) {
+//   if (throwErrors) {
+//     try {
+//       let store = await fc.fetchAndParse(profile, 'text/turtle')
+//       let subject = store.sym(profile)
+//       let predicate = store.sym('http://xmlns.com/foaf/0.1/name')
+//       let name = store.any(subject, predicate)
+//       if (!name) return false
+//       return !!name.value.match('Jeff Zucker')
+//     } catch (e) { return e }
+//   } else {
+//     let res = await fc.fetchAndParse(profile, 'text/turtle')
+//     if (!res.ok) return false
+//     let store = res.body
+//     let subject = store.sym(profile)
+//     let predicate = store.sym('http://xmlns.com/foaf/0.1/name')
+//     let name = store.any(subject, predicate)
+//     if (!name) return false
+//     return !!name.value.match('Jeff Zucker')
+//   }
+// }
 async function itemExists (url) {
   return fc.itemExists(url)
 }
