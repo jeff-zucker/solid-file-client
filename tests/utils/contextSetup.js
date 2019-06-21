@@ -7,7 +7,8 @@ const prefixes = {
 }
 
 // Create dummy variables which have to be overwritten in the setup
-let prefix, baseUrl, testContainer, testFetch
+const prefix = process.env.TEST_PREFIX || 'app://ls/'
+let baseUrl, testContainer, testFetch
 let hasBeenSetup = false
 
 /**
@@ -16,7 +17,6 @@ let hasBeenSetup = false
  */
 async function contextSetup() {
   console.group('context setup')
-  prefix = process.env.TEST_PREFIX || 'app://ls/'
   if (!Object.values(prefixes).includes(prefix)) {
     throw new Error(`TEST_PREFIX must be one of ${Object.values(prefixes).join(' ')}. Found: ${prefix}`)
   }
@@ -115,7 +115,7 @@ module.exports = {
   contextSetup,
   prefixes,
   getTestContainer,
-  getPrefix: () => assertReady(() => prefix),
+  getPrefix: () => prefix,
   getBaseUrl: () => assertReady(() => baseUrl),
   getFetch: () => assertReady(() => testFetch),
   getAuth: () => assertReady(() => auth),
