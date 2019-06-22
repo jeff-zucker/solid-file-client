@@ -382,10 +382,10 @@ class SolidAPI {
     folder[0] = Object.assign(folder[0],
       processStatements(await rdf.query(null, { thisDoc: '' })) || {}
     )
-    if (files.length === 0 && folder.length === 1) {
-      console.log('folder is empty')
-      return
-    }
+    // if (files.length === 0 && folder.length === 1) {
+    //   console.log('folder is empty')
+    //   return
+    // }
     let folderItems = []
     let fileItems = []
     for (var f in files) {

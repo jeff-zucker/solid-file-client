@@ -79,13 +79,14 @@ console.log( g )
     })
   }
 
-  async loadFromUrl(url){
-    return new Promise( async(resolve)=>{
-      let res = await this._fetch(url)
-      let string = await res.text()
-      let store = this.store = await this._load(string,url)
-      return resolve(this.store)
-    })
+  async loadFromUrl(url) {
+    const res = await this._fetch(url)
+    if (!res.ok) {
+      throw res
+    }
+    const string = await res.text()
+    this.store = await this._load(string, url)
+    return this.store
   }
 
   async _load(string,url){

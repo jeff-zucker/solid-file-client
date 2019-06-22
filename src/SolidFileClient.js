@@ -163,7 +163,7 @@ class SolidFileClient extends SolidApi {
       if(this._throwErrors) return store
       else return store ? { ok:true, body:store } : { ok:false }
 */
-    }
+    // }
     let store = $rdf.graph()
     let fetcher = $rdf.fetcher(store, this._auth)
     await fetcher.load(url).catch(e => { return this._err(e) })
