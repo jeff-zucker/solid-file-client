@@ -1,10 +1,10 @@
 // import { getParentUrl, getItemName, areFolders, areFiles, LINK } from './utils/apiUtils'
-// import folderUtils from './utils/folderUtils'
 import apiUtils from './utils/apiUtils'
+import folderUtils from './utils/folderUtils';
 import RdfQuery from './utils/rdf-query'
 
 const { getParentUrl, getItemName, areFolders, areFiles, LINK } = apiUtils
-// const { text2graph, processFolder } = folderUtils
+const {_parseLinkHeader,_urlJoin} = folderUtils
 
 /**
  * @typedef {Object} RequestOptions
@@ -25,7 +25,7 @@ class SolidAPI {
    */
   constructor (fetch) {
     this._fetch = fetch
-    this._rdf = new RdfQuery(fetch)
+    this.rdf = new RdfQuery(fetch)
   }
 
   /**
@@ -147,7 +147,7 @@ class SolidAPI {
    * @param {string} url
    * @param {Blob|string} content
    * @param {string} contentType
-   * @param {string} link - link specifies what rdf type it is
+   * @param {string} link - header for Container/Resource, see LINK in apiUtils
    * @returns {Promise<Response>}
    */
   createItem (url, content, contentType, link) {
@@ -232,12 +232,16 @@ class SolidAPI {
    */
   async readFolder (url) {
     try {
+//      const res = await this.processFolder(url)
+//      return res
+
       const res = await this.processFolder(url)
       return {
         ok: true,
         status: 200,
         body: res
       }
+
     } catch (e) {
       throw (e)
     }
@@ -267,7 +271,6 @@ class SolidAPI {
    */
   async copyFolder (from, to, { overwrite } = { overwrite: false }) {
     const { body: { folders, files } } = await this.readFolder(from).then(this._assertResponseOk)
-
     const folderResponse = await this.createFolder(to)
     const promises = [
       ...folders.map(({ name }) => this.copyFolder(`${from}${name}/`, `${to}${name}/`, { overwrite })),
@@ -302,7 +305,7 @@ class SolidAPI {
    * @returns {Promise<Response[]>} Resolves with a response for each deletion request
    */
   async deleteFolderContents (url) {
-    const { body: { folders, files } } = await this.readFolder(url).then(this._assertResponseOk)
+   const { body: { folders, files } } = await this.readFolder(url).then(this._assertResponseOk)
     const resolvedResponses = []
 
     await Promise.all([
@@ -367,211 +370,221 @@ class SolidAPI {
   }
 
   /**
-   * processFolder(url)
+   * processFolder
+   *
+   * TBD : 
+   *   - refactor all of the links=true methods (not ready yet)
+   *   - re-examine parseLinkHeader, return its full rdf
+   *   - re-examine error checking in full chain
+   *   - complete documentation of methods
+   *
+   * here's the current call stack
+   *
+   * processFolder (withLinks=false)
+   *   _processStatements
+   *   _packageFolder
+   * processFolder (withLinks=true)
+   *   _getFolderLinks
+   *   _getFileLinks
+   *     getLinks
+   *       _findLinksInHeader
+   *         _lookForLink
+   *           _getLinkObject
    *
    * returns the same thing the old solid-file-client did except
    *   a) .acl and .meta files are included in the files array *if they exist*
    *   b) additional fields such as content-type are added if available
    *   c) it no longer returns the turtle representation
+   *
+   * parses a folder's turtle, developing a list of its contents
+   * by default, finds associated .acl and .meta 
+   *
    */
-  async processFolder (folderUrl) {
-    let self = this
-    let rdf = this._rdf
-    let files = await rdf.query(folderUrl, { thisDoc: '' }, { ldp: 'contains' })
-    let folder = await self.getLinks(folderUrl)
-    folder[0] = Object.assign(folder[0],
-      processStatements(await rdf.query(null, { thisDoc: '' })) || {}
-    )
-    // if (files.length === 0 && folder.length === 1) {
-    //   console.log('folder is empty')
-    //   return
-    // }
-    let folderItems = []
-    let fileItems = []
+  async processFolder (folderUrl,options={withLinks:false}) {
+    let [rdf,folder,folderItems,fileItems] = [this.rdf,[],[],[]]
+    if(options.withLinks){
+      fileItems.push( _getFolderLinks(folderUrl) )
+    }
+    let files  = await rdf.query( folderUrl, {thisDoc:''}, {ldp:'contains'} )
     for (var f in files) {
       let thisFile = files[f].object
-      let thisFileWithLinks = await self.getLinks(thisFile.value)
-      thisFileWithLinks[0] = Object.assign(thisFileWithLinks[0],
-        processStatements(await rdf.query(null, thisFile))
-      )
-      if (thisFileWithLinks[0].type === 'Container') {
-        folderItems = folderItems.concat(thisFileWithLinks)
-      } else { fileItems = fileItems.concat(thisFileWithLinks) }
+      let thisFileStmts = await rdf.query(null,thisFile)
+      let itemRecord = this._processStatements(thisFile.value,thisFileStmts)
+      if(options.withLinks) {
+        itemRecord = _getFileLinks(thisFile.value,itemRecord)
+      }
+      if (itemRecord.itemType.match('Container')) {
+        folderItems = folderItems.concat(itemRecord)
+      } else { fileItems = fileItems.concat(itemRecord) }
     }
+    return this._packageFolder(folderUrl,folderItems,fileItems)
+  }
+
+  /*
+   * _processStatements
+   *
+   * input
+   *  - item URL
+   *  - statements from the container's turtle with this item as subject
+   * finds properties of an item from its predicates and objects
+   *  - e.g. predicate = stat#size  object = 4096
+   *  - strips off full URLs of predicates and objects
+   *  - creates arrays for properties that have multiple values (e.g. types)
+   *  - stores "type" property in types because v0.x of sfc needs type
+   * returns an associative array of the item's properties
+   */
+  _processStatements (url,stmts) {
+    let processed = {url:url}
+    stmts.forEach(stm => {
+      let predicate=stm.predicate.value.replace(/.*\//,'').replace(/.*#/,'')
+      let object = stm.object.value.replace(/.*\//,'')
+      if(!predicate.match("type")) object = object.replace(/.*#/,'')
+      if(processed[predicate]) processed[predicate].push( object )
+      else processed[predicate] = [ object ]
+    })
+    for(var key in processed){
+      if( processed[key].length===1 ) processed[key] = processed[key][0]
+    }
+    processed["itemType"] = processed.type.includes("ldp#BasicContainer") 
+      ? "Container"
+      : "Resource"
+    return processed
+  }
+
+  /*
+   * _packageFolder
+   *
+   * input  : folder's URL, arrays of folders and files it contains
+   * output : the hash expected by the end_user of readFolder
+   *          as shown in the existing documentation
+   */
+  _packageFolder(folderUrl,folderItems,fileItems) {
+    /* TBD : replace this with Otto's parent method 
+    */
     const fullName = folderUrl.replace(/\/$/, '')
     const name = fullName.replace(/.*\//, '')
     const parent = fullName.substr(0, fullName.lastIndexOf('/')) + '/'
-    let returnVal = folder.shift() // the container itself
-    fileItems = fileItems.concat(folder) // the .acl etc of the container
+    let returnVal = {}
     returnVal.type = 'folder' // for backwards compatability :-(
     returnVal.name = name
     returnVal.parent = parent
     returnVal.url = folderUrl
     returnVal.folders = folderItems
     returnVal.files = fileItems
-    // returnVal.content,                 // thinking of not sending the turtle
+    // returnVal.content,     // thinking of not sending the turtle
     return returnVal
+  }
 
-    function processStatements (stmts) {
-      let returnVal = {}
-      stmts.forEach(stm => {
-        let predicate = stm.predicate.value.replace(/.*\//, '').replace(/.*#/, '')
-        if (!predicate.endsWith('type') && !predicate.match('contains')) { returnVal[predicate] = stm.object.value }
-      })
-      return returnVal
-    }
-  } // end of processFolder
+  /*
+   * _geFolderLinks (TBD)
+   */
+  async _getFolderLinks(folderUrl){
+    let folder = await this.getLinks(folderUrl)
+    folder[0] = Object.assign(folder[0],
+      this._processStatements(await rdf.query(null, { thisDoc: '' })) || {}
+    )
+    return folder
+  }
+
+  /*
+   * _geFileLinks (TBD)
+   */
+  async _getFileLinks(itemUrl,itemRecord){
+    let itemWithLinks = await this.getLinks(itemUrl)
+    itemWithLinks[0] = Object.assign( itemWithLinks[0], itemRecord )
+    return itemWithLinks
+  }
 
   /**
-   * getLinks(itemUrl)
+   * getLinks (TBD)
    *
    * returns an array of records related to an item (resource or container)
    *   0   : the item itself
    *   1-3 : the .acl, .meta, and .meta.acl for the item if they exist
-   * each record includes these fields
+   * each record includes these fields (see _getLinkObject)
    *   url
    *   type (one of Container, Resource, AccessControl, or Metadata)
    *   content-type (text/turtle, etc.)
    */
-  async getLinks (url) {
-    let self = this
-    let res = await self.fetch(url, { method: 'HEAD' })
-    let link = await res.headers.get('link')
-    link = await parseLinkHeader(link, url, url)
-    let item = []
-    item.push({
-      url: url,
-      type: link.type,
-      'content-type': res.headers.get('content-type')
-    })
-    if (link.acl) item.push(link.acl)
-    if (link.meta) item.push(link.meta)
-    if (link.metaAcl) item.push(link.metaAcl)
-    return item
+  async getLinks (itemUrl) {
+    let res = await this.fetch(itemUrl, { method: 'HEAD' })
+    let linkHeader = await res.headers.get('link')
+    let links = await this._findLinksInHeader(itemUrl,linkHeader)
+    let itemLinks = [ this._getLinkObject(
+      links.itemType,itemUrl,res.headers.get('content-type')
+    )]
+    if (links.acl) itemLinks.push(links.acl)
+    if (links.meta) itemLinks.push(links.meta)
+    if (links.metaAcl) itemLinks.push(links.metaAcl)
+    return itemLinks
+  }
 
-    // I Stole this from rdflib and munged it
-    async function parseLinkHeader (linkHeader, originalUri, reqNode) {
-      if (!linkHeader) { return }
-
-      // const linkexp = /<[^>]*>\s*(\s*;\s*[^()<>@,;:"/[\]?={} \t]+=(([^()<>@,;:"/[]?={} \t]+)|("[^"]*")))*(,|$)/g
-      // const paramexp = /[^()<>@,;:"/[]?={} \t]+=(([^()<>@,;:"/[]?={} \t]+)|("[^"]*"))/g
-
-      // From https://www.dcode.fr/regular-expression-simplificator:
-      // const linkexp = /<[^>]*>\s*(\s*;\s*[^()<>@,;:"/[\]?={} t]+=["]))*[,$]/g
-      // const paramexp = /[^\\<>@,;:"\/\[\]?={} \t]+=["])/g
-      // Original:
-      const linkexp = /<[^>]*>\s*(\s*;\s*[^()<>@,;:"/[\]?={} \t]+=(([^\(\)<>@,;:"\/\[\]\?={} \t]+)|("[^"]*")))*(,|$)/g
-      // const paramexp = /[^\(\)<>@,;:"\/\[\]\?={} \t]+=(([^\(\)<>@,;:"\/\[\]\?={} \t]+)|("[^"]*"))/g
-
-      const matches = linkHeader.match(linkexp)
-      let final = {}
-      for (let i = 0; i < matches.length; i++) {
-        let split = matches[i].split('>')
-        let href = split[0].substring(1)
-        if (matches[i].match(/rel="acl"/)) {
-          let acl = urlJoin(href, originalUri)
-          try { let aclres = await self.fetch(acl, { method: 'HEAD' }) } catch (e) {}
-          if (typeof aclres !== 'undefined' && aclres.ok) {
-            final.acl = {
-              'url': acl,
-              type: 'AccessControl',
-              'content-type': aclres.headers.get('content-type')
-            }
-          }
-        }
-        if (matches[i].match(/rel="describedBy"/)) {
-          let meta = urlJoin(href, originalUri)
-          let metares
-          try { metares = await self.fetch(meta, { method: 'HEAD' }) } catch (e) {}
-          if (typeof metares !== 'undefined' && metares.ok) {
-            final.meta = {
-              'url': meta,
-              type: 'Metadata',
-              'content-type': metares.headers.get('content-type')
-            }
-          }
-          if (final.meta) {
-            let m = await self.getLinks(final.meta.url)
-            if (m.acl) final.metaAcl = m.acl
-          }
-        }
-        if (matches[i].match(/rel="type"/)) {
-          final.type = href.match('Resource')
-            ? 'Resource' : 'Container'
-        }
+  /**
+   * findLinksInHeader (TBD)
+   *
+   */
+  async _findLinksInHeader (originalUri,linkHeader ) {
+    let matches = _parseLinkHeader(linkHeader, originalUri)
+    let final = {}
+    for (let i = 0; i < matches.length; i++) {
+      let split = matches[i].split('>')
+      let href = split[0].substring(1)
+      if(matches[i].match(/rel="acl"/)) 
+        final.acl = await this._lookForLink("AccessControl",href,originalUri)
+      if (matches[i].match(/rel="describedBy"/)) {
+        final.meta = await this._lookForLink("Metadata",href,originalUri)
+/*
+      if(typeof final.meta !="undefined") {
+        let metaAcl = this._lookForLink(
+          "AccessControl",final.meta.url,".acl"
+        )
+        if (metaAcl) final.metaAcl = metaAcl
       }
-      return final
+*/
+    }
+    if (matches[i].match(/rel="type"/))
+      final.itemType = href.match('Resource') ? 'Resource' : 'Container'
+    }
+    return final
+  }
+  
+  /**
+   * _lookForLink (TBD)
+   *
+   * - input 
+   *     - linkType = one of AccessControl or Metatdata
+   *     - itemUrl  = address of the item associated with the link
+   *     - relative URL from the link's associated item's header (e.g. .acl)
+   * - creates an absolute Url for the link
+   * - looks for the link and, if found, returns a link object
+   * - else returns undefined
+   */
+  async _lookForLink(linkType,itemUrl,linkRelativeUrl){
+    let linkUrl = _urlJoin(linkRelativeUrl,itemUrl)
+    try { 
+      let res = await this.fetch( linkUrl, { method: 'HEAD' }) 
+      if (typeof res !== 'undefined' && res.ok) {
+        let contentType = res.headers.get("content-type")
+        return this._getLinkObject(linkUrl,linkType,contentType)
+      }
+    } catch (e) {} // ignore if not found
+  }
 
-      // I Stole this from rdflib
-      function urlJoin (given, base) {
-        var baseColon, baseScheme, baseSingle
-        var colon, lastSlash, path
-        var baseHash = base.indexOf('#')
-        if (baseHash > 0) {
-          base = base.slice(0, baseHash)
-        }
-        if (given.length === 0) {
-          return base
-        }
-        if (given.indexOf('#') === 0) {
-          return base + given
-        }
-        colon = given.indexOf(':')
-        if (colon >= 0) {
-          return given
-        }
-        baseColon = base.indexOf(':')
-        if (base.length === 0) {
-          return given
-        }
-        if (baseColon < 0) {
-          alert('Invalid base: ' + base + ' in join with given: ' + given)
-          return given
-        }
-        baseScheme = base.slice(0, +baseColon + 1 || 9e9)
-        if (given.indexOf('//') === 0) {
-          return baseScheme + given
-        }
-        if (base.indexOf('//', baseColon) === baseColon + 1) {
-          baseSingle = base.indexOf('/', baseColon + 3)
-          if (baseSingle < 0) {
-            if (base.length - baseColon - 3 > 0) {
-              return base + '/' + given
-            } else {
-              return baseScheme + given
-            }
-          }
-        } else {
-          baseSingle = base.indexOf('/', baseColon + 1)
-          if (baseSingle < 0) {
-            if (base.length - baseColon - 1 > 0) {
-              return base + '/' + given
-            } else {
-              return baseScheme + given
-            }
-          }
-        }
-        if (given.indexOf('/') === 0) {
-          return base.slice(0, baseSingle) + given
-        }
-        path = base.slice(baseSingle)
-        lastSlash = path.lastIndexOf('/')
-        if (lastSlash < 0) {
-          return baseScheme + given
-        }
-        if (lastSlash >= 0 && lastSlash < path.length - 1) {
-          path = path.slice(0, +lastSlash + 1 || 9e9)
-        }
-        path += given
-        while (path.match(/[^\/]*\/\.\.\//)) {
-          path = path.replace(/[^\/]*\/\.\.\//, '')
-        }
-        path = path.replace(/\.\//g, '')
-        path = path.replace(/\/\.$/, '/')
-        return base.slice(0, baseSingle) + path
-      } // end of urlJoin
-    } // end of parseLinkHeader
-  } // end of getLinks
+  /**
+   * _getLinkObject (TBD)
+   *
+   * creates a link object for a container or any item it holds
+   * type is one of Resource, Container, AccessControl, Metatdata
+   * content-type is from the link's header
+   */
+  _getLinkObject(linkUrl,linkType,contentType){
+    return {
+      url: linkUrl,
+      type: linkType,
+      'content-type': contentType
+    }
+  }
+
 }
 
 export default SolidAPI

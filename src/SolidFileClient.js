@@ -1,9 +1,10 @@
-import $rdf from 'rdflib'
 import SolidApi from './SolidApi'
-import folderUtils from './utils/folderUtils'
 
-// const { guessFileType, text2graph } = folderUtils
-const defaultInitOptions = { throwErrors:false }
+/** TODO
+ * maybe eventually reintroduce the fetch API response interface
+ * for now throwErrors will be the only option so no need for this line
+ * const defaultInitOptions = { throwErrors:false }
+ */
 const defaultPopupUri = 'https://solid.community/common/popup.html'
 
 /** TODO
@@ -25,18 +26,25 @@ const defaultPopupUri = 'https://solid.community/common/popup.html'
  */
 class SolidFileClient extends SolidApi {
   /**
-     * Crete a new SolidFileClient
-     * @param {SolidAuthClient,RdfLib} auth, rdflib
-     */
-    constructor(auth, options = defaultInitOptions) {
-        super(auth.fetch.bind(auth))
-        this._auth = auth
-        this._throwErrors = options.throwErrors
-        this.response = {}
-    }
+   * Crete a new SolidFileClient
+   * @param {SolidAuthClient,RdfLib} auth, rdflib
+   */
+  constructor(auth, options = defaultInitOptions) {
+    super(auth.fetch.bind(auth))
+    this._auth = auth
+    // see above on throwErrors this._throwErrors = options.throwErrors
+    this.response = {}
+  }
+
+/* TBD
+ * redo the comments for the login/session methods, they are wrong
+ * in several respects
+ */
 
     /**
-     * Redirect the user to a login page
+     * Redirect the user to a login page if in the browser
+     * or login directly from command-line or node script
+     *
      * @param {Object} credentials
      * @returns {Promise<Session>}
      */
@@ -50,7 +58,8 @@ class SolidFileClient extends SolidApi {
 
   /**
      * Open a popup prompting the user to login
-     * @returns {Promise<string>} resolves with the webId after a successful login
+     * @returns {Promise<string>} resolves with the webId after a 
+     * successful login
      */
   async popupLogin (popupUri = defaultPopupUri) {
     let session = await this._auth.currentSession()
@@ -127,8 +136,8 @@ class SolidFileClient extends SolidApi {
           else if(res.text) {
             res.text().then( text => {
                 res.body = text;
-                if(this._throwErrors) return resolve(res.body) 
-                else return resolve( res )
+                return resolve(res.body) 
+                // else return resolve( res )
             }).catch( err =>{resolve(self._err(err))} )
           }
           else resolve(res)
@@ -162,65 +171,22 @@ class SolidFileClient extends SolidApi {
       await fetcher.load(url).catch(e=>{return this._err(e)})
       if(this._throwErrors) return store
       else return store ? { ok:true, body:store } : { ok:false }
-*/
-    // }
+    }
     let store = $rdf.graph()
     let fetcher = $rdf.fetcher(store, this._auth)
     await fetcher.load(url).catch(e => { return this._err(e) })
     if (this._throwErrors) return store
     else return store ? { ok: true, body: store } : { ok: false }
+*/
   }
 
-  _err (e) {
-    let err = {
-      ok: false,
-      status: e.status || 500,
-      statusText: e.statusText || e
-    }
-    if (this._throwErrors) throw err
-    else return err
-  }
-  _ok (b) {
-    if (this._throwErrors) return b
-    else {
-      return {
-        ok: true,
-        status: 200,
-        statusText: 'OK',
-        body: b
-      }
-    }
-  }
 
-  /* These methods return the uncaught SolidApi responses which fail on error
-       unless throwErros is set to false, in which case they trap errors
-       and send either a success response or an error response.
-    */
-  async do (method, ...args) { return super[method](...args) }
-  async getHead (url, options) { return super.head(url, options) }
-  async createFile (url, content, contentType) {
-    return this._api('createFile', url, content, contentType)
-  }
-  async updateFile (url, content, contentType) {
+  async getHead(url,options) { return super.head(url, options) }
+  async deleteFile(url,options) { return this._api('delete', url, options) }
+  async deleteFolder(url,options){ return this._api('delete', url, options) }
+  async updateFile(url,content, contentType) {
     if (await this.itemExists(url)) { await this.delete(url) }
     return this._api('createFile', url, content, contentType)
-  }
-  async deleteFile (url, options) { return this._api('delete', url, options) }
-  async deleteFolder (url, options) { return this._api('delete', url, options) }
-  async createFolder (url, options) { return this._api('createFolder', url, options) }
-
-  /* TBD : pass methods, not names of methods
-    */
-  async _api (method, ...args) {
-    if (this._throwErrors) {
-      return super[method](...args)
-    }
-    try {
-      let res = await super[method](...args)
-      return res
-    } catch (e) {
-      return e
-    }
   }
 }
 
