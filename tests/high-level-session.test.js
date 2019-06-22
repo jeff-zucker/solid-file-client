@@ -1,72 +1,78 @@
-import auth from '../node_modules/solid-auth-cli';
-import FC   from '../src/index.js'
+import auth from '../node_modules/solid-auth-cli'
+import FC from '../src/index.js'
 
-const myWebId="https://jeffz.solid.community/profile/card#me"
+const myWebId = 'https://jeffz.solid.community/profile/card#me'
 
 const fc = new FC(auth)
 
-  /* login()
+/* login()
   */
-  test('login',()=>{ return expect(
+test('login', () => {
+  return expect(
     login()
-  ).resolves.toBe(true) });
+  ).resolves.toBe(true)
+})
 
-  /* checkSession()
+/* checkSession()
   */
-  test('checkSession',()=>{ return expect(
+test('checkSession', () => {
+  return expect(
     checkSession()
-  ).resolves.toBe(true) });
+  ).resolves.toBe(true)
+})
 
-  /* logout()
+/* logout()
   */
-  test('logout',()=>{ return expect(
+test('logout', () => {
+  return expect(
     logout()
-  ).resolves.toBe(true) });
+  ).resolves.toBe(true)
+})
 
-  /* popupLogin()
+/* popupLogin()
   */
-  test('popupLogin',()=>{ return expect(
+test('popupLogin', () => {
+  return expect(
     popupLogin()
-  ).resolves.toBe(true) });
+  ).resolves.toBe(true)
+})
 
-  /* getCredentials
+/* getCredentials
   */
-  test('getCredentials',()=>{ return expect(
+test('getCredentials', () => {
+  return expect(
     getCredentials()
-  ).resolves.toBe(true) });
+  ).resolves.toBe(true)
+})
 
-
-async function login() {
+async function login () {
   let webId = await fc.login()
-  if(webId && webId===myWebId) return true
+  if (webId && webId === myWebId) return true
   else return webId
 }
-async function popupLogin() {
+async function popupLogin () {
   let webId = await fc.popupLogin()
-  if ( webId && webId===myWebId) return true
+  if (webId && webId === myWebId) return true
   else return false
 }
-async function checkSession() {
+async function checkSession () {
   let webId = await fc.checkSession()
-  if ( webId && webId===myWebId) return true
+  if (webId && webId === myWebId) return true
   else return false
 }
-async function currentSession() {
-  let wsession = await fc.currentSession()
-  if ( session && session.webId===myWebId) return true
-  else return false
-}
-async function getCredentials() {
+// async function currentSession () {
+//   let wsession = await fc.currentSession()
+//   if (session && session.webId === myWebId) return true
+//   else return false
+// }
+async function getCredentials () {
   let creds = await fc.getCredentials()
-  if(creds && creds.idp) return true
+  if (creds && creds.idp) return true
   else return false
 }
-async function logout() {
+async function logout () {
   await fc.logout()
   let session = await fc.checkSession()
-  if(session) return false
+  if (session) return false
   else return true
 }
-
-
-

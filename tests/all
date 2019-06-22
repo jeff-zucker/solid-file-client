@@ -1,202 +1,197 @@
-const auth  = require("solid-auth-cli")
+const auth = require('solid-auth-cli')
 const fetch = auth.fetch // OR solid-file-client.fetch OR solid-rest.fetch
 
-let [tests,fails,passes,res] = [0,0,0]
+let [tests, fails, passes, res] = [0, 0, 0]
 
-async function main(){
-  await run("app://ls")
+async function main () {
+  await run('app://ls')
 //  await run("file://")
 //  await run("https://")
 }
 main()
 
-async function run(scheme){
-
-  [tests,fails,passes] = [0,0,0]
+async function run (scheme) {
+  [tests, fails, passes] = [0, 0, 0]
   let cfg = await getConfig(scheme)
 
   // base is app:/ls or file://+cwd ORr https://you.idp.com/public
   // creates = base/test-folder/ if it doesn't exst
   //
-  let ready = await GET( cfg.parent,{method:HEAD} )
-  if( !ready.ok ) await postFolder( cfg.base, cfg.pa)
+  let ready = await GET(cfg.parent, { method: HEAD })
+  if (!ready.ok) await postFolder(cfg.base, cfg.pa)
 
   console.log(`\nTesting ${cfg.base} ...`)
 
-// base     = app://ls/
-// parent   = app://ls/test-folder/
-// folder   = app://ls/test-folder/node/
-// file     = app://ls/test-folder/node/test-file
-// file2    = app://ls/test-folder/node/test-file2
-// deep     = app://ls/test-folder/node/deep/deeper/test-file
-// noParent = app://ls/test-folder/node/noSuchThing"
+  // base     = app://ls/
+  // parent   = app://ls/test-folder/
+  // folder   = app://ls/test-folder/node/
+  // file     = app://ls/test-folder/node/test-file
+  // file2    = app://ls/test-folder/node/test-file2
+  // deep     = app://ls/test-folder/node/deep/deeper/test-file
+  // noParent = app://ls/test-folder/node/noSuchThing"
 
-  res = await postFolder( cfg.parent, cfg.fo + "/" )
-  ok( "400 post container with trailing slash on slug", res.status==400)
+  res = await postFolder(cfg.parent, cfg.fo + '/')
+  ok('400 post container with trailing slash on slug', res.status === 400)
 
-  res = await postFolder( cfg.parent, cfg.fo )
-  ok( "201 post container", res.status==201)
+  res = await postFolder(cfg.parent, cfg.fo)
+  ok('201 post container', res.status === 201)
 
-  res = await postFolder( cfg.parent,cfg.fo )
-  ok( "201 post container, container found", res.status==201)
+  res = await postFolder(cfg.parent, cfg.fo)
+  ok('201 post container, container found', res.status === 201)
 
-  res = await postFolder( cfg.noParent, cfg.mi2 )
-  ok( "404 post container, parent not found", res.status==404)
+  res = await postFolder(cfg.noParent, cfg.mi2)
+  ok('404 post container, parent not found', res.status === 404)
 
-  res = await postFile( cfg.folder, cfg.fi, cfg.text )
-  ok( "201 post resource", res.status==201)
+  res = await postFile(cfg.folder, cfg.fi, cfg.text)
+  ok('201 post resource', res.status === 201)
 
-  res = await postFile( cfg.folder,cfg.fi, cfg.text )
-  ok( "201 post resource, resource found", res.status==201)
+  res = await postFile(cfg.folder, cfg.fi, cfg.text)
+  ok('201 post resource, resource found', res.status === 201)
 
-  res = await postFile( cfg.noParent,cfg.file )
-  ok( "404 post resource, parent not found", res.status==404)
+  res = await postFile(cfg.noParent, cfg.file)
+  ok('404 post resource, parent not found', res.status === 404)
 
-  res = await PUT( cfg.folder )
-  ok( "409 put container (method not allowed)", res.status==409)
+  res = await PUT(cfg.folder)
+  ok('409 put container (method not allowed)', res.status === 409)
 
-  res = await PUT( cfg.file2,cfg.text )
-  ok( "201 put resource", res.status==201)
+  res = await PUT(cfg.file2, cfg.text)
+  ok('201 put resource', res.status === 201)
 
-  res = await PUT( cfg.file2,cfg.text )
-  ok( "201 put resource, resource found", res.status==201)
+  res = await PUT(cfg.file2, cfg.text)
+  ok('201 put resource, resource found', res.status === 201)
 
-// if(!scheme.match("file:")){
-  res = await PUT( cfg.deep+cfg.fi,cfg.text )
-  ok("201 put resource, parent not found (recursive creation)",res.status==201)
-// }
-  res = await HEAD( cfg.file )
-  ok("200 head",res.status==200 && res.headers.get("allow") )
+  // if(!scheme.match("file:")){
+  res = await PUT(cfg.deep + cfg.fi, cfg.text)
+  ok('201 put resource, parent not found (recursive creation)', res.status === 201)
+  // }
+  res = await HEAD(cfg.file)
+  ok('200 head', res.status === 200 && res.headers.get('allow'))
 
-  res = await HEAD( cfg.noParent + cfg.fi)
-  ok("404 head resource, not found",res.status==404 )
+  res = await HEAD(cfg.noParent + cfg.fi)
+  ok('404 head resource, not found', res.status === 404)
 
-  res = await GET( cfg.noParent )
-  ok("404 get container, not found",res.status==404 )
+  res = await GET(cfg.noParent)
+  ok('404 get container, not found', res.status === 404)
 
-  res = await GET( cfg.file )
-  ok("200 get resource",res.status==200 && await res.text()===cfg.text)
+  res = await GET(cfg.file)
+  ok('200 get resource', res.status === 200 && await res.text() === cfg.text)
 
-  res = await GET( cfg.folder )
-  let type = res.headers.get("content-type")
-  ok("200 get container",res.status==200 && type==="text/turtle")
+  res = await GET(cfg.folder)
+  let type = res.headers.get('content-type')
+  ok('200 get container', res.status === 200 && type === 'text/turtle')
 
-  res = await DELETE( cfg.folder )
-  ok("409 delete container, not empty",res.status==409)
+  res = await DELETE(cfg.folder)
+  ok('409 delete container, not empty', res.status === 409)
 
-  res = await DELETE( cfg.file )
-  res = await DELETE( cfg.file2 )
+  res = await DELETE(cfg.file)
+  res = await DELETE(cfg.file2)
 
-if(!scheme.match("file:")){
-  res = await DELETE( cfg.deep + cfg.fi )
-}
-  ok("200 delete resource",res.status==200)
+  if (!scheme.match('file:')) {
+    res = await DELETE(cfg.deep + cfg.fi)
+  }
+  ok('200 delete resource', res.status === 200)
 
-if(!scheme.match("https:")){
-    res = await DELETE( cfg.deep )
-    res = await DELETE( cfg.folder + cfg.deep1 )
-    res = await DELETE( cfg.folder )
-    res = await DELETE( cfg.parent )
-    ok("200 delete container",res.status==200)
-}
+  if (!scheme.match('https:')) {
+    res = await DELETE(cfg.deep)
+    res = await DELETE(cfg.folder + cfg.deep1)
+    res = await DELETE(cfg.folder)
+    res = await DELETE(cfg.parent)
+    ok('200 delete container', res.status === 200)
+  }
 
   console.log(`${passes}/${tests} tests passed, ${fails} failed\n`)
-
 }
 /* =========================================================== */
 /* REST METHODS                                                */
 /* =========================================================== */
-async function GET(url){
-  return await fetch( url, {method:"GET"} )
+async function GET (url) {
+  return fetch(url, { method: 'GET' })
 }
-async function HEAD(url){
-  return await fetch( url, {method:"HEAD"} )
+async function HEAD (url) {
+  return fetch(url, { method: 'HEAD' })
 }
-async function PUT(url,text){
-  return await fetch( url, {method:"PUT",body:text} )
+async function PUT (url, text) {
+  return fetch(url, { method: 'PUT', body: text })
 }
-async function DELETE(url){
-  return await fetch( url, {method:"DELETE"} )
+async function DELETE (url) {
+  return fetch(url, { method: 'DELETE' })
 }
-async function POST(parent,item,content,link){
-  return await fetch( parent,{
-    method:"POST",
-    headers:{slug:item,link:link},
-    body:content
+async function POST (parent, item, content, link) {
+  return fetch(parent, {
+    method: 'POST',
+    headers: { slug: item, link: link },
+    body: content
   })
 }
-async function postFile(parent,file,content){
+async function postFile (parent, file, content) {
   let link = '<http://www.w3.org/ns/ldp#Resource>; rel="type"'
-  return POST(parent,file,content,link)
+  return POST(parent, file, content, link)
 }
-async function postFolder(parent,folder){
-  let link ='<http://www.w3.org/ns/ldp#BasicContainer>; rel="type"'
-  return POST(parent,folder,'',link)
+async function postFolder (parent, folder) {
+  let link = '<http://www.w3.org/ns/ldp#BasicContainer>; rel="type"'
+  return POST(parent, folder, '', link)
 }
 
 /* ============================================== */
 
-function ok( label, success ){
-   tests = tests + 1;   
-   if(success) passes = passes + 1
-   else fails = fails+1
-   let msg = success ? "ok " : "FAIL "
-   console.log( "  " + msg + label)
-   if(!success){ console.log(res); dump() }
-   
-   return success
+function ok (label, success) {
+  tests = tests + 1
+  if (success) passes = passes + 1
+  else fails = fails + 1
+  let msg = success ? 'ok ' : 'FAIL '
+  console.log('  ' + msg + label)
+  if (!success) { console.log(res); dump() }
+
+  return success
 }
-function dump(){
-  let storage=auth.getStorage("ls")
+function dump () {
+  let storage = auth.getStorage('ls')
   storage.dump()
 //  process.exit()
 }
-async function getBase( scheme ){
+async function getBase (scheme) {
   let base
-  if( scheme.match("app:") ) { base = scheme + "/" }
-  if( scheme.match("file:") ){ base = scheme + process.cwd() + "/" }
-  if( scheme.match("https:") ){
+  if (scheme.match('app:')) { base = scheme + '/' }
+  if (scheme.match('file:')) { base = scheme + process.cwd() + '/' }
+  if (scheme.match('https:')) {
     let session = await auth.login()
     let webId = session.webId
-    if(! webId ) throw "Couldn't login!"
-    base = webId.replace("/profile/card#me",'')+"/public/"
+    if (!webId) throw new Error("Couldn't login!")
+    base = webId.replace('/profile/card#me', '') + '/public/'
   }
   return base
 }
-async function getConfig(scheme){
-  let base    = await getBase(scheme)
-  let pa    = "test-folder"
-  let fo    = "node"
-  let fi    = "test-file.ttl"
-  let mi1   = "noSuchThing"
-  let mi2   = "norThis"
-  let deep1 = "deep"
-  let deep2 = "deeper"
-  let parent   = base +  pa + "/"      
-  let folder   = parent + fo + "/"     
-  let file     = folder + fi           
-  let file2    = folder + fi + "2"
-  let noParent = folder + mi1 + "/" 
-  let deep     = folder + deep1 + "/" + deep2 + "/"
+async function getConfig (scheme) {
+  let base = await getBase(scheme)
+  let pa = 'test-folder'
+  let fo = 'node'
+  let fi = 'test-file.ttl'
+  let mi1 = 'noSuchThing'
+  let mi2 = 'norThis'
+  let deep1 = 'deep'
+  let deep2 = 'deeper'
+  let parent = base + pa + '/'
+  let folder = parent + fo + '/'
+  let file = folder + fi
+  let file2 = folder + fi + '2'
+  let noParent = folder + mi1 + '/'
+  let deep = folder + deep1 + '/' + deep2 + '/'
   return {
-    base:      base,
-    parent:    parent,
-    folder:    folder,
-    file:      file,
-    file2:     file2,
-    text:      "<> a <#test>.",
-    noParent:  noParent,
-    deep:      deep,
-    pa:    pa,
-    fo:    fo,
-    fi:    fi,
-    mi1:   mi1,
-    mi2:   mi2,
+    base: base,
+    parent: parent,
+    folder: folder,
+    file: file,
+    file2: file2,
+    text: '<> a <#test>.',
+    noParent: noParent,
+    deep: deep,
+    pa: pa,
+    fo: fo,
+    fi: fi,
+    mi1: mi1,
+    mi2: mi2,
     deep1: deep1,
-    deep2: deep2,
+    deep2: deep2
 
   }
 }
-
-
-

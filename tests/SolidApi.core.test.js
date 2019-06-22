@@ -2,9 +2,11 @@ import SolidApi from '../src/SolidApi'
 import apiUtils from '../src/utils/apiUtils'
 import { Folder, File, FolderPlaceholder, FilePlaceholder, BaseFolder } from './utils/TestFolderGenerator'
 import { getFetch, getTestContainer, contextSetup } from './utils/contextSetup'
-import { resolvesWithHeader, resolvesWithStatus, rejectsWithStatus } from './utils/expectUtils'
+import { resolvesWithHeader, resolvesWithStatus, rejectsWithStatus } from './utils/jestUtils'
 
 const { LINK } = apiUtils
+
+/** @type {SolidApi} */
 let api
 
 const inexistentFolder = new FolderPlaceholder('inexistent')
@@ -13,7 +15,7 @@ const turtleFile = new File('turtle.ttl', '<> a <#test>.', 'text/turtle')
 const container = new BaseFolder(getTestContainer(), 'SolidApi-core', [
   inexistentFile,
   inexistentFolder,
-  turtleFile,
+  turtleFile
 ])
 
 beforeAll(async () => {
@@ -23,19 +25,18 @@ beforeAll(async () => {
 })
 
 describe('core methods', () => {
-
   describe('getters', () => {
     const getters = {
       fetch: (...args) => api.fetch.bind(api)(...args),
       get: (...args) => api.get.bind(api)(...args),
-      head: (...args) => api.head.bind(api)(...args),
+      head: (...args) => api.head.bind(api)(...args)
       // TODO: [Add this when supported by solid-rest] options: (...args) => api.options.bind(api)(...args),
     }
     for (const [name, method] of Object.entries(getters)) {
       test(`${name} resolves with 200 for folder`, () => resolvesWithStatus(method(container.url), 200))
       test(`${name} resolves with 200 for file`, () => resolvesWithStatus(method(turtleFile.url), 200))
-      test(`${name} resolves with Content-Type text/turtle for folder`, () => resolvesWithHeader(method(container.url), "Content-Type", 'text/turtle'))
-      test(`${name} resolves with Content-Type text/turtle for file`, () => resolvesWithHeader(method(turtleFile.url), "Content-Type", 'text/turtle'))
+      test(`${name} resolves with Content-Type text/turtle for folder`, () => resolvesWithHeader(method(container.url), 'Content-Type', 'text/turtle'))
+      test(`${name} resolves with Content-Type text/turtle for file`, () => resolvesWithHeader(method(turtleFile.url), 'Content-Type', 'text/turtle'))
       test(`${name} rejects with 404 for inexistent folder`, () => rejectsWithStatus(method(inexistentFolder.url), 404))
       test(`${name} rejects with 404 for inexistent file`, () => rejectsWithStatus(method(inexistentFile.url), 404))
     }
@@ -46,12 +47,12 @@ describe('core methods', () => {
     const newFolderPlaceholder = new FolderPlaceholder('folder')
     const nestedFilePlaceholder = new FilePlaceholder('nested.ttl')
     const nestedFolderPlaceholder = new FolderPlaceholder('nested-folder', [
-      nestedFilePlaceholder,
+      nestedFilePlaceholder
     ])
 
     const usedFolder = new Folder('used-folder')
     const usedFile = new File('used.ttl')
-  
+
     const postFolder = new BaseFolder(container, 'post', [
       usedFolder,
       usedFile,
@@ -59,7 +60,7 @@ describe('core methods', () => {
       newFolderPlaceholder,
       new FolderPlaceholder('inexistent', [
         new FolderPlaceholder('path', [
-          nestedFolderPlaceholder,
+          nestedFolderPlaceholder
         ])
       ])
     ])
@@ -70,13 +71,13 @@ describe('core methods', () => {
       return {
         headers: {
           slug,
-          link,
+          link
         }
       }
     }
 
     let invalidSlugOptions = getPostOptions(newFolderPlaceholder.name)
-    invalidSlugOptions.headers.slug += '/';
+    invalidSlugOptions.headers.slug += '/'
 
     beforeEach(() => postFolder.reset())
 
@@ -90,5 +91,35 @@ describe('core methods', () => {
     test('put resolves with 201 creating a new file', () => resolvesWithStatus(api.put(newFilePlaceholder.url), 201))
     test('put resolves with 201 overwriting a file', () => resolvesWithStatus(api.put(usedFile.url), 201))
     test('put resolves with 201 creating a nested files', () => resolvesWithStatus(api.put(nestedFilePlaceholder.url), 201))
+  })
+
+  describe('delete', () => {
+    const file = new File('turtle.tt')
+    const emptyFolder = new Folder('empty')
+    const filledFolder = new Folder('filled', [
+      file,
+      emptyFolder
+    ])
+    const deleteFolder = new BaseFolder(container, 'delete', [
+      filledFolder
+    ])
+
+    beforeEach(() => deleteFolder.reset())
+
+    test('delete rejects with 404 on an inexistent file', () => rejectsWithStatus(api.delete(inexistentFile.url), 404))
+    test('delete rejects with 404 on an inexistent folder', () => rejectsWithStatus(api.delete(inexistentFolder.url), 404))
+    test('delete resolves deleting a file and it does not exist afterwards', async () => {
+      await expect(api.delete(file.url)).resolves.toBeDefined()
+      return expect(api.itemExists(file.url)).resolves.toBe(false)
+    })
+    test.skip('delete resolves deleting an empty folder and it does not exist afterwards', async () => {
+      // TODO: Apparently the folder exists after deletion
+      await expect(api.delete(emptyFolder.url)).resolves.toBeDefined()
+      console.log('contents', await api.get(emptyFolder.url).then(res => res.text()))
+      return expect(api.itemExists(emptyFolder.url)).resolves.toBe(false)
+    })
+    test('delete rejects deleting a folder with contents inside it', async () => {
+      return rejectsWithStatus(api.delete(filledFolder.url), 409)
+    })
   })
 })
