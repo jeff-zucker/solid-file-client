@@ -23,6 +23,7 @@ class RdfQuery {
   }
 
   async query( source,s,p,o,g ){
+    if(source && !source.endsWith("/")) source = source + "/"
     if(!g) g = namedNode(source)
     [s,p,o,g]=[s,p,o,g].map( term => {
       if(typeof term==="object" && term){
@@ -113,5 +114,5 @@ console.log( g )
 
 }
 
-module.exports = RdfQuery
+export default RdfQuery
 

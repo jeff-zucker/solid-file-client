@@ -1,169 +1,112 @@
-import $rdf from 'rdflib'
 
-const folderType = 'folder'
+  /**
+   *  input  : linkHeader from a res.headers.get("link") and the item url
+   *           sent by SolidApi.findLinkFiles()
+   * 
+   *  output : an array of strings, one for each link type (acl,meta,etc.)
+   *
+   * this is lifted from rdflib and truncated a bit
+   *
+   * note: please leave the formating as-is so it can be easily compared
+   *       with the original
+   */
+  function _parseLinkHeader (linkHeader, originalUri) {
+      if (!linkHeader) { return }
 
-/* cjs */ function getStats (graph, subjectName) {
-  const subjectNode = $rdf.sym(subjectName)
-  const mod = $rdf.sym('http://purl.org/dc/terms/modified')
-  const size = $rdf.sym('http://www.w3.org/ns/posix/stat#size')
-  const mtime = $rdf.sym('http://www.w3.org/ns/posix/stat#mtime')
-  let modified = graph.any(subjectNode, mod, undefined)
-  if (typeof (modified) === 'undefined') return false
-  else modified = modified.value
-  return {
-    modified: modified,
-    size: graph.any(subjectNode, size, undefined).value,
-    mtime: graph.any(subjectNode, mtime, undefined).value
-  }
-}
+      // const linkexp = /<[^>]*>\s*(\s*;\s*[^()<>@,;:"/[\]?={} \t]+=(([^()<>@,;:"/[]?={} \t]+)|("[^"]*")))*(,|$)/g
+      // const paramexp = /[^()<>@,;:"/[]?={} \t]+=(([^()<>@,;:"/[]?={} \t]+)|("[^"]*"))/g
 
-/** A type used internally to indicate we are handling a folder */
-/**
- * @param {$rdf.IndexedFormula} graph a $rdf.graph() database instance
- * @param {string} url location of the folder
- * @returns {string} content mime-type of a file, If it's a folder, return 'folder', 'unknown' for not sure
- */
-/* cjs */ function getFileType (graph, url) {
-  const folderNode = $rdf.sym(url)
-  const isAnInstanceOfClass = $rdf.sym('http://www.w3.org/1999/02/22-rdf-syntax-ns#type')
-  const types = graph.each(folderNode, isAnInstanceOfClass, undefined)
-  for (const index in types) {
-    const contentType = types[index].value
-    if (contentType.match('ldp#BasicContainer')) return folderType
-    if (contentType.match('http://www.w3.org/ns/iana/media-types/')) {
-      return contentType.replace('http://www.w3.org/ns/iana/media-types/', '').replace('#Resource', '')
-    }
-  }
-  return 'unknown'
-}
-/* cjs */ function getFolderItems (graph, subj) {
-  var contains = { folders: [], files: [] }
-  var itemsTmp = graph.each(
-    $rdf.sym(subj),
-    $rdf.sym('http://www.w3.org/ns/ldp#contains'),
-    undefined
-  )
-  // self.log("Got "+itemsTmp.length+" items")
-  for (let i = 0; i < itemsTmp.length; i++) {
-    var item = itemsTmp[i]
-    // console.log(item.value)
-    var newItem = {}
-    newItem.type = getFileType(graph, item.value, $rdf)
-    var stats = getStats(graph, item.value, $rdf)
-    newItem.modified = stats.modified
-    newItem.size = stats.size
-    newItem.mtime = stats.mtime
-    newItem.label = decodeURIComponent(item.value).replace(/.*\//, '')
-    if (newItem.type === folderType) {
-      // item.value = item.value.replace(/[/]+/g,'/');
-      item.value = item.value.replace(/https:/, 'https:/')
-      var name = item.value.replace(/\/$/, '')
-      newItem.name = name.replace(/.*\//, '')
-      newItem.url = item.value
-      contains.folders.push(newItem)
-    } else {
-      newItem.url = item.value
-      newItem.name = item.value.replace(/.*\//, '')
-      contains.files.push(newItem)
-    }
-  }
-  return contains
+      // From https://www.dcode.fr/regular-expression-simplificator:
+      // const linkexp = /<[^>]*>\s*(\s*;\s*[^()<>@,;:"/[\]?={} t]+=["]))*[,$]/g
+      // const paramexp = /[^\\<>@,;:"\/\[\]?={} \t]+=["])/g
+      // Original:
+      const linkexp = /<[^>]*>\s*(\s*;\s*[^()<>@,;:"/[\]?={} \t]+=(([^\(\)<>@,;:"\/\[\]\?={} \t]+)|("[^"]*")))*(,|$)/g
+      // const paramexp = /[^\(\)<>@,;:"\/\[\]\?={} \t]+=(([^\(\)<>@,;:"\/\[\]\?={} \t]+)|("[^"]*"))/g
+
+      return linkHeader.match(linkexp)
 }
 
-/* cjs */
-/*
- function getFolderItems(graph, subjectName) {
-  var contains = {files:[],folders:[]};
-  const items = graph.each($rdf.sym(subjectName), $rdf.sym('http://www.w3.org/ns/ldp#contains'), undefined);
 
-  for (let i = 0; i < items.length; i += 1) {
-    const item = items[i];
-    const newItem = {
-      type: getFileType(graph, item.value),
-      ...getStats(graph, item.value),
-      label: decodeURIComponent(item.value).replace(/.*\//, ''),
-      url: '',
-      name: '',
-    };
-    if (newItem.type === folderType) {
-      newItem.url = item.value.replace(/[/]+/g, '/').replace(/https:/, 'https:/');
-      newItem.name = newItem.url.replace(/\/$/, '').replace(/.*\//, '');
-      contains.folders.push(newItem);
-    } else {
-      newItem.url = item.value;
-      newItem.name = newItem.url.replace(/.*\//, '');
-      // if (newItem.name === 'index.html') hasIndexHtml = true;
-      contains.files.push(newItem);
-    }
-  }
-  return contains;
-}
-*/
-/**
- * @param {$rdf.IndexedFormula} graph a $rdf.graph() database instance
- * @param {string} url location of the folder
- * @param {string} content raw content of the folder's RDF (turtle) representation,
- * @returns {Object} FolderData
- */
-/* cjs */ function processFolder (graph, url, content) {
-  const items = getFolderItems(graph, url, $rdf)
-  const stats = getStats(graph, url, $rdf)
-  const fullName = url.replace(/\/$/, '')
-  const name = fullName.replace(/.*\//, '')
-  const parent = fullName.substr(0, fullName.lastIndexOf('/')) + '/'
-  return {
-    type: folderType,
-    name,
-    url,
-    modified: stats.modified,
-    size: stats.size,
-    mtime: stats.mtime,
-    parent,
-    content,
-    folders: items.folders,
-    files: items.files
-  }
-}
-/* cjs */ function guessFileType (url) {
-  const ext = url.replace(/.*\./, '')
-  if (ext.match(/\/$/)) return folderType
-  if (ext.match(/(md|markdown)/)) return 'text/markdown'
-  if (ext.match(/html/)) return 'text/html'
-  if (ext.match(/xml/)) return 'text/xml'
-  if (ext.match(/ttl/)) return 'text/turtle'
-  if (ext.match(/n3/)) return 'text/n3'
-  if (ext.match(/rq/)) return 'application/sparql'
-  if (ext.match(/css/)) return 'text/css'
-  if (ext.match(/txt/)) return 'text/plain'
-  if (ext.match(/json/)) return 'application/json'
-  if (ext.match(/js/)) return 'application/javascript'
-  if (ext.match(/(png|gif|jpeg|tif)/)) return 'image'
-  if (ext.match(/(mp3|aif|ogg)/)) return 'audio'
-  if (ext.match(/(avi|mp4|mpeg)/)) return 'video'
-  /* default */ return 'text/turtle'
-}
-
-/**
- * @param {string} text RDF text that can be passed to $rdf.parse()
- * @param {*} content the request body
- * @param {string} contentType Content-Type of the request
- * @returns {$rdf.IndexedFormula} a $rdf.graph() database instance with parsed RDF
- */
-/* cjs */ async function text2graph (text, url, contentType) {
-  return new Promise((resolve, reject) => {
-    contentType = contentType || guessFileType(url)
-    var graph = $rdf.graph()
-    try {
-      $rdf.parse(text, graph, url, contentType)
-      resolve(graph)
-    } catch (err) {
-      reject(err)
-    }
-  })
-}
+  /**
+   * joins a path to a base path
+   *
+   *  .urlJoin(".acl", "https://x.com/" )         -> https://x.com/.acl
+   *  .urlJoin("y.ttl.acl","https://x.com/y.ttl") -> https://x.com/y.ttl.acl
+   *
+   * this is lifted from rdflib
+   *
+   * note: please leave the formating as-is so it can be easily compared
+   *       with the original
+   */
+  function _urlJoin (given, base) {
+        var baseColon, baseScheme, baseSingle
+        var colon, lastSlash, path
+        var baseHash = base.indexOf('#')
+        if (baseHash > 0) {
+          base = base.slice(0, baseHash)
+        }
+        if (given.length === 0) {
+          return base
+        }
+        if (given.indexOf('#') === 0) {
+          return base + given
+        }
+        colon = given.indexOf(':')
+        if (colon >= 0) {
+          return given
+        }
+        baseColon = base.indexOf(':')
+        if (base.length === 0) {
+          return given
+        }
+        if (baseColon < 0) {
+          alert('Invalid base: ' + base + ' in join with given: ' + given)
+          return given
+        }
+        baseScheme = base.slice(0, +baseColon + 1 || 9e9)
+        if (given.indexOf('//') === 0) {
+          return baseScheme + given
+        }
+        if (base.indexOf('//', baseColon) === baseColon + 1) {
+          baseSingle = base.indexOf('/', baseColon + 3)
+          if (baseSingle < 0) {
+            if (base.length - baseColon - 3 > 0) {
+              return base + '/' + given
+            } else {
+              return baseScheme + given
+            }
+          }
+        } else {
+          baseSingle = base.indexOf('/', baseColon + 1)
+          if (baseSingle < 0) {
+            if (base.length - baseColon - 1 > 0) {
+              return base + '/' + given
+            } else {
+              return baseScheme + given
+            }
+          }
+        }
+        if (given.indexOf('/') === 0) {
+          return base.slice(0, baseSingle) + given
+        }
+        path = base.slice(baseSingle)
+        lastSlash = path.lastIndexOf('/')
+        if (lastSlash < 0) {
+          return baseScheme + given
+        }
+        if (lastSlash >= 0 && lastSlash < path.length - 1) {
+          path = path.slice(0, +lastSlash + 1 || 9e9)
+        }
+        path += given
+        while (path.match(/[^\/]*\/\.\.\//)) {
+          path = path.replace(/[^\/]*\/\.\.\//, '')
+        }
+        path = path.replace(/\.\//g, '')
+        path = path.replace(/\/\.$/, '/')
+        return base.slice(0, baseSingle) + path
+      } // end of urlJoin
 
 export default {
-  guessFileType,
-  processFolder,
-  text2graph
+  _parseLinkHeader,
+  _urlJoin
 }
