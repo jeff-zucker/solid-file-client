@@ -29,7 +29,7 @@ class SolidFileClient extends SolidApi {
    * Crete a new SolidFileClient
    * @param {SolidAuthClient,RdfLib} auth, rdflib
    */
-  constructor(auth, options = defaultInitOptions) {
+  constructor (auth, options) {
     super(auth.fetch.bind(auth))
     this._auth = auth
     // see above on throwErrors this._throwErrors = options.throwErrors

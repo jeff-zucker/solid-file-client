@@ -2,7 +2,7 @@ import SolidApi from '../src/SolidApi'
 import apiUtils from '../src/utils/apiUtils'
 import { Folder, File, FolderPlaceholder, FilePlaceholder, BaseFolder } from './utils/TestFolderGenerator'
 import { getFetch, getTestContainer, contextSetup } from './utils/contextSetup'
-import { resolvesWithHeader, resolvesWithStatus, rejectsWithStatus } from './utils/jestUtils'
+import { resolvesWithHeader, resolvesWithStatus, rejectsWithStatus, testIfHttps } from './utils/jestUtils'
 
 const { LINK } = apiUtils
 
@@ -112,7 +112,7 @@ describe('core methods', () => {
       await expect(api.delete(file.url)).resolves.toBeDefined()
       return expect(api.itemExists(file.url)).resolves.toBe(false)
     })
-    test.skip('delete resolves deleting an empty folder and it does not exist afterwards', async () => {
+    testIfHttps('delete resolves deleting an empty folder and it does not exist afterwards', async () => {
       // TODO: Apparently the folder exists after deletion
       await expect(api.delete(emptyFolder.url)).resolves.toBeDefined()
       console.log('contents', await api.get(emptyFolder.url).then(res => res.text()))

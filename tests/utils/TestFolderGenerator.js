@@ -112,7 +112,7 @@ class TestFolderGenerator {
   }
 
   _generateFolder () {
-    return getApi().createFolder(this.url)
+    return getApi().createFolder(this.url, { createPath: false })
   }
 
   _generateFile () {

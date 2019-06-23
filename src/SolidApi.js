@@ -1,15 +1,25 @@
 // import { getParentUrl, getItemName, areFolders, areFiles, LINK } from './utils/apiUtils'
 import apiUtils from './utils/apiUtils'
-import folderUtils from './utils/folderUtils';
+import folderUtils from './utils/folderUtils'
 import RdfQuery from './utils/rdf-query'
 
 const { getParentUrl, getItemName, areFolders, areFiles, LINK } = apiUtils
-const {_parseLinkHeader,_urlJoin} = folderUtils
+const { _parseLinkHeader, _urlJoin } = folderUtils
 
 /**
- * @typedef {Object} RequestOptions
- * @property {boolean} [overwrite=false]
+ * @typedef {Object} WriteOptions
+ * @property {boolean} [overwrite=true]
+ * @property {boolean} [copyAcl=true]
+ * @property {boolean} [copyMeta=true]
+ * @property {boolean} [createPath=true]
  */
+/** @type WriteOptions */
+const defaultWriteOptions = {
+  overwrite: true,
+  copyAcl: true,
+  copyMeta: true,
+  createPath: true
+}
 
 class SolidAPI {
   /**
@@ -142,87 +152,82 @@ class SolidAPI {
   }
 
   /**
-   * Create an item at target name
-   * A different name will be chosen if it already exists
+   * Create an item at target url
+   * Per default it will create the parent folder if it doesn't exist
+   * Per default existing items will be replaced
    * @param {string} url
    * @param {Blob|string} content
    * @param {string} contentType
    * @param {string} link - header for Container/Resource, see LINK in apiUtils
+   * @param {WriteOptions} [options]
    * @returns {Promise<Response>}
    */
-  createItem (url, content, contentType, link) {
+  async createItem (url, content, contentType, link, options) {
+    options = {
+      ...defaultWriteOptions,
+      ...options
+    }
     const parentUrl = getParentUrl(url)
-    const name = getItemName(url)
-    const options = {
+
+    if (await this.itemExists(url)) {
+      if (!options.overwrite) {
+        throw new Error('Item already existed: ' + url)
+      }
+      await this.delete(url) // TODO: Should we throw here if a folder has contents?
+    } else if (options.createPath) {
+      await this.createFolder(parentUrl)
+    }
+
+    const requestOptions = {
       headers: {
         link,
-        slug: name,
+        slug: getItemName(url),
         'Content-Type': contentType
       },
       body: content
     }
 
-    return this.post(parentUrl, options)
-  }
-
-  /**
-   * Create or overwrite an item
-   * @param {string} url
-   * @param {Blob|string} content
-   * @param {string} contentType
-   * @param {string} link - link specifies what rdf type it is
-   * @returns {Promise<Response>}
-   */
-  putItem (url, content, contentType, link) {
-    const parentUrl = getParentUrl(url)
-    const name = getItemName(url)
-    const options = {
-      headers: {
-        link,
-        slug: name,
-        'Content-Type': contentType
-      },
-      body: content
-    }
-
-    return this.put(parentUrl, options)
+    return this.post(parentUrl, requestOptions)
   }
 
   /**
    * Create a folder if it doesn't exist
    * @param {string} url
+   * @param {WriteOptions} [options] - overwrite will default to false
    * @returns {Promise<Response>} Response of HEAD request if it already existed, else of creation request
    */
-  async createFolder (url) {
-    return this.head(url)
-      .catch(response => {
-        if (response.status !== 404) {
-          throw response
-        }
+  async createFolder (url, options) {
+    options = {
+      ...defaultWriteOptions,
+      overwrite: false,
+      ...options
+    }
 
-        return this.createItem(url, '', 'text/turtle', LINK.CONTAINER)
-      })
+    try {
+      // Test if item exists
+      const res = await this.head(url)
+      if (!options.overwrite) {
+        return res
+      }
+      await this.deleteFolderRecursively(url)
+    } catch (e) {
+      if (e.status !== 404) {
+        throw e
+      }
+    }
+
+    return this.createItem(url, '', 'text/turtle', LINK.CONTAINER, options)
   }
 
   /**
    * Create a new file
    * @param {string} url
    * @param {Blob|String} content
+   * @param {WriteOptions} [options]
    * @returns {Promise<Response>}
    */
-  createFile (url, content, contentType) {
-    return this.createItem(url, content, contentType, LINK.RESOURCE)
-  }
-
-  /**
-   * Put a new file to the target destination (overwrites if already existing)
-   * @param {string} url
-   * @param {Blob|String} content
-   * @param {string} contentType
-   * @returns {Promise<Response>}
-   */
-  putFile (url, content, contentType) {
-    return this.putItem(url, content, contentType, LINK.RESOURCE)
+  createFile (url, content, contentType, options) {
+    return this.createItem(url, content, contentType, LINK.RESOURCE, options)
   }
 
   /**
@@ -252,48 +257,57 @@ class SolidAPI {
    * Writes to a different name if overwrite option is not set to true
    * @param {string} from - Url where the file currently is
    * @param {string} to - Url where it should be copied to
-   * @param {RequestOptions} [options]
+   * @param {WriteOptions} [options]
    * @returns {Promise<Response>} - Response from the new file created
    */
-  async copyFile (from, to, { overwrite } = { overwrite: false }) {
+  async copyFile (from, to, options) {
     const response = await this.get(from)
     const content = await response.blob()
+    const contentType = response.headers.get('content-type')
 
-    return overwrite ? this.putFile(to, content) : this.createFile(to, content)
+    return this.createFile(to, content, contentType, options)
   }
 
   /**
-   * Copy a folder and all its contents
+   * Copy a folder and all contents
    * @param {string} from
    * @param {string} to
-   * @param {RequestOptions} [options]
-   * @returns {Promise<Response>} Resolves with the response from the top level folder created
+   * @param {WriteOptions} [options]
+   * @returns {Promise<Response[]>} Resolves with an array of creation responses.
+   * The first one will be the folder specified by "to".
+   * The others will be creation responses from the contents in arbitrary order.
    */
-  async copyFolder (from, to, { overwrite } = { overwrite: false }) {
-    const { body: { folders, files } } = await this.readFolder(from).then(this._assertResponseOk)
-    const folderResponse = await this.createFolder(to)
+  async copyFolder (from, to, options) {
+    const { body: { folders, files } } = await this.readFolder(from)
+    const folderResponse = await this.createFolder(to, options) // TODO: Consider separating into overwriteFiles and overwriteFolders
+
     const promises = [
-      ...folders.map(({ name }) => this.copyFolder(`${from}${name}/`, `${to}${name}/`, { overwrite })),
-      ...files.map(({ name }) => this.copyFile(`${from}${name}`, `${to}${name}`, { overwrite }))
+      ...folders.map(({ name }) => this.copyFolder(`${from}${name}/`, `${to}${name}/`, options)),
+      ...files.map(({ name }) => this.copyFile(`${from}${name}`, `${to}${name}`, options))
     ]
 
-    return Promise.all(promises)
-      .then(folderResponse)
+    const creationResults = await Promise.all(promises)
+
+    return [folderResponse].concat(...creationResults) // Alternative to Array.prototype.flat
   }
 
   /**
    * Copy a file (url ending with file name) or folder (url ending with "/")
    * @param {string} from
    * @param {string} to
-   * @param {RequestOptions} [options]
-   * @returns {Promise<Response>} Resolves with the response of the creation of the "to" resource
+   * @param {WriteOptions} [options]
+   * @returns {Promise<Response[]>} Resolves with an array of creation responses.
+   * The first one will be the folder specified by "to".
+   * If it is a folder, the others will be creation responses from the contents in arbitrary order.
    */
   copy (from, to, options) {
+    // TODO: Rewrite to detect folders not by url (ie remove areFolders)
     if (areFolders(from, to)) {
       return this.copyFolder(from, to, options)
     }
     if (areFiles(from, to)) {
       return this.copyFile(from, to, options)
+        .then(res => [ res ])
     }
 
     throw new Error('Cannot copy from a folder url to a file url or vice versa')
@@ -305,21 +319,22 @@ class SolidAPI {
    * @returns {Promise<Response[]>} Resolves with a response for each deletion request
    */
   async deleteFolderContents (url) {
-   const { body: { folders, files } } = await this.readFolder(url).then(this._assertResponseOk)
-    const resolvedResponses = []
+    const { body: { folders, files } } = await this.readFolder(url)
 
-    await Promise.all([
-      ...folders.map(async ({ url: folderUrl }) => resolvedResponses.push(...(await this.deleteFolderRecursively(folderUrl)))),
-      ...files.map(async ({ url: fileUrl }) => resolvedResponses.push(await this.delete(fileUrl)))
+    const deletionResults = await Promise.all([
+      ...folders.map(async ({ url: folderUrl }) => this.deleteFolderRecursively(folderUrl)),
+      ...files.map(async ({ url: fileUrl }) => this.delete(fileUrl))
     ])
 
-    return resolvedResponses
+    return [].concat(deletionResults) // Flatten array
   }
 
   /**
    * Delete a folder and its contents recursively
    * @param {string} url
-   * @returns {Promise<Response>} Response for the top level folder
+   * @returns {Promise<Response[]>} Resolves with an array of deletion responses.
+   * The first one will be the folder specified by "url".
+   * The others will be the deletion responses from the contents in arbitrary order.
    */
   async deleteFolderRecursively (url) {
     const resolvedResponses = []
