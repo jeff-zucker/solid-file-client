@@ -31,6 +31,84 @@ describe('composed methods', () => {
     test('itemExists resolves with true on inexistent folder', () => expect(api.itemExists(inexistentFolder.url)).resolves.toBe(false))
   })
 
+  describe('create', () => {
+    const nestedFilePlaceholder = new FilePlaceholder('nested.ttl')
+    const nestedFolderPlaceholder = new FolderPlaceholder('nested-folder')
+    const filePlaceholder = new FilePlaceholder('file.ttl')
+    const folderPlaceholder = new FolderPlaceholder('folder', [
+      nestedFilePlaceholder,
+      nestedFolderPlaceholder
+    ])
+    const usedFile = new File('existing.ttl')
+    const fileInUsedFolder = new File('some-file.ttl')
+    const usedFolder = new Folder('existing-folder', [
+      fileInUsedFolder
+    ])
+
+    const createContainer = new BaseFolder(container, 'create', [
+      filePlaceholder,
+      folderPlaceholder,
+      usedFile,
+      usedFolder
+    ])
+
+    beforeEach(() => createContainer.reset())
+
+    describe('createItem', () => {
+      // Tests for createItem may be redundant as createFolder and createItem probably cover everything
+      // If something is not covered by these two methods, add it here
+      test.todo('Consider adding tests for createItem')
+    })
+
+    describe('createFolder', () => {
+      test('resolves with 200 on existing folder and is not modified', async () => {
+        await resolvesWithStatus(api.createFolder(usedFolder.url), 200)
+        await expect(api.itemExists(fileInUsedFolder.url)).resolves.toBe(true)
+      })
+      test('resolves with 201 on existing folder with options.overwrite and is empty afterwards', async () => {
+        await resolvesWithStatus(api.createFolder(usedFolder.url, { overwrite: true }), 201)
+        await expect(api.itemExists(fileInUsedFolder.url)).resolves.toBe(false)
+      })
+      test('resolves with 201 on inexistent folder with parent', () => {
+        return resolvesWithStatus(api.createFolder(folderPlaceholder.url), 201)
+      })
+      test('resolves with 201 on inexistent folder with parent and options.createPath=false', () => {
+        return resolvesWithStatus(api.createFolder(folderPlaceholder.url), 201)
+      })
+      test('resolves with 201 on inexistent folder without parent', () => {
+        return resolvesWithStatus(api.createFolder(nestedFolderPlaceholder.url), 201)
+      })
+      test('rejects with 404 on folder without parent with options.createPath=false', () => {
+        return rejectsWithStatus(api.createFolder(nestedFolderPlaceholder.url, { createPath: false }), 404)
+      })
+    })
+
+    describe('createFile', () => {
+      const content = '<> a <#newContent>.'
+      const contentType = 'text/turtle'
+
+      test('resolves with 201 on existing file and has new content', async () => {
+        await resolvesWithStatus(api.createFile(usedFile.url, content, contentType), 201)
+        const res = await api.fetch(usedFile.url)
+        expect(await res.text()).toBe(content)
+        expect(await res.headers.get('content-type')).toMatch(contentType)
+      })
+      test('rejects on existing file if options.overwrite=false', () => {
+        return expect(api.createFile(usedFile.url, content, contentType, { overwrite: false })).rejects.toBeDefined()
+      })
+      test('resolves with 201 on inexistent file', () => {
+        return resolvesWithStatus(api.createFile(filePlaceholder.url, content, contentType), 201)
+      })
+      test('resolves with 201 on inexistent nested file', () => {
+        return resolvesWithStatus(api.createFile(nestedFilePlaceholder.url, content, contentType), 201)
+      })
+      test('rejects with 404 on inexistent nested file with options.createPath=false', () => {
+        return rejectsWithStatus(api.createFile(nestedFilePlaceholder.url, content, contentType, { createPath: false }), 404)
+      })
+      test.todo('Add tests for binary files (images, audio, ...)')
+    })
+  })
+
   describe('nested methods', () => {
     const filePlaceholder = new FilePlaceholder('placeholder.ttl')
     const folderPlaceholder = new FolderPlaceholder('folder-placeholder')
