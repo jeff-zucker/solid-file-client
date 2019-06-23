@@ -182,11 +182,11 @@ class SolidFileClient extends SolidApi {
 
 
   async getHead(url,options) { return super.head(url, options) }
-  async deleteFile(url,options) { return this._api('delete', url, options) }
-  async deleteFolder(url,options){ return this._api('delete', url, options) }
+  async deleteFile(url,options) { return this.delete( url, options) }
+  async deleteFolder(url,options){ return this.delete( url, options) }
   async updateFile(url,content, contentType) {
     if (await this.itemExists(url)) { await this.delete(url) }
-    return this._api('createFile', url, content, contentType)
+    return this.createFile( url, content, contentType)
   }
 }
 
