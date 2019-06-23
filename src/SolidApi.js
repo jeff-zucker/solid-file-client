@@ -1,8 +1,10 @@
 // import { getParentUrl, getItemName, areFolders, areFiles, LINK } from './utils/apiUtils'
+import debug from 'debug'
 import apiUtils from './utils/apiUtils'
 import folderUtils from './utils/folderUtils';
 import RdfQuery from './utils/rdf-query'
 
+const fetchLog = debug('solid-file-client:fetch')
 const { getParentUrl, getItemName, areFolders, areFiles, LINK } = apiUtils
 const {_parseLinkHeader,_urlJoin} = folderUtils
 
@@ -36,6 +38,10 @@ class SolidAPI {
    */
   fetch (url, options) {
     return this._fetch(url, options)
+      .then(res => {
+        fetchLog(`${res.status} - ${options && options.method} ${url}`)
+        return res
+      })
       .then(this._assertResponseOk)
   }
 
