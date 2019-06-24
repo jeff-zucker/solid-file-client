@@ -10,14 +10,16 @@ const { _parseLinkHeader, _urlJoin } = folderUtils
 
 /**
  * @typedef {Object} WriteOptions
- * @property {boolean} [overwrite=true]
+ * @property {boolean} [overwriteFiles=true]
+ * @property {boolean} [overwriteFolders=false]
  * @property {boolean} [copyAcl=true]
  * @property {boolean} [copyMeta=true]
  * @property {boolean} [createPath=true]
  */
 /** @type WriteOptions */
 const defaultWriteOptions = {
-  overwrite: true,
+  overwriteFiles: true,
+  overwriteFolders: false,
   copyAcl: true,
   copyMeta: true,
   createPath: true
@@ -176,7 +178,7 @@ class SolidAPI {
     const parentUrl = getParentUrl(url)
 
     if (await this.itemExists(url)) {
-      if (!options.overwrite) {
+      if ((link === LINK.RESOURCE && !options.overwriteFiles) || (link === LINK.CONTAINER && !options.overwriteFolders)) {
         throw new Error('Item already existed: ' + url)
       }
       await this.delete(url) // TODO: Should we throw here if a folder has contents?
@@ -199,20 +201,19 @@ class SolidAPI {
   /**
    * Create a folder if it doesn't exist
    * @param {string} url
-   * @param {WriteOptions} [options] - overwrite will default to false
+   * @param {WriteOptions} [options]
    * @returns {Promise<Response>} Response of HEAD request if it already existed, else of creation request
    */
   async createFolder (url, options) {
     options = {
       ...defaultWriteOptions,
-      overwrite: false,
       ...options
     }
 
     try {
       // Test if item exists
       const res = await this.head(url)
-      if (!options.overwrite) {
+      if (!options.overwriteFolders) {
         return res
       }
       await this.deleteFolderRecursively(url)
@@ -260,7 +261,6 @@ class SolidAPI {
 
   /**
    * Copy a file
-   * Writes to a different name if overwrite option is not set to true
    * @param {string} from - Url where the file currently is
    * @param {string} to - Url where it should be copied to
    * @param {WriteOptions} [options]

@@ -65,8 +65,8 @@ describe('composed methods', () => {
         await resolvesWithStatus(api.createFolder(usedFolder.url), 200)
         await expect(api.itemExists(fileInUsedFolder.url)).resolves.toBe(true)
       })
-      test('resolves with 201 on existing folder with options.overwrite and is empty afterwards', async () => {
-        await resolvesWithStatus(api.createFolder(usedFolder.url, { overwrite: true }), 201)
+      test('resolves with 201 on existing folder with options.overwriteFolders and is empty afterwards', async () => {
+        await resolvesWithStatus(api.createFolder(usedFolder.url, { overwriteFolders: true }), 201)
         await expect(api.itemExists(fileInUsedFolder.url)).resolves.toBe(false)
       })
       test('resolves with 201 on inexistent folder with parent', () => {
@@ -93,8 +93,8 @@ describe('composed methods', () => {
         expect(await res.text()).toBe(content)
         expect(await res.headers.get('content-type')).toMatch(contentType)
       })
-      test('rejects on existing file if options.overwrite=false', () => {
-        return expect(api.createFile(usedFile.url, content, contentType, { overwrite: false })).rejects.toBeDefined()
+      test('rejects on existing file if options.overwriteFiles=false', () => {
+        return expect(api.createFile(usedFile.url, content, contentType, { overwriteFiles: false })).rejects.toBeDefined()
       })
       test('resolves with 201 on inexistent file', () => {
         return resolvesWithStatus(api.createFile(filePlaceholder.url, content, contentType), 201)
