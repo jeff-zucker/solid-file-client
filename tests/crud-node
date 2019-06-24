@@ -1,0 +1,173 @@
+#!/usr/bin/env node
+/*
+CONNECT login, popupLogin, logout, checkSession
+CREATE  createFile, createFolder
+READ    readFile, readFolder, readHead, 
+QUERY   fetchAndParse*
+UPDATE  updateFile, copyFile*, copyFolder*, moveFile*, moveFolder*
+DELETE  deleteFile, deleteFolder*
+*/
+
+
+const auth       = require('solid-auth-cli')
+const FileClient = require('../')
+const fc = new FileClient(auth,{throwErrors:false})
+
+let [tests,fails,passes,res] = [0,0,0]
+
+getConfig("app://ls").then( cfg => { run(cfg) } )
+//getConfig("file://").then( cfg => { run(cfg) } )
+//getConfig("https://").then( cfg => { run(cfg) } )
+
+async function run(cfg){
+
+  await prepTest(cfg)
+
+  console.log("  CREATE")
+  ok('201 createFolder', 201, await t('createFolder',cfg.folder) )
+  ok('200 createFolder, already exists',200,await t('createFolder',cfg.folder))
+  ok('201 createFolder, parent not found', 201, await 
+    t('createFolder',cfg.parentMissing) )
+
+  ok('201 createFile',201, await t('createFile',cfg.file,cfg.expectedText) )
+  ok('201 createFile, already exists',201, await
+    t('createFile',cfg.file,cfg.expectedText) )
+  ok('201 createFile, parent not found',201, await
+    t('createFile',cfg.deepFile,cfg.expectedText) )
+
+  console.log("  READ")
+  ok( '200 readFolder',true, await getFolder(cfg.folder) );
+  ok( "404 readFolder, not found",404, await t('readFolder',cfg.badFolder) );
+
+  ok('200 readFile',true, await readFile(cfg.file,cfg.expectedText )) 
+  ok( "404 readFile, not found",404, await t('readFile',cfg.badFile) );
+
+  ok('200 readHead',true, await readHead(cfg.file,cfg )) 
+  ok( "404 readHead, not found",404, await readHead(cfg.badFile) )
+
+  ok('true itemExists',true, await t('itemExists',cfg.file,cfg )) 
+  ok( "false itemExists, not found",false, await t('itemExists',cfg.badFile) )
+
+  console.log("  UPDATE")
+  ok('200 updateFile',true, await updateFile(cfg.file,cfg.expectedText2 )) 
+  ok('404 updateFile, not found',true, await updateFile(cfg.badFile,cfg.expectedText2 )) 
+
+let res = await fc.readFolder(cfg.folder) 
+console.log( res.body.files, res.body.folders )
+
+  console.log("  DELETE")
+  ok( '200 delete folder',200, await t('deleteFolder',cfg.parentMissing) );
+  ok( "409 delete folder, non-empty",409, await t('deleteFolder',cfg.folder) )
+  ok( "404 delete folder, not found",404, await t('deleteFolder',cfg.parentMissing) );
+
+  ok( '200 delete file',200, await t('deleteFile',cfg.file) );
+  ok( "404 delete file, not found",404, await t('deleteFile',cfg.file) );
+
+  console.log(`${passes}/${tests} tests passed, ${fails} failed\n`)
+}
+
+async function updateFile(url,expected){
+  try {
+    let res = await fc.updateFile(url,expected)
+    let got = await fc.readFile(url)
+    return got===expected
+  }
+  catch(e){ return e }
+}
+async function getFolder(url,file){
+  let res = await fc.readFolder(url)
+  if(res.body && res.body.files) return true
+}
+async function readFile(url,text){
+  try {
+    let res = await fc.readFile(url)
+    return res===text
+  }
+  catch(e){ return e }
+}
+async function readHead(url){
+  try {
+    let res = await fc.head(url)
+    return res.headers.get('allow') ? true : false
+  }
+  catch(e){ return e }
+}
+async function getBase( scheme ){
+  let base,webId
+  if( scheme.match("app:") ) { 
+    base = scheme 
+    console.log("Using "+base)
+  }
+  if( scheme.match("file:") ){ 
+     base = scheme + process.cwd() 
+    console.log("Using "+base)
+   }
+  if( scheme.match("https:") ){
+    console.log("Logging in ...")
+    let session = await auth.login()
+    console.log("  logged in as <"+session.webId+">")
+    webId = session.webId
+    if(! webId ) throw "Couldn't login!"
+    base = webId.replace("/profile/card#me",'')+"/public"
+    console.log("  using base " + base)
+  }
+  return [base + "/",webId]
+}
+async function getConfig(scheme){
+  let [base,webId] = await getBase(scheme)
+  let parent  = base   + "test-folder/"
+  let folder  = parent + "default/"
+  let badFile ="app://ls/example.com/badurl"
+  return {
+    scheme:    scheme,
+    webId:     webId,
+    base:      base,
+    parent:    parent,
+    folder:    folder,
+    file:      folder + "test.ttl",
+    parentMissing:   folder + "noSuchThing/norThis/",
+    deepFile:  folder +  "deep-folder/deep-file.ttl",
+    badFile:   badFile,
+    badFolder: badFile+"/",
+    expectedText:  "<> a <#test>.",
+    expectedText2: "<> a <#revisedtest>.",
+    profile: "https://jeffz.solid.community/profile/card#me"
+  }
+}
+async function t(method,...args){
+  return await fc[method](...args).catch(e=>{ return e })
+}
+function ok ( label,expected,got ) {
+  got = got.status || got
+  tests = tests + 1;   
+  if(expected===got) passes = passes + 1
+  else fails = fails+1
+  if(expected===got)  console.log( "    ok "+label )
+  else console.log( "    FAIL "+label + " : expected : "+expected+" got : "+got );
+}
+
+async function prepTest(cfg){
+  console.log("Preparing test")
+  await deleteTestFolders(cfg,cfg.folder)
+  await deleteTestFolders(cfg,cfg.folder+"noSuchThing/norThis")
+  await deleteTestFolders(cfg,cfg.folder+"noSuchThing/")
+  await deleteTestFolders(cfg,cfg.folder+"deep-folder/")
+  await deleteTestFolders(cfg,cfg.folder)
+  console.log("Beginnning test")
+}
+
+async function deleteTestFolders(cfg,folderUrl) {
+  try {
+    const folder = await fc.readFolder(folderUrl)
+    folder.body.files.forEach( async (file) => {
+      const furl = folderUrl.replace(cfg.base,'')
+      console.log("  deleting "+ furl)
+      await fc.delete(file.url)
+    })
+    const furl = folderUrl.replace(cfg.base,'')
+    console.log("  deleting "+furl)
+    await fc.delete(folderUrl)
+  }
+  catch(e){return e}
+}
+

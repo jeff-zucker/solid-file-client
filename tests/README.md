@@ -1,8 +1,5 @@
-The file "tests/all" is a nodejs test, not a jest test.
+The file "tests/crud-node" is a nodejs test, not a jest test.
 
-Run it with node tests/all
+Run it with node tests/crud-node.
 
-The https: part requires you to have your idp, username, and
-password either in the file HOME/.solid-auth-cli-config.js
-or in environment variables.  See solid-auth-cli readme for details.
 
