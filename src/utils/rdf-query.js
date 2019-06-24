@@ -23,7 +23,6 @@ class RdfQuery {
   }
 
   async query( source,s,p,o,g ){
-    if(source && !source.endsWith("/")) source = source + "/"
     if(!g) g = namedNode(source)
     [s,p,o,g]=[s,p,o,g].map( term => {
       if(typeof term==="object" && term){
@@ -80,6 +79,13 @@ console.log( g )
     })
   }
 
+  async load(url) {
+    let store = await this.loadFromUrl(url)
+    store.query = this.query
+    return store
+  }
+ 
+
   async loadFromUrl(url) {
     const res = await this._fetch(url)
     if (!res.ok) {
@@ -106,8 +112,8 @@ console.log( g )
         if(quad) {
            store.push(quad)        
         }
-        resolve(store)
         if(err) return resolve(err);
+        resolve(store)
       })
     })
   }

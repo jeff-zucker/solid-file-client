@@ -25,7 +25,12 @@ const defaultPopupUri = 'https://solid.community/common/popup.html'
  * @extends SolidApi
  */
 class SolidFileClient extends SolidApi {
+
   /**
+   * constructor
+   *
+   * backwards incompatible change : users need to use new SolidFileClient(auth)
+   *
    * Crete a new SolidFileClient
    * @param {SolidAuthClient,RdfLib} auth, rdflib
    */
@@ -140,12 +145,20 @@ class SolidFileClient extends SolidApi {
     }
 
     /**
+     * fetchAndParse
+     * 
+     * backwards incompatible change : dropping support for JSON parsing, this is only for RDF
+     * backwards incompatible change : now reurns an rdf-query/N3 quad-store rather than an rdflib store
+     * backwards incompatible change : parsed quads are returned, not a response object with store in body
+     * 
      * Fetch an item and parse it
      * @param {string} url
      * @param {string} [contentType]
      * @returns {Promise<Object|RDFLIB.GRAPH}
      */
     async fetchAndParse(url, contentType) {
+      return await this.rdf.query(url)
+
 /* 
   TBD: REFACTOR USING RDF-QUERY
 
@@ -175,13 +188,28 @@ class SolidFileClient extends SolidApi {
   }
 
 
-  async getHead(url,options) { return super.head(url, options) }
+  async query(url,s,p,o,g) { return this.rdf.query(url,s,p,o,g) }
+
+  async readHead(url,options) { return super.head(url, options) }
+
   async deleteFile(url,options) { return this.delete( url, options) }
+
+  /* TBD
+   * point to deleteFolderRecursively instead
+   */
   async deleteFolder(url,options){ return this.delete( url, options) }
+
   async updateFile(url,content, contentType) {
     if (await this.itemExists(url)) { await this.delete(url) }
     return this.createFile( url, content, contentType)
   }
+
+  /* TBD
+   *
+   * copyFile, copyFolder, deleteFolder, moveFile, moveFolder
+   *
+   */
+
 }
 
 export default SolidFileClient

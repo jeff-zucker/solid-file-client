@@ -1,13 +1,17 @@
 #!/usr/bin/env node
 /*
-CONNECT login, popupLogin, logout, checkSession
+CONNECT login, popupLogin, logout, currentSession
 CREATE  createFile, createFolder
-READ    readFile, readFolder, readHead, 
-QUERY   fetchAndParse*
+READ    readFile, readFolder, readHead, itemExists, query
 UPDATE  updateFile, copyFile*, copyFolder*, moveFile*, moveFolder*
 DELETE  deleteFile, deleteFolder*
-*/
 
+Note : 
+  - asterisks indicate methods TBD
+  - copyFolder, moveFolder, deleteFolder are recursive (operate on an entire folder tree)
+  - query is a replacement for fetchAndParse which I can't duplicate without rdflib
+  
+*/
 
 const auth       = require('solid-auth-cli')
 const FileClient = require('../')
@@ -15,45 +19,51 @@ const fc = new FileClient(auth,{throwErrors:false})
 
 let [tests,fails,passes,res] = [0,0,0]
 
-getConfig("app://ls").then( cfg => { run(cfg) } )
-//getConfig("file://").then( cfg => { run(cfg) } )
+//getConfig("app://ls").then( cfg => { run(cfg) } )
+ getConfig("file://").then( cfg => { run(cfg) } )
 //getConfig("https://").then( cfg => { run(cfg) } )
 
 async function run(cfg){
 
   await prepTest(cfg)
 
+
   console.log("  CREATE")
-  ok('201 createFolder', 201, await t('createFolder',cfg.folder) )
-  ok('200 createFolder, already exists',200,await t('createFolder',cfg.folder))
+  ok('201 createFolder, folder not found', 201, await t('createFolder',cfg.folder) )
+  ok('200 createFolder, folder found',200,await t('createFolder',cfg.folder))
   ok('201 createFolder, parent not found', 201, await 
     t('createFolder',cfg.parentMissing) )
 
-  ok('201 createFile',201, await t('createFile',cfg.file,cfg.expectedText) )
-  ok('201 createFile, already exists',201, await
+  ok('201 createFile, file not found',201, await t('createFile',cfg.file,cfg.expectedText) )
+  ok('201 createFile, file found',201, await
     t('createFile',cfg.file,cfg.expectedText) )
   ok('201 createFile, parent not found',201, await
     t('createFile',cfg.deepFile,cfg.expectedText) )
 
   console.log("  READ")
-  ok( '200 readFolder',true, await getFolder(cfg.folder) );
-  ok( "404 readFolder, not found",404, await t('readFolder',cfg.badFolder) );
+  ok( '200 readFolder, folder found',true, await getFolder(cfg.folder) );
+  ok( "404 readFolder, folder not found",404, await t('readFolder',cfg.badFolder) );
 
-  ok('200 readFile',true, await readFile(cfg.file,cfg.expectedText )) 
-  ok( "404 readFile, not found",404, await t('readFile',cfg.badFile) );
+  ok('200 readFile, file found',true, await readFile(cfg.file,cfg.expectedText )) 
+  ok( "404 readFile, file not found",404, await t('readFile',cfg.badFile) );
 
-  ok('200 readHead',true, await readHead(cfg.file,cfg )) 
-  ok( "404 readHead, not found",404, await readHead(cfg.badFile) )
+  ok('200 readHead, file found',true, await readHead(cfg.file,cfg )) 
+  ok( "404 readHead, file not found",404, await readHead(cfg.badFile) )
 
-  ok('true itemExists',true, await t('itemExists',cfg.file,cfg )) 
-  ok( "false itemExists, not found",false, await t('itemExists',cfg.badFile) )
+  ok('true itemExists, file found',true, await t('itemExists',cfg.file)) 
+  ok( "false itemExists, file not found",false, await t('itemExists',cfg.badFile) )
+
+  ok('true itemExists, folder found',true, await t('itemExists',cfg.folder)) 
+  ok("false itemExists, folder not found",false, await t('itemExists',cfg.badFolder) )
+
+  ok("query",true, await query(cfg.folder,cfg))
 
   console.log("  UPDATE")
   ok('200 updateFile',true, await updateFile(cfg.file,cfg.expectedText2 )) 
-  ok('404 updateFile, not found',true, await updateFile(cfg.badFile,cfg.expectedText2 )) 
+  ok('404 updateFile, not found',false, await updateFile(cfg.badFile,cfg.expectedText2 )) 
 
-let res = await fc.readFolder(cfg.folder) 
-console.log( res.body.files, res.body.folders )
+// let res = await fc.readFolder(cfg.folder+"noSuchThing/") 
+// console.log( res.body.files, res.body.folders )
 
   console.log("  DELETE")
   ok( '200 delete folder',200, await t('deleteFolder',cfg.parentMissing) );
@@ -76,7 +86,8 @@ async function updateFile(url,expected){
 }
 async function getFolder(url,file){
   let res = await fc.readFolder(url)
-  if(res.body && res.body.files) return true
+//  if(res.body && res.body.files) return true
+  if(res && res.files) return true
 }
 async function readFile(url,text){
   try {
@@ -87,7 +98,7 @@ async function readFile(url,text){
 }
 async function readHead(url){
   try {
-    let res = await fc.head(url)
+    let res = await fc.readHead(url)
     return res.headers.get('allow') ? true : false
   }
   catch(e){ return e }
@@ -159,7 +170,7 @@ async function prepTest(cfg){
 async function deleteTestFolders(cfg,folderUrl) {
   try {
     const folder = await fc.readFolder(folderUrl)
-    folder.body.files.forEach( async (file) => {
+    folder.files.forEach( async (file) => {
       const furl = folderUrl.replace(cfg.base,'')
       console.log("  deleting "+ furl)
       await fc.delete(file.url)
@@ -168,6 +179,13 @@ async function deleteTestFolders(cfg,folderUrl) {
     console.log("  deleting "+furl)
     await fc.delete(folderUrl)
   }
-  catch(e){return e}
+  catch(e){return(e)}
 }
+
+async function query(folderUrl,cfg) {
+  let files = await fc.query(folderUrl,{thisDoc:""},{ldp:"contains"})
+  return files.length===3 ? true : false
+}
+
+  
 

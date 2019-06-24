@@ -244,16 +244,16 @@ class SolidAPI {
    */
   async readFolder (url) {
     try {
-//      const res = await this.processFolder(url)
-//      return res
-
+      const res = await this.processFolder(url)
+      return res
+/*
       const res = await this.processFolder(url)
       return {
         ok: true,
         status: 200,
         body: res
       }
-
+*/
     } catch (e) {
       throw (e)
     }
@@ -284,7 +284,8 @@ class SolidAPI {
    * The others will be creation responses from the contents in arbitrary order.
    */
   async copyFolder (from, to, options) {
-    const { body: { folders, files } } = await this.readFolder(from)
+//    const { body: { folders, files } } = await this.readFolder(from)
+    const {folders,files} = await this.readFolder(from)
     const folderResponse = await this.createFolder(to, options) // TODO: Consider separating into overwriteFiles and overwriteFolders
 
     const promises = [
@@ -325,8 +326,8 @@ class SolidAPI {
    * @returns {Promise<Response[]>} Resolves with a response for each deletion request
    */
   async deleteFolderContents (url) {
-    const { body: { folders, files } } = await this.readFolder(url)
-
+    //  const { body: { folders, files } } = await this.readFolder(url)
+    const { folders, files } = await this.readFolder(url)
     const deletionResults = await Promise.all([
       ...folders.map(async ({ url: folderUrl }) => this.deleteFolderRecursively(folderUrl)),
       ...files.map(async ({ url: fileUrl }) => this.delete(fileUrl))
@@ -422,6 +423,7 @@ class SolidAPI {
    *
    */
   async processFolder (folderUrl,options={withLinks:false}) {
+    if(!folderUrl.endsWith("/")) folderUrl = folderUrl + "/"
     let [rdf,folder,folderItems,fileItems] = [this.rdf,[],[],[]]
     if(options.withLinks){
       fileItems.push( _getFolderLinks(folderUrl) )
