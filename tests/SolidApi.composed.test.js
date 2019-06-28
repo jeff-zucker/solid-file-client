@@ -138,9 +138,9 @@ describe('composed methods', () => {
         test.todo('throws some kind of error when called on file')
         test('resolved array contains all names of the deleted items', async () => {
           const responses = await api.deleteFolderContents(parentFolder.url)
-          const names = responses.map(response => apiUtils.getItemName(response.headers.get('location')))
-          const expectedNames = parentFolder.contents.map(item => apiUtils.getItemName(item.url))
-          expect(names.sort()).toEqual(expectedNames.sort())
+          const urls = responses.map(response => response.url)
+          const expectedUrls = parentFolder.contents.map(item => item.url)
+          expect(urls.sort()).toEqual(expectedUrls.sort())
         })
         test('resolves with empty array on folder without contents', () => expect(api.deleteFolderContents(emptyFolder.url)).resolves.toHaveLength(0))
         test('after deletion itemExists returns false on all contents', async () => {
@@ -154,12 +154,12 @@ describe('composed methods', () => {
         test.todo('throws some kind of error when called on file')
         test('resolved array contains all names of the delete items', async () => {
           const responses = await api.deleteFolderRecursively(parentFolder.url)
-          const names = responses.map(response => apiUtils.getItemName(response.headers.get('location')))
-          const expectedNames = [
-            apiUtils.getItemName(parentFolder.url),
-            ...parentFolder.contents.map(item => apiUtils.getItemName(item.url))
+          const urls = responses.map(response => response.url)
+          const expectedUrls = [
+            parentFolder.url,
+            ...parentFolder.contents.map(item => item.url)
           ]
-          expect(names.sort()).toEqual(expectedNames.sort())
+          expect(urls.sort()).toEqual(expectedUrls.sort())
         })
         testIfHttps('after deletion itemExists returns false on folder and all contents', async () => {
           await api.deleteFolderRecursively(parentFolder.url)
@@ -172,11 +172,10 @@ describe('composed methods', () => {
     describe('copy', () => {
       describe('copyFile', () => {
         test('rejects with 404 on inexistent file', () => rejectsWithStatus(api.copyFile(inexistentFile.url, filePlaceholder.url), 404))
-        test.todo('throws some kind of error when called on folder')
-        test.todo('rejects if no second url is specified')
+        test('rejects if no second url is specified', () => expect(api.copyFile(childFile.url)).rejects.toBeDefined())
         // TODO: Change to test(...) when solid-rest supports blobs
-        testIfHttps('resolves with 201', () => resolvesWithStatus(api.copyFile(childFile.url, filePlaceholder.url), 201))
-        testIfHttps('resolves and has same content and contentType afterwards', async () => {
+        test('resolves with 201', () => resolvesWithStatus(api.copyFile(childFile.url, filePlaceholder.url), 201))
+        test('resolves and has same content and contentType afterwards', async () => {
           await resolvesWithStatus(api.copyFile(childFile.url, filePlaceholder.url), 201)
           await expect(api.itemExists(filePlaceholder.url)).resolves.toBe(true)
           const fromResponse = await api.get(childFile.url)
@@ -184,18 +183,19 @@ describe('composed methods', () => {
           expect(fromResponse.headers.get('Content-Type')).toBe(toResponse.headers.get('Content-Type'))
           expect(await fromResponse.text()).toBe(await toResponse.text())
         })
+        test.todo('throws some kind of error when called on folder')
         test.todo('test different configurations (overwrite, ...)')
       })
 
       describe('copyFolder', () => {
         test('rejects with 404 on inexistent folder', () => rejectsWithStatus(api.copyFolder(inexistentFolder.url, inexistentFolder.url), 404))
-        test.todo('throws some kind of error when called on file')
-        test.todo('rejects if no second url is specified')
-        testIfHttps('resolves with 201 and copies empty folder', async () => {
-          await resolvesWithStatus(api.copyFolder(emptyFolder.url, folderPlaceholder.url), 201)
+        test('rejects if no second url is specified', () => expect(api.copyFolder(emptyFolder.url)).rejects.toBeDefined())
+        test('resolves and copies empty folder', async () => {
+          await expect(api.copyFolder(emptyFolder.url, folderPlaceholder.url)).resolves.toBeDefined()
           await expect(api.itemExists(folderPlaceholder.url)).resolves.toBe(true)
         })
         test.todo('resolves with 201 and copies folder including its contents')
+        test.todo('throws some kind of error when called on file')
         test.todo('test different configurations (overwrite, ...')
       })
     })
