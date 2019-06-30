@@ -25,11 +25,17 @@ else{
 	var auth       = require('solid-auth-cli')
 	var FileClient = require('../')
 	var fc = new FileClient(auth,{throwErrors:false})
+	
+	testAll()
 
-	getConfig("https://").then( cfg => { run(cfg) } )
-	getConfig("app://ls").then( cfg => { run(cfg) } )
-	getConfig("file://").then( cfg => { run(cfg) } )
 }
+
+async function testAll() {
+	await getConfig("https://").then( cfg => { return run(cfg) } )
+	await getConfig("app://ls").then( cfg => { return run(cfg) } )
+	await getConfig("file://").then( cfg => { return run(cfg) } )
+}
+
 
   
 //
@@ -198,7 +204,7 @@ async function deleteTestFolders(cfg,folderUrl) {
   try {
     const folder = await fc.readFolder(folderUrl)
     folder.files.forEach( async (file) => {
-      const furl = folderUrl.replace(cfg.base,'')
+      const furl = file.url.replace(cfg.base,'')
       console.log("  deleting "+ furl)
       await fc.delete(file.url)
     })
