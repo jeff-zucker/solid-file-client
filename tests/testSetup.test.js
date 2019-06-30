@@ -1,5 +1,6 @@
 import { File, FolderPlaceholder, FilePlaceholder, BaseFolder } from './utils/TestFolderGenerator'
-import { getTestContainer, contextSetup } from './utils/contextSetup'
+import { getTestContainer, contextSetup, getFetch } from './utils/contextSetup'
+import SolidAPI from '../src/SolidApi'
 
 const inexistentFolder = new FolderPlaceholder('inexistent')
 const inexistentFile = new FilePlaceholder('inexistent.abc')
@@ -10,11 +11,22 @@ const container = new BaseFolder(getTestContainer(), 'setup-test', [
   turtleFile
 ])
 
+/** @type {SolidAPI} */
+let api
+
 beforeAll(async () => {
   await contextSetup()
-  await container.reset()
+  api = new SolidAPI(getFetch())
 })
+
+beforeEach(() => container.reset())
 
 describe('setup test', () => {
   test('true', () => expect(true).toBe(true))
+  test('container exists', () => expect(api.itemExists(container.url)).resolves.toBe(true))
+  test('can delete container', async () => {
+    await expect(api.delete(turtleFile.url)).resolves.toBeDefined()
+    await expect(api.delete(container.url)).resolves.toBeDefined()
+    return expect(api.itemExists(container.url)).resolves.toBe(false)
+  })
 })

@@ -267,6 +267,9 @@ class SolidAPI {
    * @returns {Promise<Response>} - Response from the new file created
    */
   async copyFile (from, to, options) {
+    if (typeof from !== 'string' || typeof to !== 'string') {
+      throw new Error(`The from and to parameters of copyFile must be strings. Found: ${from} and ${to}`)
+    }
     const response = await this.get(from)
     const content = await response.blob()
     const contentType = response.headers.get('content-type')
@@ -284,8 +287,10 @@ class SolidAPI {
    * The others will be creation responses from the contents in arbitrary order.
    */
   async copyFolder (from, to, options) {
-//    const { body: { folders, files } } = await this.readFolder(from)
-    const {folders,files} = await this.readFolder(from)
+    if (typeof from !== 'string' || typeof to !== 'string') {
+      throw new Error(`The from and to parameters of copyFile must be strings. Found: ${from} and ${to}`)
+    }
+    const { folders, files } = await this.readFolder(from)
     const folderResponse = await this.createFolder(to, options) // TODO: Consider separating into overwriteFiles and overwriteFolders
 
     const promises = [
@@ -333,7 +338,7 @@ class SolidAPI {
       ...files.map(async ({ url: fileUrl }) => this.delete(fileUrl))
     ])
 
-    return [].concat(deletionResults) // Flatten array
+    return [].concat(...deletionResults) // Flatten array
   }
 
   /**

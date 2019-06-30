@@ -76,9 +76,10 @@ describe('core methods', () => {
       }
     }
 
-    let invalidSlugOptions = getPostOptions(newFolderPlaceholder.name)
+    const invalidSlugOptions = getPostOptions(newFolderPlaceholder.name)
     invalidSlugOptions.headers.slug += '/'
 
+    beforeAll(() => console.log('putUrl', usedFile.url))
     beforeEach(() => postFolder.reset())
 
     test('post resolves with 201 creating a new folder with valid slug', () => resolvesWithStatus(api.post(postFolder.url, getPostOptions(newFolderPlaceholder.name)), 201))
@@ -94,7 +95,7 @@ describe('core methods', () => {
   })
 
   describe('delete', () => {
-    const file = new File('turtle.tt')
+    const file = new File('turtle.ttl')
     const emptyFolder = new Folder('empty')
     const filledFolder = new Folder('filled', [
       file,
