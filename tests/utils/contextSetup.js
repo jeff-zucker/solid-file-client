@@ -16,7 +16,6 @@ let hasBeenSetup = false
  * Login the user if required
  */
 async function contextSetup () {
-  console.group('context setup')
   if (!Object.values(prefixes).includes(prefix)) {
     throw new Error(`TEST_PREFIX must be one of ${Object.values(prefixes).join(' ')}. Found: ${prefix}`)
   }
@@ -30,8 +29,6 @@ async function contextSetup () {
     // Memory tests don't share a common storage, hence reset the container every time contextSetup is called
     await getTestContainer().reset()
   }
-  console.log('Finished context setup')
-  console.groupEnd()
 }
 
 function getTestContainer () {
@@ -61,7 +58,6 @@ async function getBaseUrl (prefix) {
     case prefixes.https:
       try {
         await auth.login()
-        console.log('Successfully logged in')
         if (!process.env.TEST_BASE_URL) {
           throw new Error('Please specify the base url if you use the https prefix')
         }
@@ -79,7 +75,6 @@ async function getBaseUrl (prefix) {
       throw new Error('Unsupported prefix in getBaseUrl: ' + prefix)
   }
 
-  console.log('baseUrl', baseUrl)
   return baseUrl
 }
 

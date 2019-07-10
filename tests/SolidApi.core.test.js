@@ -2,7 +2,7 @@ import SolidApi from '../src/SolidApi'
 import apiUtils from '../src/utils/apiUtils'
 import { Folder, File, FolderPlaceholder, FilePlaceholder, BaseFolder } from './utils/TestFolderGenerator'
 import { getFetch, getTestContainer, contextSetup } from './utils/contextSetup'
-import { resolvesWithHeader, resolvesWithStatus, rejectsWithStatus, testIfHttps } from './utils/jestUtils'
+import { resolvesWithHeader, resolvesWithStatus, rejectsWithStatus } from './utils/jestUtils'
 
 const { LINK } = apiUtils
 
@@ -79,7 +79,6 @@ describe('core methods', () => {
     const invalidSlugOptions = getPostOptions(newFolderPlaceholder.name)
     invalidSlugOptions.headers.slug += '/'
 
-    beforeAll(() => console.log('putUrl', usedFile.url))
     beforeEach(() => postFolder.reset())
 
     test('post resolves with 201 creating a new folder with valid slug', () => resolvesWithStatus(api.post(postFolder.url, getPostOptions(newFolderPlaceholder.name)), 201))
@@ -113,10 +112,8 @@ describe('core methods', () => {
       await expect(api.delete(file.url)).resolves.toBeDefined()
       return expect(api.itemExists(file.url)).resolves.toBe(false)
     })
-    testIfHttps('delete resolves deleting an empty folder and it does not exist afterwards', async () => {
-      // TODO: Apparently the folder exists after deletion
+    test('delete resolves deleting an empty folder and it does not exist afterwards', async () => {
       await expect(api.delete(emptyFolder.url)).resolves.toBeDefined()
-      console.log('contents', await api.get(emptyFolder.url).then(res => res.text()))
       return expect(api.itemExists(emptyFolder.url)).resolves.toBe(false)
     })
     test('delete rejects deleting a folder with contents inside it', async () => {

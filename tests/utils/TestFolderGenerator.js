@@ -171,10 +171,29 @@ class TestFolderGenerator {
     return contextSetup.getBaseUrl() + this.basePath + this.name
   }
 
+  /**
+   * @returns {TestFolderGenerator[]}
+   */
   get contents () {
     const contents = []
     this.traverseContents(item => contents.push(item))
     return contents
+  }
+
+  clone () {
+    if (this instanceof Folder) {
+      return new Folder(this.name, this.children.map(child => child.clone()))
+    }
+    if (this instanceof FolderPlaceholder) {
+      return new FolderPlaceholder(this.name, this.children.map(child => child.clone()))
+    }
+    if (this instanceof File) {
+      return new File(this.name, this.content, this.contentType)
+    }
+    if (this instanceof FilePlaceholder) {
+      return new FilePlaceholder(this.name, this.content, this.contentType)
+    }
+    throw new Error("Couldn't create clone")
   }
 
   toString () {

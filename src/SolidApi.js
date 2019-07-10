@@ -294,8 +294,16 @@ class SolidAPI {
     const folderResponse = await this.createFolder(to, options) // TODO: Consider separating into overwriteFiles and overwriteFolders
 
     const promises = [
-      ...folders.map(({ name }) => this.copyFolder(`${from}${name}/`, `${to}${name}/`, options)),
-      ...files.map(({ name }) => this.copyFile(`${from}${name}`, `${to}${name}`, options))
+      // ...folders.map(({ name }) => this.copyFolder(`${from}${name}/`, `${to}${name}/`, options)),
+      // ...files.map(({ name }) => this.copyFile(`${from}${name}`, `${to}${name}`, options))
+      ...folders.map(({ url }) => {
+        const name = getItemName(url)
+        return this.copyFolder(`${from}${name}/`, `${to}${name}/`, options)
+      }),
+      ...files.map(({ url }) => {
+        const name = getItemName(url)
+        return this.copyFile(`${from}${name}`, `${to}${name}`, options)
+      })
     ]
 
     const creationResults = await Promise.all(promises)
@@ -362,11 +370,15 @@ class SolidAPI {
    * @param {string} from
    * @param {string} to
    * @param {RequestOptions} [options]
-   * @returns {Promise<Response>} Response of the new item created
+   * @returns {Promise<Response[]>} Responses of the newly created items
    */
   async move (from, to, options) {
     const copyResponse = await this.copy(from, to, options)
-    await this.delete(from)
+    if (areFolders(from)) {
+      await this.deleteFolderRecursively(from)
+    } else {
+      await this.delete(from)
+    }
     return copyResponse
   }
 
@@ -376,7 +388,7 @@ class SolidAPI {
    * @param {string} url
    * @param {string} newName
    * @param {RequestOptions} [options]
-   * @returns {Promise<Response>} Response of the new item created
+   * @returns {Promise<Response[]>} Response of the newly created items
    */
   rename (url, newName, options) {
     const to = getParentUrl(url) + newName + (areFolders(url) ? '/' : '')
@@ -386,7 +398,7 @@ class SolidAPI {
   /**
    * Throw error if response.ok is set to false
    * @param {Response} response
-   * @returns {Reponse} same response
+   * @returns {Response} same response
    * @throws {Response}
    */
   _assertResponseOk (response) {
