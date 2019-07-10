@@ -1,7 +1,6 @@
 import { contextSetup, getTestContainer, getPrefix, prefixes } from './utils/contextSetup'
 
 async function setup () {
-  console.group('setup')
   try {
     await contextSetup()
   } catch (e) {
@@ -20,8 +19,6 @@ async function setup () {
       throw e
     }
   }
-  console.log('finished setup.js')
-  console.groupEnd()
 }
 
 export default setup
