@@ -203,6 +203,23 @@ class SolidFileClient extends SolidApi {
     if (await this.itemExists(url)) { await this.delete(url) }
     return this.createFile( url, content, contentType)
   }
+  
+  async createFile(url,content, contentType) {
+     let ext = url.replace(/.*\./,'')
+     contentType = contentType || "text/turtle"
+     if(ext && ext==="ttl" && contentType==="text/turtle")
+        url=url.replace(".ttl","")
+     return super.createFile( url, content, contentType )
+  }
+
+/*
+     return this._fetch( url, {
+       method:"PUT",
+       body:content, 
+       headers: {"Content-type":contentType}
+    })
+*/
+  
 
   /* TBD
    *

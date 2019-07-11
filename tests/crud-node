@@ -17,14 +17,14 @@ let [tests,fails,passes,res] = [0,0,0]
 
 if(typeof window === "object") {    
 	var auth = solid.auth;
-    var fc = new SolidFileClient(auth,{throwErrors:false});
+    var fc = new SolidFileClient(auth);
 
 	getConfig("https://").then( cfg => { run(cfg) } )
 }
 else{
 	var auth       = require('solid-auth-cli')
 	var FileClient = require('../')
-	var fc = new FileClient(auth,{throwErrors:false})
+	var fc = new FileClient(auth)
 	
 	testAll()
 
@@ -32,8 +32,8 @@ else{
 
 async function testAll() {
 	await getConfig("https://").then( cfg => { return run(cfg) } )
-	await getConfig("app://ls").then( cfg => { return run(cfg) } )
-	await getConfig("file://").then( cfg => { return run(cfg) } )
+//	await getConfig("app://ls").then( cfg => { return run(cfg) } )
+//	await getConfig("file://").then( cfg => { return run(cfg) } )
 }
 
 
@@ -74,14 +74,10 @@ async function run(cfg){
   ok('true itemExists, folder found',true, await t('itemExists',cfg.folder)) 
   ok("false itemExists, folder not found",false, await t('itemExists',cfg.badFolder) )
 
-  ok("query",true, await query(cfg.folder,cfg))
-
   console.log("  UPDATE")
   ok('200 updateFile',true, await updateFile(cfg.file,cfg.expectedText2 )) 
-  ok('404 updateFile, not found, created',true, await updateFile(cfg.badFile,cfg.expectedText2 )) // updated from false to true
-
-// let res = await fc.readFolder(cfg.folder+"noSuchThing/") 
-// console.log( res.body.files, res.body.folders )
+//  ok('404 updateFile, not found, created',true, await updateFile(cfg.badFile,cfg.expectedText2 )) 
+// this test is useless, replace with test of trying to update a file that doesn't exist, should return true
 
   console.log("  DELETE")
   ok( '200 delete folder',200, await t('deleteFolder',cfg.parentMissing) );
@@ -137,6 +133,7 @@ async function getBase( scheme ){
     console.log(scheme+" Using "+base)
    }
   if( scheme.match("https:") ){  // updated to use popupLogin
+    await auth.logout()
     console.log("Logging in ...")
     let session = await auth.currentSession();
     if (!session) {
@@ -179,7 +176,7 @@ async function getConfig(scheme){
   }
 }
 async function t(method,...args){
-  return await fc[method](...args).catch(e=>{ return e })
+  return await fc[method](...args).catch(e=>{ console.log(e.status); return e })
 }
 function ok ( label,expected,got ) {
   got = got.status || got
@@ -215,7 +212,4 @@ async function deleteTestFolders(cfg,folderUrl) {
   catch(e){return(e)}
 }
 
-async function query(folderUrl,cfg) {
-  let files = await fc.query(folderUrl,{thisDoc:""},{ldp:"contains"})
-  return files.length===3 ? true : false
-}
+

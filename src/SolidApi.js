@@ -294,8 +294,9 @@ class SolidAPI {
     const folderResponse = await this.createFolder(to, options) // TODO: Consider separating into overwriteFiles and overwriteFolders
 
     const promises = [
-      // ...folders.map(({ name }) => this.copyFolder(`${from}${name}/`, `${to}${name}/`, options)),
-      // ...files.map(({ name }) => this.copyFile(`${from}${name}`, `${to}${name}`, options))
+       ...folders.map(({ name }) => this.copyFolder(`${from}${name}/`, `${to}${name}/`, options)),
+       ...files.map(({ name }) => this.copyFile(`${from}${name}`, `${to}${name}`, options))
+/*
       ...folders.map(({ url }) => {
         const name = getItemName(url)
         return this.copyFolder(`${from}${name}/`, `${to}${name}/`, options)
@@ -304,6 +305,7 @@ class SolidAPI {
         const name = getItemName(url)
         return this.copyFile(`${from}${name}`, `${to}${name}`, options)
       })
+*/
     ]
 
     const creationResults = await Promise.all(promises)
@@ -488,6 +490,8 @@ class SolidAPI {
     processed["itemType"] = processed.type.includes("ldp#BasicContainer") 
       ? "Container"
       : "Resource"
+    processed.name = getItemName(url)
+    processed.parent = getParentUrl(url)
     return processed
   }
 
@@ -499,15 +503,15 @@ class SolidAPI {
    *          as shown in the existing documentation
    */
   _packageFolder(folderUrl,folderItems,fileItems) {
-    /* TBD : replace this with Otto's parent method 
-    */
+/*
     const fullName = folderUrl.replace(/\/$/, '')
     const name = fullName.replace(/.*\//, '')
     const parent = fullName.substr(0, fullName.lastIndexOf('/')) + '/'
+*/  
     let returnVal = {}
     returnVal.type = 'folder' // for backwards compatability :-(
-    returnVal.name = name
-    returnVal.parent = parent
+    returnVal.name = getItemName(folderUrl)
+    returnVal.parent = getParentUrl(folderUrl)
     returnVal.url = folderUrl
     returnVal.folders = folderItems
     returnVal.files = fileItems
