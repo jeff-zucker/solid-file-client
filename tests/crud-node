@@ -14,7 +14,7 @@ Note :
 */
 
 let [tests,fails,passes,res] = [0,0,0]
-
+const cType = "text/turtle"
 if(typeof window === "object") {    
 	var auth = solid.auth;
     var fc = new SolidFileClient(auth);
@@ -31,9 +31,9 @@ else{
 }
 
 async function testAll() {
+	await getConfig("app://ls").then( cfg => { return run(cfg) } )
+	await getConfig("file://").then( cfg => { return run(cfg) } )
 	await getConfig("https://").then( cfg => { return run(cfg) } )
-//	await getConfig("app://ls").then( cfg => { return run(cfg) } )
-//	await getConfig("file://").then( cfg => { return run(cfg) } )
 }
 
 
@@ -52,11 +52,11 @@ async function run(cfg){
   ok('201 createFolder, parent not found', 201, await 
     t('createFolder',cfg.parentMissing) )
 
-  ok('201 createFile, file not found',201, await t('createFile',cfg.file,cfg.expectedText) )
+  ok('201 createFile, file not found',201, await t('createFile',cfg.file,cfg.expectedText,cType) )
   ok('201 createFile, file found',201, await
-    t('createFile',cfg.file,cfg.expectedText) )
+    t('createFile',cfg.file,cfg.expectedText,cType) )
   ok('201 createFile, parent not found',201, await
-    t('createFile',cfg.deepFile,cfg.expectedText) )
+    t('createFile',cfg.deepFile,cfg.expectedText,cType) )
 
   console.log("  READ")
   ok( '200 readFolder, folder found',true, await getFolder(cfg.folder) );
@@ -165,8 +165,8 @@ async function getConfig(scheme){
     parent:    parent,
     folder:    folder,
     file:      folder + "test.ttl",
-    parentMissing:   folder + "noSuchThing/norThis/",
     deepFile:  folder +  "deep-folder/deep-file.ttl",
+    parentMissing:   folder + "noSuchThing/norThis/",
     badFile:   badFile,
     badFolder: badFile+"/",
     expectedText:  "<> a <#test>.",
@@ -176,7 +176,7 @@ async function getConfig(scheme){
   }
 }
 async function t(method,...args){
-  return await fc[method](...args).catch(e=>{ console.log(e.status); return e })
+  return await fc[method](...args).catch(e=>{ return e })
 }
 function ok ( label,expected,got ) {
   got = got.status || got

@@ -8,8 +8,8 @@ let cfg
 let throwErrors = true
 
 // choose the storage type
-let scheme = 'app://ls'
-// let scheme = "file://"
+ let scheme = 'app://ls'
+//let scheme = "file://"
 // let scheme = "https://"
 
 const fc = throwErrors
@@ -58,7 +58,6 @@ test('readFolder', () => {
     readFolder(cfg.folder)
   ).resolves.toBe(cfg.file)
 })
-
 // readFile()
 //
 test('readFile', () => {
@@ -69,11 +68,9 @@ test('readFile', () => {
 
 // fetchAndParse()
 //
-/*
-  test('fetchAndParse',()=>{ return expect(
-    fetchAndParse(cfg.profile)
-  ).resolves.toBe(true) });
-*/
+//  test('fetchAndParse',()=>{ return expect(
+//    fetchAndParse(cfg.profile)
+//  ).resolves.toBe(true) });
 // updateFile()
 //
 test('updateFile', () => {
@@ -82,21 +79,22 @@ test('updateFile', () => {
   ).resolves.toBe(true)
 })
 
-// getHead()
+// readHead()
 //
-test('getHead()', () => {
+test('readHead()', () => {
   return expect(
-    getHead(cfg.file)
+    readHead(cfg.file)
   ).resolves.toBe(true)
 })
 
 // getLinks()
 //
-test('getLinks()', () => {
-  return expect(
-    getLinks(cfg.file)
-  ).resolves.toBe(true)
-})
+// test('getLinks()', () => {
+//  return expect(
+//    getLinks(cfg.file)
+//  ).resolves.toBe(true)
+// })
+
 
 // readFile() on non-existent resource
 //
@@ -171,17 +169,11 @@ async function updateFile (url, content) {
     return res.body === content
   }
 }
-async function getHead (url) {
-  if (throwErrors) {
+async function readHead (url) {
     try {
-      let res = await fc.getHead(url)
+      let res = await fc.readHead(url)
       if (res) return true
-    } catch (e) { return false }
-  } else {
-    let res = await fc.getHead(url)
-    if (res.ok) return true
-    return false
-  }
+    } catch (e) { return e }
 }
 async function getLinks (url) {
   if (throwErrors) {
@@ -221,26 +213,22 @@ async function itemExists (url) {
   return fc.itemExists(url)
 }
 async function readFolder (url) {
-  if (throwErrors) {
-    let res = await fc.readFolder(url)
-    if (res.ok) return res.body.files[0].url
-    return res.status
-  } else {
-    let res = await fc.readFolder(url)
-    if (res.ok) return res.body.files[0].url
-    return res.status
-  }
+    try {
+      let res = await fc.readFolder(url)
+      return res.files[0].url
+    }
+    catch(e) {
+      return e.status
+    }
 }
 async function readFile (url) {
-  if (throwErrors) {
-    let res = await fc.get(url)
-    if (res.ok) return res.text()
-    return res
-  } else {
-    let res = await fc.readFile(url)
-    if (!res.ok) return res.status
-    else return res.body
-  }
+    try {
+      let res = await fc.readFile(url)
+      return res
+    }
+    catch(e) {
+      return e.status
+    }
 }
 async function testInterface (method, ...args) {
   if (throwErrors) {
@@ -248,6 +236,7 @@ async function testInterface (method, ...args) {
       let res = await fc[method](...args)
       return res.status
     } catch (e) {
+      console.log(e)
       return e.status
     }
   } else {
@@ -259,7 +248,7 @@ async function getConfig (scheme) {
   let base = await getBase(scheme)
   let parent = base + '/test-folder/'
   let folder = parent + (throwErrors ? 'throwErrors' : 'default') + '/'
-  let badFile = 'https://example.com/badurl'
+  let badFile = parent + 'absolutelyDoesNotExist'
   return {
     base: base,
     parent: parent,

@@ -127,11 +127,11 @@ class SolidFileClient extends SolidApi {
      async readFile(url,request){
       let self=this
       let res 
-      try { res = await this.get(url,request) }catch(e) {return e}
-      if(!res.ok) return res
+      try { res = await this.get(url,request) }catch(e) {throw e}
+      if(!res.ok) throw res
       let type 
       try{ type = res.headers.get('content-type') }catch(e){
-         return(e)
+         throw e
       }
       if(type && type.match(/(image|audio|video)/)){
         let blob = await res.buffer()
@@ -203,7 +203,7 @@ class SolidFileClient extends SolidApi {
     if (await this.itemExists(url)) { await this.delete(url) }
     return this.createFile( url, content, contentType)
   }
-  
+/*  
   async createFile(url,content, contentType) {
      let ext = url.replace(/.*\./,'')
      contentType = contentType || "text/turtle"
@@ -211,7 +211,7 @@ class SolidFileClient extends SolidApi {
         url=url.replace(".ttl","")
      return super.createFile( url, content, contentType )
   }
-
+*/
 /*
      return this._fetch( url, {
        method:"PUT",
