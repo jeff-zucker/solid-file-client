@@ -117,7 +117,6 @@ class SolidFileClient extends SolidApi {
     return this._auth.logout()
   }
 
-  /* TBD : refactor with await */
   /**
      * Fetch an item and reurn content as text,json,or blob as needed
      * @param {string} url
@@ -194,6 +193,13 @@ class SolidFileClient extends SolidApi {
 
   async deleteFile(url,options) { return this.delete( url, options) }
 
+  async deleteFolder(url,options) { return this.deleteFolderRecursively( url, options) }
+
+  async moveFile(url,options) { return this.move( url, options) }
+
+  async moveFolder(url,options) { return this.move( url, options) }
+
+
   /* TBD
    * point to deleteFolderRecursively instead
    */
@@ -212,14 +218,16 @@ class SolidFileClient extends SolidApi {
      return super.createFile( url, content, contentType )
   }
 */
-/*
+
+  /* REMOVE THIS IF/WHEN NSS FIXES POST
+  */
+  async createFile(url,content, contentType) {
      return this._fetch( url, {
        method:"PUT",
        body:content, 
        headers: {"Content-type":contentType}
     })
-*/
-  
+  }  
 
   /* TBD
    *

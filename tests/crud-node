@@ -2,9 +2,13 @@
 /*
 CONNECT login, popupLogin, logout, currentSession
 CREATE  createFile, createFolder
-READ    readFile, readFolder, readHead, itemExists, query
-UPDATE  updateFile, copyFile*, copyFolder*, moveFile*, moveFolder*
-DELETE  deleteFile, deleteFolder*
+READ    readFile, readFolder, readHead, itemExists
+UPDATE  updateFile, copyFile, copyFolder, moveFile, moveFolder
+DELETE  deleteFile, deleteFolder
+
+Not included
+  fetchAndParse
+  getLinks
 
 Note : 
   - asterisks indicate methods TBD
