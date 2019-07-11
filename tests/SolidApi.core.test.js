@@ -73,7 +73,8 @@ describe('core methods', () => {
       return {
         headers: {
           slug,
-          link
+          link,
+          'Content-Type': 'text/turtle'
         }
       }
     }
