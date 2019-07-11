@@ -2,7 +2,7 @@ import SolidApi from '../src/SolidApi'
 import apiUtils from '../src/utils/apiUtils'
 import { Folder, File, FolderPlaceholder, FilePlaceholder, BaseFolder } from './utils/TestFolderGenerator'
 import { getFetch, getTestContainer, contextSetup } from './utils/contextSetup'
-import { rejectsWithStatus, resolvesWithStatus, testIfHttps } from './utils/jestUtils'
+import { rejectsWithStatus, resolvesWithStatus } from './utils/jestUtils'
 // import { resolvesWithHeader, resolvesWithStatus, rejectsWithStatus } from './utils/expectUtils'
 
 /** @type {SolidApi} */
@@ -16,6 +16,8 @@ const container = new BaseFolder(getTestContainer(), 'SolidApi-composed', [
   inexistentFolder,
   turtleFile
 ])
+
+jest.setTimeout(20 * 1000)
 
 beforeAll(async () => {
   await contextSetup()
@@ -310,7 +312,7 @@ describe('composed methods', () => {
       test('rejects with 404 on inexistent item', () => {
         return rejectsWithStatus(api.rename(inexistentFile.url, 'abc.txt'), 404)
       })
-  
+
       describe('rename file', () => {
         test('resolves with existing file', () => {
           return expect(api.rename(childFile.url, 'new-name.txt')).resolves.toBeDefined()

@@ -12,6 +12,19 @@ let baseUrl, testContainer, testFetch
 let hasBeenSetup = false
 
 /**
+ * @typedef {object} HttpRequest
+ * @property {string} url
+ * @property {object} options
+ * @property {function} resolve
+ * @property {function} reject
+ */
+
+const httpRequestsPerSecond = 10
+/** @type {HttpRequest[]} */
+const httpRequestQueue = []
+let httpRequestInterval
+
+/**
  * Setup the testing environment
  * Login the user if required
  */
@@ -57,11 +70,13 @@ async function getBaseUrl (prefix) {
 
     case prefixes.https:
       try {
-        await auth.login()
+        // Due to a bug in combination with jest authentication will be skipped
+        // await auth.login()
         if (!process.env.TEST_BASE_URL) {
-          throw new Error('Please specify the base url if you use the https prefix')
+          throw new Error('Please specify TEST_BASE_URL url if you use the https prefix')
         }
         // Expects something like https://test.solid.community/private/tests/
+        // It must be a publicy read and write able folder
         baseUrl = process.env.TEST_BASE_URL
         baseUrl += baseUrl.endsWith('/') ? '' : '/'
       } catch (e) {
@@ -83,9 +98,29 @@ function createTestFetch (baseUrl, authFetch) {
     if (!url.startsWith(baseUrl)) {
       throw new Error(`Prevent request to >${url}< because it doesn't start with the base url >${baseUrl}<`)
     }
-    const res = await authFetch(url, options)
 
-    return res
+    // Limit requests per second for the http environment
+    if (prefix !== prefixes.https) {
+      return authFetch(url, options)
+    }
+
+    if (!httpRequestInterval) {
+      httpRequestInterval = setInterval(async () => {
+        const { url, options, resolve, reject } = httpRequestQueue.shift()
+        authFetch(url, options)
+          .then(resolve)
+          .catch(reject)
+
+        if (!httpRequestQueue.length) {
+          httpRequestInterval = clearInterval(httpRequestInterval)
+        }
+      }, 1000 / httpRequestsPerSecond)
+    }
+
+    // Return a promise which waits until it is first in the queue
+    return new Promise((resolve, reject) => {
+      httpRequestQueue.push({ url, options, resolve, reject })
+    })
   }
 }
 
