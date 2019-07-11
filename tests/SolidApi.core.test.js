@@ -18,6 +18,8 @@ const container = new BaseFolder(getTestContainer(), 'SolidApi-core', [
   turtleFile
 ])
 
+jest.setTimeout(20 * 1000)
+
 beforeAll(async () => {
   await contextSetup()
   api = new SolidApi(getFetch())
