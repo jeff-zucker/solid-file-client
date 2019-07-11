@@ -19,6 +19,7 @@
     "prepublishOnly": "npm run build && npm run test:all",
     "build": "webpack",
     "build:dev": "webpack --mode development --watch",
+    "build:docs": "jsdoc2md src/*.js > docs/api.md",
     "lint": "standard src/* tests/*",
     "lint:fix": "npm run lint -- --fix"
   },
@@ -58,6 +59,7 @@
     "babel-jest": "^24.8.0",
     "babel-loader": "^8.0.0-beta.6",
     "jest": "^24.8.0",
+    "jsdoc-to-markdown": "^5.0.0",
     "n3": "^1.1.1",
     "rdflib": "^0.20.1",
     "regenerator-runtime": "^0.13.1",
