@@ -50,7 +50,7 @@ class SolidFileClient extends SolidApi {
    * @param {SolidFileClientOptions} [options]
    */
   constructor (auth, options) {
-    super(auth.fetch.bind(auth))
+    super(auth.fetch.bind(auth), options)
     this._auth = auth
   }
 
