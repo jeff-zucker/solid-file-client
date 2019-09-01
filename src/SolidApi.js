@@ -30,6 +30,10 @@ const defaultWriteOptions = {
  * @property {boolean|string} [enableLogging=false] - set to true to output all logging to the console or e.g. solid-file-client:fetch for partial logs
  */
 
+const defaultSolidApiOptions = {
+  enableLogging: false
+}
+
 // TBD: Update this
 
 /**
@@ -57,8 +61,17 @@ class SolidAPI {
    * @param {SolidApiOptions} [options]
    */
   constructor (fetch, options) {
+    options = { ...defaultSolidApiOptions, ...options }
     this._fetch = fetch
     this.rdf = new RdfQuery(fetch)
+
+    if (options.enableLogging) {
+      if (typeof options.enableLogging === 'boolean') {
+        debug.enable('solid-file-client:*')
+      } else {
+        debug.enable(options.enableLogging)
+      }
+    }
   }
 
   /**
