@@ -19,19 +19,20 @@ Note :
 
 let [tests,fails,passes,res] = [0,0,0]
 const cType = "text/turtle"
+
+/* https from browser 
+*/
 if(typeof window === "object") {    
-	var auth = solid.auth;
-    var fc = new SolidFileClient(auth);
-
-	getConfig("https://").then( cfg => { run(cfg) } )
+  var auth = solid.auth;
+  var fc = new SolidFileClient(auth);
+  getConfig("https://").then( cfg => { run(cfg) } )
 }
+//  await getConfig("app://ls").then( cfg => { return run(cfg) } )
 else{
-	var auth       = require('solid-auth-cli')
-	var FileClient = require('../')
-	var fc = new FileClient(auth)
-	
-	testAll()
-
+  var auth       = require('solid-auth-cli')
+  var FileClient = require('../')
+  var fc = new FileClient(auth)
+  testAll()
 }
 
 async function testAll() {
@@ -141,13 +142,13 @@ async function getBase( scheme ){
     console.log("Logging in ...")
     let session = await auth.currentSession();
     if (!session) {
-		if (typeof window === "object"){
-		    let popupUri = 'https://solid.community/common/popup.html';
-		    session = await auth.popupLogin({popupUri})
-		}else{
-			session = await auth.login()
-		}
-	    if(! session ) throw "Couldn't login!"
+	if (typeof window === "object"){
+	    let popupUri = 'https://solid.community/common/popup.html';
+	    session = await auth.popupLogin({popupUri})
+	}else{
+	    session = await auth.login()
+	}
+        if(! session ) throw "Couldn't login!"
     }
     console.log("  logged in as <"+session.webId+">")
     webId = session.webId;
