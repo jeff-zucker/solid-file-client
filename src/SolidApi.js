@@ -498,6 +498,7 @@ class SolidAPI {
       //   itemRecord = _getFileLinks(thisFile.value, itemRecord)
       // }
       if (itemRecord.itemType.match('Container')) {
+        itemRecord.type = "folder"
         folderItems = folderItems.concat(itemRecord)
       } else { fileItems = fileItems.concat(itemRecord) }
     }
@@ -513,7 +514,6 @@ class SolidAPI {
    * finds properties of an item from its predicates and objects
    *  - e.g. predicate = stat#size  object = 4096
    *  - strips off full URLs of predicates and objects
-   *  - creates arrays for properties that have multiple values (e.g. types)
    *  - stores "type" property in types because v0.x of sfc needs type
    * returns an associative array of the item's properties
    */
@@ -525,17 +525,18 @@ class SolidAPI {
    * @returns {Item}
    */
   _processStatements (url, stmts) {
+	let ianaMediaType = "http://www.w3.org/ns/iana/media-types/"
     let processed = { url: url }
     stmts.forEach(stm => {
       let predicate = stm.predicate.value.replace(/.*\//, '').replace(/.*#/, '')
-      let object = stm.object.value.replace(/.*\//, '')
+      let object = stm.object.value.match(ianaMediaType) ? stm.object.value.replace(ianaMediaType, '') : stm.object.value.replace(/.*\//, '')
       if (!predicate.match('type')) object = object.replace(/.*#/, '')
-      if (processed[predicate]) processed[predicate].push(object)
-      else processed[predicate] = [ object ]
+      else if (object !== "ldp#Resource" && object !== "ldp#Container") processed[predicate] = [ object.replace('#Resource', '') ]   // keep only contentType and ldp#BasicContainer
     })
     for (var key in processed) {
       if (processed[key].length === 1) processed[key] = processed[key][0]
     }
+    if ( processed.type === undefined ) processed["type"] = "application/octet-stream"
     processed['itemType'] = processed.type.includes('ldp#BasicContainer')
       ? 'Container'
       : 'Resource'

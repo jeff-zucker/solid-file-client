@@ -87,7 +87,7 @@ console.log( g )
  
 
   async loadFromUrl(url) {
-    const res = await this._fetch(url)
+    const res = await this._fetch(url, { headers: { "Accept": "text/turtle" }})   // needed for https://<podName>/ when there is an index.html
     if (!res.ok) {
       throw res
     }
