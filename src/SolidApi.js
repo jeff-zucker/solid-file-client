@@ -281,9 +281,9 @@ class SolidAPI {
    * @param {string} url
    * @returns {Promise<FolderData>}
    */
-  async readFolder (url) {
+  async readFolder (url, options) {
     try {
-      const res = await this.processFolder(url)
+      const res = await this.processFolder(url, options)
       return res
       /*
       const res = await this.processFolder(url)
@@ -332,7 +332,7 @@ class SolidAPI {
     if (typeof from !== 'string' || typeof to !== 'string') {
       throw new Error(`The from and to parameters of copyFile must be strings. Found: ${from} and ${to}`)
     }
-    const { folders, files } = await this.readFolder(from)
+    const { folders, files } = await this.readFolder(from, options)
     const folderResponse = await this.createFolder(to, options) // TBD: Consider separating into overwriteFiles and overwriteFolders
 
     const promises = [
@@ -374,8 +374,8 @@ class SolidAPI {
    * @param {string} url
    * @returns {Promise<Response[]>} Resolves with a response for each deletion request
    */
-  async deleteFolderContents (url) {
-    const { folders, files } = await this.readFolder(url)
+  async deleteFolderContents (url, options = { withLinks: true }) {  // should delete .acl by default
+    const { folders, files } = await this.readFolder(url, options)
     const deletionResults = await Promise.all([
       ...folders.map(({ url }) => this.deleteFolderRecursively(url)),
       ...files.map(({ url }) => this.delete(url))
@@ -485,22 +485,24 @@ class SolidAPI {
 
     let [rdf, folder, folderItems, fileItems] = [this.rdf, [], [], []] // eslint-disable-line no-unused-vars
     // TBD: Add when the discussion about this has finished
-    // if (options.withLinks) {
-    //   fileItems.push(_getFolderLinks(folderUrl))
-    // }
+    if (options.withLinks) {
+      fileItems = fileItems.concat(await this._getFolderLinks(folderUrl))
+    }
     let files = await rdf.query(folderUrl, { thisDoc: '' }, { ldp: 'contains' })
     for (var f in files) {
       let thisFile = files[f].object
       let thisFileStmts = await rdf.query(null, thisFile)
       let itemRecord = this._processStatements(thisFile.value, thisFileStmts)
-      // TBD: Add when the discussion about this has finished
-      // if (options.withLinks) {
-      //   itemRecord = _getFileLinks(thisFile.value, itemRecord)
-      // }
       if (itemRecord.itemType.match('Container')) {
         itemRecord.type = "folder"
         folderItems = folderItems.concat(itemRecord)
-      } else { fileItems = fileItems.concat(itemRecord) }
+      }else {
+        fileItems = fileItems.concat(itemRecord)
+      // TBD: Add when the discussion about this has finished
+		if (options.withLinks) {
+          fileItems = fileItems.concat(await this._getFileLinks(thisFile.value, itemRecord))
+        }
+      }
     }
     return this._packageFolder(folderUrl, folderItems, fileItems)
   }
@@ -582,10 +584,10 @@ class SolidAPI {
    */
   async _getFolderLinks (folderUrl) {
     let folder = await this.getLinks(folderUrl)
-    folder[0] = Object.assign(folder[0]
+//  folder[0] = Object.assign(folder[0]
       // TBD: Update this method without rdf when finished
       // this._processStatements(await rdf.query(null, { thisDoc: '' })) || {}
-    )
+//  )
     return folder
   }
 
@@ -595,7 +597,6 @@ class SolidAPI {
    */
   async _getFileLinks (itemUrl, itemRecord) {
     let itemWithLinks = await this.getLinks(itemUrl)
-    itemWithLinks[0] = Object.assign(itemWithLinks[0], itemRecord)
     return itemWithLinks
   }
 
@@ -604,23 +605,20 @@ class SolidAPI {
    * getLinks (TBD)
    *
    * returns an array of records related to an item (resource or container)
-   *   0   : the item itself
-   *   1-3 : the .acl, .meta, and .meta.acl for the item if they exist
+   *   0-2 : the .acl, .meta, and .meta.acl for the item if they exist
    * each record includes these fields (see _getLinkObject)
    *   url
-   *   type (one of Container, Resource, AccessControl, or Metadata)
+   *   type (AccessControl, or Metadata)
    *   content-type (text/turtle, etc.)
    */
   async getLinks (itemUrl) {
     let res = await this.fetch(itemUrl, { method: 'HEAD' })
     let linkHeader = await res.headers.get('link')
     let links = await this._findLinksInHeader(itemUrl, linkHeader)
-    let itemLinks = [ this._getLinkObject(
-      links.itemType, itemUrl, res.headers.get('content-type')
-    )]
-    if (links.acl) itemLinks.push(links.acl)
-    if (links.meta) itemLinks.push(links.meta)
-    if (links.metaAcl) itemLinks.push(links.metaAcl)
+	let itemLinks = []
+    if (links.acl) itemLinks = itemLinks.concat(links.acl)
+    if (links.meta) itemLinks = itemLinks.concat(links.meta)
+    if (links.metaAcl) itemLinks = itemLinks.concat(links.metaAcl)
     return itemLinks
   }
 
@@ -635,9 +633,11 @@ class SolidAPI {
     for (let i = 0; i < matches.length; i++) {
       let split = matches[i].split('>')
       let href = split[0].substring(1)
-      if (matches[i].match(/rel="acl"/)) { final.acl = await this._lookForLink('AccessControl', href, originalUri) }
+      if (matches[i].match(/rel="acl"/)) {
+        final.acl = await this._lookForLink('AccessControl', href, originalUri)
+      }
       if (matches[i].match(/rel="describedBy"/)) {
-        final.meta = await this._lookForLink('Metadata', href, originalUri)
+        final.meta = await this._lookForLink('Metadata', href, originalUri);
         /*
       if(typeof final.meta !="undefined") {
         let metaAcl = this._lookForLink(
@@ -647,7 +647,6 @@ class SolidAPI {
       }
 */
       }
-      if (matches[i].match(/rel="type"/)) { final.itemType = href.match('Resource') ? 'Resource' : 'Container' }
     }
     return final
   }
@@ -664,13 +663,13 @@ class SolidAPI {
    * - looks for the link and, if found, returns a link object
    * - else returns undefined
    */
-  async _lookForLink (linkType, itemUrl, linkRelativeUrl) {
-    let linkUrl = _urlJoin(linkRelativeUrl, itemUrl)
+  async _lookForLink (linkType, itemUrl, linkRelativeUrl, parent) {
+    let linkUrl = _urlJoin(itemUrl, linkRelativeUrl)
     try {
       let res = await this.fetch(linkUrl, { method: 'HEAD' })
       if (typeof res !== 'undefined' && res.ok) {
         let contentType = res.headers.get('content-type')
-        return this._getLinkObject(linkUrl, linkType, contentType)
+        return this._getLinkObject(linkUrl, linkType, contentType, itemUrl)
       }
     } catch (e) {} // ignore if not found
   }
@@ -680,14 +679,16 @@ class SolidAPI {
    * _getLinkObject (TBD)
    *
    * creates a link object for a container or any item it holds
-   * type is one of Resource, Container, AccessControl, Metatdata
+   * type is one of AccessControl, Metatdata
    * content-type is from the link's header
    */
-  _getLinkObject (linkUrl, linkType, contentType) {
+  _getLinkObject (linkUrl, linkType, contentType, itemUrl) {
     return {
       url: linkUrl,
-      type: linkType,
-      'content-type': contentType
+      type: contentType,
+      itemType: linkType,
+      name: itemUrl,
+      parent: linkUrl.split(itemUrl)[0]
     }
   }
 }
