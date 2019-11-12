@@ -109,6 +109,31 @@ describe('composed methods', () => {
       })
       test.todo('Add tests for binary files (images, audio, ...)')
     })
+
+    describe('putFile', () => {
+      const content = '<> a <#newContent>.'
+      const contentType = 'text/turtle'
+
+      test('resolves with 201 on existing file and has new content', async () => {
+        await resolvesWithStatus(api.putFile(usedFile.url, content, contentType), 201)
+        const res = await api.fetch(usedFile.url)
+        expect(await res.text()).toBe(content)
+        expect(await res.headers.get('content-type')).toMatch(contentType)
+      })
+      test('rejects on existing file if options.overwriteFiles=false', () => {
+        return expect(api.putFile(usedFile.url, content, contentType, { overwriteFiles: false })).rejects.toBeDefined()
+      })
+      test('resolves with 201 on inexistent file', () => {
+        return resolvesWithStatus(api.putFile(filePlaceholder.url, content, contentType), 201)
+      })
+      test('resolves with 201 on inexistent nested file', () => {
+        return resolvesWithStatus(api.putFile(nestedFilePlaceholder.url, content, contentType), 201)
+      })
+      test('rejects on inexistent nested file with options.createPath=false', () => {
+        return expect(api.putFile(nestedFilePlaceholder.url, content, contentType, { createPath: false })).rejects.toBeDefined()
+      })
+      test.todo('Add tests for binary files (images, audio, ...)')
+    })
   })
 
   describe('nested methods', () => {
@@ -251,7 +276,7 @@ describe('composed methods', () => {
           const responses = await api.move(childFile.url, filePlaceholder.url)
           expect(responses).toHaveLength(1)
           expect(responses[0]).toHaveProperty('status', 201)
-          expect(responses[0]).toHaveProperty('url', apiUtils.getParentUrl(filePlaceholder.url))
+          expect(responses[0]).toHaveProperty('url', filePlaceholder.url)
         })
         test('resolves moving existing to existing file', () => {
           return expect(api.move(childFile.url, parentFile.url)).resolves.toBeDefined()
@@ -323,7 +348,7 @@ describe('composed methods', () => {
           const responses = await api.rename(childFile.url, newName)
           expect(responses).toHaveLength(1)
           expect(responses[0]).toHaveProperty('status', 201)
-          expect(responses[0]).toHaveProperty('url', apiUtils.getParentUrl(childFile.url))
+          expect(responses[0]).toHaveProperty('url', apiUtils.getParentUrl(childFile.url) + newName)
 
           await expect(api.itemExists(childFile.url)).resolves.toBe(false)
           await expect(api.itemExists(newUrl)).resolves.toBe(true)
