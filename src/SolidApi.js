@@ -1,11 +1,13 @@
 // import { getParentUrl, getItemName, areFolders, areFiles, LINK } from './utils/apiUtils'
 import debug from 'debug'
 import apiUtils from './utils/apiUtils'
+import promiseUtils from './utils/promiseUtils'
 import folderUtils from './utils/folderUtils'
 import RdfQuery from './utils/rdf-query'
 
 const fetchLog = debug('solid-file-client:fetch')
 const { getParentUrl, getItemName, areFolders, areFiles, LINK } = apiUtils
+const { promiseAllWithErrors } = promiseUtils
 const { _parseLinkHeader, _urlJoin } = folderUtils
 
 /**
@@ -333,14 +335,14 @@ class SolidAPI {
       throw new Error(`The from and to parameters of copyFile must be strings. Found: ${from} and ${to}`)
     }
     const { folders, files } = await this.readFolder(from)
-    const folderResponse = await this.createFolder(to, options) // TBD: Consider separating into overwriteFiles and overwriteFolders
+    const folderResponse = await this.createFolder(to, options)
 
     const promises = [
       ...folders.map(({ name }) => this.copyFolder(`${from}${name}/`, `${to}${name}/`, options)),
       ...files.map(({ name }) => this.copyFile(`${from}${name}`, `${to}${name}`, options))
     ]
 
-    const creationResults = await Promise.all(promises)
+    const creationResults = await promiseAllWithErrors(promises)
 
     return [folderResponse].concat(...creationResults) // Alternative to Array.prototype.flat
   }
@@ -376,7 +378,7 @@ class SolidAPI {
    */
   async deleteFolderContents (url) {
     const { folders, files } = await this.readFolder(url)
-    const deletionResults = await Promise.all([
+    const deletionResults = await promiseAllWithErrors([
       ...folders.map(({ url }) => this.deleteFolderRecursively(url)),
       ...files.map(({ url }) => this.delete(url))
     ])
