@@ -565,7 +565,9 @@ class SolidAPI {
       let predicate = stm.predicate.value.replace(/.*\//, '').replace(/.*#/, '')
       let object = stm.object.value.match(ianaMediaType) ? stm.object.value.replace(ianaMediaType, '') : stm.object.value.replace(/.*\//, '')
       if (!predicate.match('type')) object = object.replace(/.*#/, '')
-      else if (object !== "ldp#Resource" && object !== "ldp#Container") processed[predicate] = [ object.replace('#Resource', '') ]   // keep only contentType and ldp#BasicContainer
+      else if (object !== "ldp#Resource" && object !== "ldp#Container") {
+        processed[predicate] = [ ...(processed[predicate] || []), object.replace('#Resource', '') ]   // keep only contentType and ldp#BasicContainer
+      }
     })
     for (var key in processed) {
       if (processed[key].length === 1) processed[key] = processed[key][0]
