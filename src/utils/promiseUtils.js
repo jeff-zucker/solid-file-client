@@ -34,7 +34,21 @@ async function promiseAllWithErrors(promises) {
     return res.filter(({ status }) => status === 'fulfilled').map(({ value }) => value)
 }
 
+/**
+ * Wait for all promises to finish. 
+ * If one or more rejects, create a flattened array of the errors and reject with it. 
+ * Else resolve with an array of the fulfilled ones
+ * @param {Promise<any>[]} promises
+ * @returns {Promise<any>[]} resolved values of the promises
+ * @throws {any[]} reasons of the rejected promises
+ */
+async function promiseAllWithFlattenedErrors(promises) {
+    return promiseAllWithErrors(promises)
+        .catch(errors => { throw [].concat(...errors) })
+}
+
 export default {
     promiseAllWithErrors,
-    promisesSettled
+    promisesSettled,
+    promiseAllWithFlattenedErrors
 }
