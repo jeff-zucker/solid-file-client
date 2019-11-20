@@ -268,7 +268,7 @@ class SolidAPI {
 
   /**
    * Create a new file.
-   * Per default it will overwrite if the file already exists
+   * Per default it will overwrite existing files
    * @param {string} url
    * @param {Blob|String} content
    * @param {WriteOptions} [options]
@@ -276,6 +276,40 @@ class SolidAPI {
    */
   createFile (url, content, contentType, options) {
     return this.createItem(url, content, contentType, LINK.RESOURCE, options)
+  }
+
+  /**
+   * Create a file using PUT
+   * Per default it will overwrite existing files
+   * @param {string} url
+   * @param {Blob|String} content
+   * @param {WriteOptions} [options]
+   * @returns {Promise<Response>}
+   */
+  async putFile (url, content, contentType, options) {
+    options = {
+      ...defaultWriteOptions,
+      ...options
+    }
+    // Options which are not like the default PUT behaviour
+    if (!options.overwriteFiles && await this.itemExists(url)) {
+      throw new Error('File already existed: ' + url)
+    }
+    if (!options.createPath && !(await this.itemExists(getParentUrl(url)))) {
+      // Incosistent with createFile (createFile returns 404 response)
+      throw new Error(`Container of ${url} did not exist. Specify createPath=true if it should be created`)
+    }
+
+    const requestOptions = {
+      headers: {
+        link: LINK.RESOURCE,
+        slug: getItemName(url),
+        'Content-Type': contentType
+      },
+      body: content
+    }
+
+    return this.put(url, requestOptions)
   }
 
   /**
@@ -303,7 +337,7 @@ class SolidAPI {
     const content = await response.blob()
     const contentType = response.headers.get('content-type')
 
-    return this.createFile(to, content, contentType, options)
+    return this.putFile(to, content, contentType, options)
   }
 
   /**
@@ -529,7 +563,9 @@ class SolidAPI {
       let predicate = stm.predicate.value.replace(/.*\//, '').replace(/.*#/, '')
       let object = stm.object.value.match(ianaMediaType) ? stm.object.value.replace(ianaMediaType, '') : stm.object.value.replace(/.*\//, '')
       if (!predicate.match('type')) object = object.replace(/.*#/, '')
-      else if (object !== "ldp#Resource" && object !== "ldp#Container") processed[predicate] = [ object.replace('#Resource', '') ]   // keep only contentType and ldp#BasicContainer
+      else if (object !== "ldp#Resource" && object !== "ldp#Container") {
+        processed[predicate] = [ ...(processed[predicate] || []), object.replace('#Resource', '') ]   // keep only contentType and ldp#BasicContainer
+      }
     })
     for (var key in processed) {
       if (processed[key].length === 1) processed[key] = processed[key][0]
