@@ -211,34 +211,37 @@ class SolidFileClient extends SolidApi {
 
   async deleteFile (url, options) { return this.delete(url, options) }
 
-  async deleteFolder (url, options) { return this.deleteFolderRecursively(url, options) }
 
   async moveFile (url, options) { return this.move(url, options) }
 
   async moveFolder (url, options) { return this.move(url, options) }
 
-  /* TBD
-   * point to deleteFolderRecursively instead
-   */
-  // TBD: This method is already declared above
-  async deleteFolder (url, options) { return this.delete(url, options) }
+  // DELETE FOLDER
+  async deleteFolderRecursively (url, options) { 
+     return this.deleteFolderRecursively(url, options) 
+  }
+  async deleteFolder (url, options) {
+    return this.delete(url, options) 
+  }
 
+  // UPDATE FILE
   async updateFile (url, content, contentType) {
     if (await this.itemExists(url)) { await this.delete(url) }
     return this.createFile(url, content, contentType)
   }
+
+  async createFile (url, content, contentType) {
+     return super.createFile( url, content, contentType )
+  }
+
+  /* OLD CREATE-FILE
   /*
     async createFile(url,content, contentType) {
        let ext = url.replace(/.*\./,'')
        contentType = contentType || "text/turtle"
        if(ext && ext==="ttl" && contentType==="text/turtle")
           url=url.replace(".ttl","")
-       return super.createFile( url, content, contentType )
     }
-  */
-
-  /* REMOVE THIS IF/WHEN NSS FIXES POST
-  */
   async createFile (url, content, contentType) {
     return this._fetch(url, {
       method: 'PUT',
@@ -246,10 +249,11 @@ class SolidFileClient extends SolidApi {
       headers: { 'Content-type': contentType }
     })
   }
+  */
 
   /* TBD
    *
-   * copyFile, copyFolder, deleteFolder, moveFile, moveFolder
+   * copyFile, copyFolder, moveFile, moveFolder
    *
    */
 }
