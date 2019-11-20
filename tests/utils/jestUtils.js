@@ -20,6 +20,20 @@ export function rejectsWithStatus (promise, status) {
 }
 
 /**
+ * @param {Promise<Response[]>} promise
+ * @param {number[]} statuses
+ */
+export async function rejectsWithStatuses (promise, statuses) {
+  try {
+    await promise
+    expect('expected rejection').toBe(undefined)
+  } catch (errors) {
+    expect(errors).toHaveLength(statuses.length)
+    errors.forEach((err, i) => expect(err).toHaveProperty('status', statuses[i]))
+  }
+}
+
+/**
  * @param {Promise<Response>} promise
  * @param {string} name
  * @param {string} value

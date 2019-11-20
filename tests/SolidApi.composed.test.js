@@ -2,7 +2,7 @@ import SolidApi from '../src/SolidApi'
 import apiUtils from '../src/utils/apiUtils'
 import { Folder, File, FolderPlaceholder, FilePlaceholder, BaseFolder } from './utils/TestFolderGenerator'
 import { getFetch, getTestContainer, contextSetup } from './utils/contextSetup'
-import { rejectsWithStatus, resolvesWithStatus } from './utils/jestUtils'
+import { rejectsWithStatus, resolvesWithStatus, rejectsWithStatuses } from './utils/jestUtils'
 // import { resolvesWithHeader, resolvesWithStatus, rejectsWithStatus } from './utils/expectUtils'
 
 /** @type {SolidApi} */
@@ -140,7 +140,7 @@ describe('composed methods', () => {
 
     describe('delete', () => {
       describe('deleteFolderContents', () => {
-        test('rejects with 404 on inexistent folder', () => rejectsWithStatus(api.deleteFolderContents(inexistentFolder.url), 404))
+        test('rejects with 404 on inexistent folder', () => rejectsWithStatuses(api.deleteFolderContents(inexistentFolder.url), [404]))
         test.todo('throws some kind of error when called on file')
         test('resolved array contains all names of the deleted items', async () => {
           const responses = await api.deleteFolderContents(parentFolder.url)
@@ -156,7 +156,7 @@ describe('composed methods', () => {
       })
 
       describe('deleteFolderRecursively', () => {
-        test('rejects with 404 on inexistent folder', () => rejectsWithStatus(api.deleteFolderRecursively(inexistentFolder.url), 404))
+        test('rejects with 404 on inexistent folder', () => rejectsWithStatuses(api.deleteFolderRecursively(inexistentFolder.url), [404]))
         test.todo('throws some kind of error when called on file')
         test('resolved array contains all names of the delete items', async () => {
           const responses = await api.deleteFolderRecursively(parentFolder.url)
@@ -195,7 +195,7 @@ describe('composed methods', () => {
       })
 
       describe('copyFolder', () => {
-        test('rejects with 404 on inexistent folder', () => rejectsWithStatus(api.copyFolder(inexistentFolder.url, inexistentFolder.url), 404))
+        test('rejects with 404 on inexistent folder', async () => rejectsWithStatuses(api.copyFolder(inexistentFolder.url, inexistentFolder.url), [404]))
         test('rejects if no second url is specified', () => expect(api.copyFolder(emptyFolder.url)).rejects.toBeDefined())
         test('resolves and copies empty folder', async () => {
           await expect(api.copyFolder(emptyFolder.url, folderPlaceholder.url)).resolves.toBeDefined()
@@ -229,7 +229,7 @@ describe('composed methods', () => {
           await expect(api.itemExists(`${parentFolder.url}${childFile.name}`)).resolves.toBe(true)
         })
         test('rejects when merging folders and files exist with option overwriteFiles=false', () => {
-          return expect(api.copyFolder(childOne.url, childTwo.url, { overwriteFiles: false })).rejects.toThrowError('already existed')
+          return expect(api.copyFolder(childOne.url, childTwo.url, { overwriteFiles: false })).rejects.toEqual(expect.arrayContaining([expect.any(Error)]))
         })
         test('deletes old contents when copying to an existing folder with overwriteFolders=true', async () => {
           await expect(api.copyFolder(childTwo.url, childOne.url, { overwriteFolders: true })).resolves.toBeDefined()
@@ -238,12 +238,13 @@ describe('composed methods', () => {
           await expect(api.itemExists(emptyFolder.url)).resolves.toBe(false) // Was only in  childOne
         })
         test.todo('throws some kind of error when called on file')
+        test.todo('throws flattened errors when it fails in multiple levels')
       })
     })
 
     describe('move', () => {
       test('rejects with 404 on inexistent item', () => {
-        return rejectsWithStatus(api.move(inexistentFile.url, filePlaceholder.url), 404)
+        return rejectsWithStatuses(api.move(inexistentFile.url, filePlaceholder.url), [404])
       })
 
       describe('moving file', () => {
@@ -290,7 +291,7 @@ describe('composed methods', () => {
           return expect(api.move(childTwo.url, childOne.url)).resolves.toBeDefined()
         })
         test('rejects moving folder to existing folder with similar contents with overwriteFiles=false', async () => {
-          await expect(api.move(childTwo.url, childOne.url, { overwriteFiles: false })).rejects.toThrowError('already existed')
+          await expect(api.move(childTwo.url, childOne.url, { overwriteFiles: false })).rejects.toEqual(expect.arrayContaining([expect.any(Error)]))
           await expect(api.itemExists(childTwo.url)).resolves.toBe(true)
         })
         test('overwrites new folder contents and deletes old one', async () => {
@@ -310,7 +311,7 @@ describe('composed methods', () => {
 
     describe('rename', () => {
       test('rejects with 404 on inexistent item', () => {
-        return rejectsWithStatus(api.rename(inexistentFile.url, 'abc.txt'), 404)
+        return rejectsWithStatuses(api.rename(inexistentFile.url, 'abc.txt'), [404])
       })
 
       describe('rename file', () => {

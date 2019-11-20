@@ -1,11 +1,13 @@
 // import { getParentUrl, getItemName, areFolders, areFiles, LINK } from './utils/apiUtils'
 import debug from 'debug'
 import apiUtils from './utils/apiUtils'
+import promiseUtils from './utils/promiseUtils'
 import folderUtils from './utils/folderUtils'
 import RdfQuery from './utils/rdf-query'
 
 const fetchLog = debug('solid-file-client:fetch')
 const { getParentUrl, getItemName, areFolders, areFiles, LINK } = apiUtils
+const { promiseAllWithFlattenedErrors } = promiseUtils
 const { _parseLinkHeader, _urlJoin } = folderUtils
 
 /**
@@ -282,20 +284,7 @@ class SolidAPI {
    * @returns {Promise<FolderData>}
    */
   async readFolder (url) {
-    try {
-      const res = await this.processFolder(url)
-      return res
-      /*
-      const res = await this.processFolder(url)
-      return {
-        ok: true,
-        status: 200,
-        body: res
-      }
-*/
-    } catch (e) {
-      throw (e)
-    }
+    return this.processFolder(url)
   }
 
   /**
@@ -327,20 +316,21 @@ class SolidAPI {
    * @returns {Promise<Response[]>} Resolves with an array of creation responses.
    * The first one will be the folder specified by "to".
    * The others will be creation responses from the contents in arbitrary order.
+   * @throws {Response[]|Error} if one or more fetch requests failed an array of the responses.
    */
   async copyFolder (from, to, options) {
     if (typeof from !== 'string' || typeof to !== 'string') {
       throw new Error(`The from and to parameters of copyFile must be strings. Found: ${from} and ${to}`)
     }
-    const { folders, files } = await this.readFolder(from)
-    const folderResponse = await this.createFolder(to, options) // TBD: Consider separating into overwriteFiles and overwriteFolders
+    const { folders, files } = await this.readFolder(from).catch(responseErrToArray)
+    const folderResponse = await this.createFolder(to, options).catch(responseErrToArray)
 
     const promises = [
       ...folders.map(({ name }) => this.copyFolder(`${from}${name}/`, `${to}${name}/`, options)),
       ...files.map(({ name }) => this.copyFile(`${from}${name}`, `${to}${name}`, options))
     ]
 
-    const creationResults = await Promise.all(promises)
+    const creationResults = await promiseAllWithFlattenedErrors(promises)
 
     return [folderResponse].concat(...creationResults) // Alternative to Array.prototype.flat
   }
@@ -355,6 +345,7 @@ class SolidAPI {
    * @returns {Promise<Response[]>} Resolves with an array of creation responses.
    * The first one will be the folder specified by "to".
    * If it is a folder, the others will be creation responses from the contents in arbitrary order.
+   * @throws {Response[]|Error} if one or more fetch requests failed an array of the responses.
    */
   copy (from, to, options) {
     // TBD: Rewrite to detect folders not by url (ie remove areFolders)
@@ -363,7 +354,8 @@ class SolidAPI {
     }
     if (areFiles(from, to)) {
       return this.copyFile(from, to, options)
-        .then(res => [ res ])
+        .then(responseToArray)
+        .catch(responseErrToArray)
     }
 
     throw new Error('Cannot copy from a folder url to a file url or vice versa')
@@ -373,10 +365,11 @@ class SolidAPI {
    * Delete all folders and files inside a folder
    * @param {string} url
    * @returns {Promise<Response[]>} Resolves with a response for each deletion request
+   * @throws {Response[]|Error} if one or more fetch requests failed an array of the responses.
    */
   async deleteFolderContents (url) {
-    const { folders, files } = await this.readFolder(url)
-    const deletionResults = await Promise.all([
+    const { folders, files } = await this.readFolder(url).catch(responseErrToArray)
+    const deletionResults = await promiseAllWithFlattenedErrors([
       ...folders.map(({ url }) => this.deleteFolderRecursively(url)),
       ...files.map(({ url }) => this.delete(url))
     ])
@@ -390,10 +383,11 @@ class SolidAPI {
    * @returns {Promise<Response[]>} Resolves with an array of deletion responses.
    * The first one will be the folder specified by "url".
    * The others will be the deletion responses from the contents in arbitrary order
+   * @throws {Response[]|Error} if one or more fetch requests failed an array of the responses.
    */
   async deleteFolderRecursively (url) {
     const resolvedResponses = await this.deleteFolderContents(url)
-    resolvedResponses.unshift(await this.delete(url))
+    resolvedResponses.unshift(await this.delete(url).catch(responseErrToArray))
 
     return resolvedResponses
   }
@@ -405,6 +399,7 @@ class SolidAPI {
    * @param {string} to
    * @param {RequestOptions} [options]
    * @returns {Promise<Response[]>} Responses of the newly created items
+   * @throws {Response[]|Error} if one or more fetch requests failed an array of the responses.
    */
   async move (from, to, options) {
     const copyResponse = await this.copy(from, to, options)
@@ -412,6 +407,8 @@ class SolidAPI {
       await this.deleteFolderRecursively(from)
     } else {
       await this.delete(from)
+        .then(responseToArray)
+        .catch(responseErrToArray)
     }
     return copyResponse
   }
@@ -423,6 +420,7 @@ class SolidAPI {
    * @param {string} newName
    * @param {RequestOptions} [options]
    * @returns {Promise<Response[]>} Response of the newly created items
+   * @throws {Response[]|Error} if one or more fetch requests failed an array of the responses.
    */
   rename (url, newName, options) {
     const to = getParentUrl(url) + newName + (areFolders(url) ? '/' : '')
@@ -689,6 +687,30 @@ class SolidAPI {
       type: linkType,
       'content-type': contentType
     }
+  }
+}
+
+/**
+ * If the error is a response, it will be rethrown as an array
+ * @param {Response|Error} err 
+ */
+function responseErrToArray(err) {
+  if (err instanceof Error || !err.status || !err.statusText) {
+    throw err
+  } else {
+    throw [ err ]
+  }
+}
+
+/**
+ * return the response as array
+ * @param {Response} res 
+ */
+function responseToArray(res) {
+  if (Array.isArray(res)) {
+    return res
+  } else {
+    return [ res ]
   }
 }
 
