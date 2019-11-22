@@ -731,7 +731,7 @@ class SolidAPI {
  * @param {Response|Error} err 
  */
 function responseErrToArray(err) {
-  if (err instanceof Error || !err.status || !err.statusText) {
+  if (err instanceof Error || !err.status) {
     throw err
   } else {
     throw [ err ]
