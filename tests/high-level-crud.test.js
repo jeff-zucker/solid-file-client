@@ -218,7 +218,7 @@ async function readFolder (url) {
       return res.files[0].url
     }
     catch(e) {
-      return e.status
+      return e.response.status
     }
 }
 async function readFile (url) {
@@ -227,7 +227,7 @@ async function readFile (url) {
       return res
     }
     catch(e) {
-      return e.status
+      return e.response.status
     }
 }
 async function testInterface (method, ...args) {
@@ -237,7 +237,7 @@ async function testInterface (method, ...args) {
       return res.status
     } catch (e) {
       console.log(e)
-      return e.status
+      return e.response.status
     }
   } else {
     let res = await fc[method](...args)

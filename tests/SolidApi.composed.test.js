@@ -3,7 +3,9 @@ import apiUtils from '../src/utils/apiUtils'
 import { Folder, File, FolderPlaceholder, FilePlaceholder, BaseFolder } from './utils/TestFolderGenerator'
 import { getFetch, getTestContainer, contextSetup } from './utils/contextSetup'
 import { rejectsWithStatus, resolvesWithStatus, rejectsWithStatuses } from './utils/jestUtils'
-// import { resolvesWithHeader, resolvesWithStatus, rejectsWithStatus } from './utils/expectUtils'
+import errorUtils from '../src/utils/errorUtils'
+
+const { FetchError, ComposedFetchError } = errorUtils
 
 /** @type {SolidApi} */
 let api
@@ -220,7 +222,7 @@ describe('composed methods', () => {
       })
 
       describe('copyFolder', () => {
-        test('rejects with 404 on inexistent folder', async () => rejectsWithStatuses(api.copyFolder(inexistentFolder.url, inexistentFolder.url), [404]))
+        test('rejects with 404 on inexistent folder', async () => rejectsWithStatus(api.copyFolder(inexistentFolder.url, inexistentFolder.url), 404))
         test('rejects if no second url is specified', () => expect(api.copyFolder(emptyFolder.url)).rejects.toBeDefined())
         test('resolves and copies empty folder', async () => {
           await expect(api.copyFolder(emptyFolder.url, folderPlaceholder.url)).resolves.toBeDefined()
@@ -254,7 +256,7 @@ describe('composed methods', () => {
           await expect(api.itemExists(`${parentFolder.url}${childFile.name}`)).resolves.toBe(true)
         })
         test('rejects when merging folders and files exist with option overwriteFiles=false', () => {
-          return expect(api.copyFolder(childOne.url, childTwo.url, { overwriteFiles: false })).rejects.toEqual(expect.arrayContaining([expect.any(Error)]))
+          return expect(api.copyFolder(childOne.url, childTwo.url, { overwriteFiles: false })).rejects.toThrow(/already existed/)
         })
         test('deletes old contents when copying to an existing folder with overwriteFolders=true', async () => {
           await expect(api.copyFolder(childTwo.url, childOne.url, { overwriteFolders: true })).resolves.toBeDefined()

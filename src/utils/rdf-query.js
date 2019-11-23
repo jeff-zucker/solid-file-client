@@ -129,6 +129,7 @@ console.log( g )
    * @returns {Promise<N3.N3Store>}
    */
   async loadFromUrl(url) {
+    // TBD: Not failing when the server responds with text/html
     const res = await this._fetch(url, { headers: { "Accept": "text/turtle" }})   // needed for https://<podName>/ when there is an index.html
     if (!res.ok) {
       throw res

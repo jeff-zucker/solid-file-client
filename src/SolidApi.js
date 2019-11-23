@@ -1,13 +1,13 @@
 import debug from 'debug'
 import apiUtils from './utils/apiUtils'
-import promiseUtils from './utils/promiseUtils'
 import folderUtils from './utils/folderUtils'
 import RdfQuery from './utils/rdf-query'
+import errorUtils from './utils/errorUtils'
 
 const fetchLog = debug('solid-file-client:fetch')
 const { getParentUrl, getItemName, areFolders, areFiles, LINK } = apiUtils
-const { promiseAllWithFlattenedErrors } = promiseUtils
 const { _parseLinkHeader, _urlJoin } = folderUtils
+const { FetchError, ComposedFetchError, assertResponseOk, awaitComposedFetch } = errorUtils
 
 /**
  * @typedef {Object} WriteOptions
@@ -70,7 +70,7 @@ class SolidAPI {
   constructor (fetch, options) {
     options = { ...defaultSolidApiOptions, ...options }
     this._fetch = fetch
-    this.rdf = new RdfQuery(fetch)
+    this.rdf = new RdfQuery(this.fetch.bind(this))
 
     if (options.enableLogging) {
       if (typeof options.enableLogging === 'string') {
@@ -86,7 +86,7 @@ class SolidAPI {
    * @param {string} url
    * @param {RequestInit} [options]
    * @returns {Promise<Response>} resolves if response.ok is true, else rejects the response
-   * @throws {Response|Error}
+   * @throws {FetchError}
    */
   fetch (url, options) {
     return this._fetch(url, options)
@@ -94,7 +94,7 @@ class SolidAPI {
         fetchLog(`${res.status} - ${options && options.method} ${url}`)
         return res
       })
-      .then(this._assertResponseOk)
+      .then(assertResponseOk)
   }
 
   /**
@@ -102,7 +102,7 @@ class SolidAPI {
    * @param {string} url
    * @param {RequestInit} [options]
    * @returns {Promise<Response>}
-   * @throws {Response|Error}
+   * @throws {FetchError}
    */
   get (url, options) {
     return this.fetch(url, {
@@ -116,7 +116,7 @@ class SolidAPI {
    * @param {string} url
    * @param {RequestInit} [options]
    * @returns {Promise<Response>}
-   * @throws {Response|Error}
+   * @throws {FetchError}
    */
   delete (url, options) {
     return this.fetch(url, {
@@ -130,7 +130,7 @@ class SolidAPI {
    * @param {string} url
    * @param {RequestInit} [options]
    * @returns {Promise<Response>}
-   * @throws {Response|Error}
+   * @throws {FetchError}
    */
   post (url, options) {
     return this.fetch(url, {
@@ -144,7 +144,7 @@ class SolidAPI {
    * @param {string} url
    * @param {RequestInit} [options]
    * @returns {Promise<Response>}
-   * @throws {Response|Error}
+   * @throws {FetchError}
    */
   put (url, options) {
     return this.fetch(url, {
@@ -158,7 +158,7 @@ class SolidAPI {
    * @param {string} url
    * @param {RequestInit} [options]
    * @returns {Promise<Response>}
-   * @throws {Response|Error}
+   * @throws {FetchError}
    */
   patch (url, options) {
     return this.fetch(url, {
@@ -172,7 +172,7 @@ class SolidAPI {
    * @param {string} url
    * @param {RequestInit} [options]
    * @returns {Promise<Response>}
-   * @throws {Response|Error}
+   * @throws {FetchError}
    */
   head (url, options) {
     return this.fetch(url, {
@@ -186,7 +186,7 @@ class SolidAPI {
    * @param {string} url
    * @param {RequestInit} [options]
    * @returns {Promise<Response>}
-   * @throws {Response|Error}
+   * @throws {FetchError}
    */
   options (url, options) {
     return this.fetch(url, {
@@ -196,11 +196,10 @@ class SolidAPI {
   }
 
   /**
-   * Check if item exists
+   * Check if item exists.
+   * Return false if status is 404. If status is 403 (or any other "bad" status) reject.
    * @param {string} url
    * @returns {Promise<boolean>}
-   * @throws {Response|Error}
-   * @todo Discuss how it should behave on 403, etc
    * @example
    * if (await api.itemExists(url)) {
    *   // Do something
@@ -211,7 +210,12 @@ class SolidAPI {
   async itemExists (url) {
     return this.head(url)
       .then(() => true)
-      .catch(() => false) // TODO: Check if error status is 404
+      .catch(err => {
+        // Only return false when the server returned 404. Else throw
+        if (!(err instanceof FetchError && err.response.status === 404))
+          throw err
+        return false
+      })
   }
 
   /**
@@ -225,7 +229,7 @@ class SolidAPI {
    * @param {string} link - header for Container/Resource, see LINK in apiUtils
    * @param {WriteOptions} [options]
    * @returns {Promise<Response>}
-   * @throws {Response|Error}
+   * @throws {FetchError|Error}
    */
   async createItem (url, content, contentType, link, options) {
     options = {
@@ -261,7 +265,7 @@ class SolidAPI {
    * @param {string} url
    * @param {WriteOptions} [options]
    * @returns {Promise<Response>} Response of HEAD request if it already existed, else of creation request
-   * @throws {Response|Error}
+   * @throws {FetchError|Error}
    */
   async createFolder (url, options) {
     options = {
@@ -277,7 +281,7 @@ class SolidAPI {
       }
       await this.deleteFolderRecursively(url)
     } catch (e) {
-      if (e.status !== 404) {
+      if (!(e instanceof FetchError && e.response.status === 404)) {
         throw e
       }
     }
@@ -292,7 +296,7 @@ class SolidAPI {
    * @param {Blob|String} content
    * @param {WriteOptions} [options]
    * @returns {Promise<Response>}
-   * @throws {Response|Error}
+   * @throws {FetchError|Error}
    */
   createFile (url, content, contentType, options) {
     return this.createItem(url, content, contentType, LINK.RESOURCE, options)
@@ -305,7 +309,7 @@ class SolidAPI {
    * @param {Blob|String} content
    * @param {WriteOptions} [options]
    * @returns {Promise<Response>}
-   * @throws {Response|Error}
+   * @throws {FetchError|Error}
    */
   async putFile (url, content, contentType, options) {
     options = {
@@ -314,6 +318,7 @@ class SolidAPI {
     }
     // Options which are not like the default PUT behaviour
     if (!options.overwriteFiles && await this.itemExists(url)) {
+      // TODO: Discuss how this should be thrown
       throw new Error('File already existed: ' + url)
     }
     if (!options.createPath && !(await this.itemExists(getParentUrl(url)))) {
@@ -337,7 +342,7 @@ class SolidAPI {
    * Fetch and parse a folder
    * @param {string} url
    * @returns {Promise<FolderData>}
-   * @throws {Response|Error}
+   * @throws {FetchError}
    */
   async readFolder (url) {
     return this.processFolder(url)
@@ -350,7 +355,7 @@ class SolidAPI {
    * @param {string} to - Url where it should be copied to
    * @param {WriteOptions} [options]
    * @returns {Promise<Response>} - Response from the new file created
-   * @throws {Response|Error}
+   * @throws {FetchError|Error}
    */
   async copyFile (from, to, options) {
     if (typeof from !== 'string' || typeof to !== 'string') {
@@ -373,21 +378,21 @@ class SolidAPI {
    * @returns {Promise<Response[]>} Resolves with an array of creation responses.
    * The first one will be the folder specified by "to".
    * The others will be creation responses from the contents in arbitrary order.
-   * @throws {Response[]|Error} if one or more fetch requests failed an array of the responses.
+   * @throws {ComposedFetchError|FetchError|Error}
    */
   async copyFolder (from, to, options) {
     if (typeof from !== 'string' || typeof to !== 'string') {
       throw new Error(`The from and to parameters of copyFile must be strings. Found: ${from} and ${to}`)
     }
-    const { folders, files } = await this.readFolder(from).catch(_responseErrToArray)
-    const folderResponse = await this.createFolder(to, options).catch(_responseErrToArray)
+    const { folders, files } = await this.readFolder(from)
+    const folderResponse = await this.createFolder(to, options)
 
     const promises = [
       ...folders.map(({ name }) => this.copyFolder(`${from}${name}/`, `${to}${name}/`, options)),
       ...files.map(({ name }) => this.copyFile(`${from}${name}`, `${to}${name}`, options))
     ]
 
-    const creationResults = await promiseAllWithFlattenedErrors(promises)
+    const creationResults = await awaitComposedFetch(promises)
 
     return [folderResponse].concat(...creationResults) // Alternative to Array.prototype.flat
   }
@@ -402,7 +407,7 @@ class SolidAPI {
    * @returns {Promise<Response[]>} Resolves with an array of creation responses.
    * The first one will be the folder specified by "to".
    * If it is a folder, the others will be creation responses from the contents in arbitrary order.
-   * @throws {Response[]|Error} if one or more fetch requests failed an array of the responses.
+   * @throws {ComposedFetchError|FetchError|Error}
    */
   copy (from, to, options) {
     // TBD: Rewrite to detect folders not by url (ie remove areFolders)
@@ -412,7 +417,6 @@ class SolidAPI {
     if (areFiles(from, to)) {
       return this.copyFile(from, to, options)
         .then(_responseToArray)
-        .catch(_responseErrToArray)
     }
 
     throw new Error('Cannot copy from a folder url to a file url or vice versa')
@@ -422,11 +426,11 @@ class SolidAPI {
    * Delete all folders and files inside a folder
    * @param {string} url
    * @returns {Promise<Response[]>} Resolves with a response for each deletion request
-   * @throws {Response[]|Error} if one or more fetch requests failed an array of the responses.
+   * @throws {ComposedFetchError|FetchError|Error}
    */
   async deleteFolderContents (url) {
-    const { folders, files } = await this.readFolder(url).catch(_responseErrToArray)
-    const deletionResults = await promiseAllWithFlattenedErrors([
+    const { folders, files } = await this.readFolder(url)
+    const deletionResults = await awaitComposedFetch([
       ...folders.map(({ url }) => this.deleteFolderRecursively(url)),
       ...files.map(({ url }) => this.delete(url))
     ])
@@ -440,11 +444,11 @@ class SolidAPI {
    * @returns {Promise<Response[]>} Resolves with an array of deletion responses.
    * The first one will be the folder specified by "url".
    * The others will be the deletion responses from the contents in arbitrary order
-   * @throws {Response[]|Error} if one or more fetch requests failed an array of the responses.
+   * @throws {ComposedFetchError|FetchError|Error}
    */
   async deleteFolderRecursively (url) {
     const resolvedResponses = await this.deleteFolderContents(url)
-    resolvedResponses.unshift(await this.delete(url).catch(_responseErrToArray))
+    resolvedResponses.unshift(await this.delete(url))
 
     return resolvedResponses
   }
@@ -456,7 +460,7 @@ class SolidAPI {
    * @param {string} to
    * @param {RequestOptions} [options]
    * @returns {Promise<Response[]>} Responses of the newly created items
-   * @throws {Response[]|Error} if one or more fetch requests failed an array of the responses.
+   * @throws {ComposedFetchError|FetchError|Error}
    */
   async move (from, to, options) {
     const copyResponse = await this.copy(from, to, options)
@@ -465,7 +469,6 @@ class SolidAPI {
     } else {
       await this.delete(from)
         .then(_responseToArray)
-        .catch(_responseErrToArray)
     }
     return copyResponse
   }
@@ -477,25 +480,11 @@ class SolidAPI {
    * @param {string} newName
    * @param {RequestOptions} [options]
    * @returns {Promise<Response[]>} Response of the newly created items
-   * @throws {Response[]|Error} if one or more fetch requests failed an array of the responses.
+   * @throws {ComposedFetchError|FetchError|Error}
    */
   rename (url, newName, options) {
     const to = getParentUrl(url) + newName + (areFolders(url) ? '/' : '')
     return this.move(url, to, options)
-  }
-
-  /**
-   * Throw response if response.ok is set to false
-   * @private
-   * @param {Response} response
-   * @returns {Response} same response
-   * @throws {Response}
-   */
-  _assertResponseOk (response) {
-    if (!response.ok) {
-      throw response
-    }
-    return response
   }
 
   // TBD: Move this code inside readFolder?
@@ -765,20 +754,6 @@ class SolidAPI {
       type: linkType,
       'content-type': contentType
     }
-  }
-}
-
-/**
- * If the error is a response, it will be rethrown as an array
- * @private
- * @param {Response|Response[]|Error} err
- * @throws {Response[]|Error}
- */
-function _responseErrToArray (err) {
-  if (err instanceof Error || !err.status) {
-    throw err
-  } else {
-    throw [ err ]
   }
 }
 

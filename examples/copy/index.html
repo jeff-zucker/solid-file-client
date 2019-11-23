@@ -112,9 +112,11 @@
         crossorigin="anonymous"></script>
 
     <!-- Solid Copy -->
-    <script src="./solid-auth-client/solid-auth-client.bundle.js"></script>
+    <script src="../solid-auth-client/solid-auth-client.bundle.js"></script>
     <script src="../../dist/window/solid-file-client.bundle.js"></script>
     <script>
+        const { FetchError, ComposedFetchError } = SolidFileClient
+
         const fileClient = new SolidFileClient(solid.auth, { enableLogging: true })
 
         document.getElementById('login').addEventListener('click', e => fileClient.popupLogin())
@@ -162,6 +164,7 @@
         const overwriteFoldersInput = document.getElementById('overwrite-folders')
 
         document.getElementById('copy-form').addEventListener('submit', async e => {
+            console.log('sdkfsldkfs')
             e.preventDefault()
             const from = fromInput.value
             const to = destInput.value
@@ -182,23 +185,21 @@
                     addSuccessLog(msg)
                 })
             } catch (err) {
-                if (!Array.isArray(err)) {
-                    if (err && err.status && err.url) {
-                        const msg = responseToMsg(err)
-                        console.error(msg)
-                        addErrorLog(msg)
-                    } else {
-                        // Unexpected error due to a mistake in our code (not because the fetch didn't work
-                        throw err
-                    }
-                } else {
-                    // One or more of the requests weren't successful
-                    // With PR 80 this will be an array of all rejected ones. Without only a single one
-                    err.forEach(response => {
-                        const msg = responseToMsg(response)
-                        console.error(msg)
-                        addErrorLog(msg)
+                console.error(err)
+                if (err instanceof FetchError) {
+                    addErrorLog(err.message)
+                } else if (err instanceof ComposedFetchError) {
+                    err.rejectedErrors.forEach(err => {
+                        console.error(err)
+                        addErrorLog(err)
                     })
+                    err.successful.map(responseToMsg).forEach(msg => {
+                        console.log(msg)
+                        addSuccessLog(msg)
+                    })
+                } else {
+                    const msg = `Unexpected error: ${err.message}`
+                    addErrorLog(err)
                 }
             }
             setCopyStatus(false)

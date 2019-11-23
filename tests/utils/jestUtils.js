@@ -2,6 +2,9 @@
  * Methods which make working with expect and api responses more convenient
  */
 import { getPrefix, prefixes } from './contextSetup'
+import SolidFileClient from '../../src'
+
+const { FetchError, ComposedFetchError } = SolidFileClient
 
 /**
  * @param {Promise<Response>} promise
@@ -15,8 +18,14 @@ export function resolvesWithStatus (promise, status) {
  * @param {Promise<Response>} promise
  * @param {number} status
  */
-export function rejectsWithStatus (promise, status) {
-  return expect(promise).rejects.toHaveProperty('status', status)
+export async function rejectsWithStatus (promise, status) {
+  try {
+    await promise
+    expect('promise did not reject').toBe(false)
+  } catch (err) {
+    expect(err).toBeInstanceOf(FetchError)
+    expect(err.response).toHaveProperty('status', status)
+  }
 }
 
 /**
@@ -26,10 +35,10 @@ export function rejectsWithStatus (promise, status) {
 export async function rejectsWithStatuses (promise, statuses) {
   try {
     await promise
-    expect('expected rejection').toBe(undefined)
-  } catch (errors) {
-    expect(errors).toHaveLength(statuses.length)
-    errors.forEach((err, i) => expect(err).toHaveProperty('status', statuses[i]))
+    expect('promise did not reject').toBe(false)
+  } catch (err) {
+    expect(err).toBeInstanceOf(ComposedFetchError)
+    err.rejected.forEach((res, i) => expect(res).toHaveProperty('status', statuses[i]))
   }
 }
 
