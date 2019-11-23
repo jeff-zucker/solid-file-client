@@ -7,7 +7,7 @@ import errorUtils from './utils/errorUtils'
 const fetchLog = debug('solid-file-client:fetch')
 const { getParentUrl, getItemName, areFolders, areFiles, LINK } = apiUtils
 const { _parseLinkHeader, _urlJoin } = folderUtils
-const { FetchError, ComposedFetchError, assertResponseOk, awaitComposedFetch } = errorUtils
+const { FetchError, ComposedFetchError, assertResponseOk, composedFetch, toComposedError } = errorUtils
 
 /**
  * @typedef {Object} WriteOptions
@@ -378,21 +378,19 @@ class SolidAPI {
    * @returns {Promise<Response[]>} Resolves with an array of creation responses.
    * The first one will be the folder specified by "to".
    * The others will be creation responses from the contents in arbitrary order.
-   * @throws {ComposedFetchError|FetchError|Error}
+   * @throws {ComposedFetchError}
    */
   async copyFolder (from, to, options) {
     if (typeof from !== 'string' || typeof to !== 'string') {
       throw new Error(`The from and to parameters of copyFile must be strings. Found: ${from} and ${to}`)
     }
-    const { folders, files } = await this.readFolder(from)
-    const folderResponse = await this.createFolder(to, options)
+    const { folders, files } = await this.readFolder(from).catch(toComposedError)
+    const folderResponse = await this.createFolder(to, options).catch(toComposedError)
 
-    const promises = [
+    const creationResults = await composedFetch([
       ...folders.map(({ name }) => this.copyFolder(`${from}${name}/`, `${to}${name}/`, options)),
       ...files.map(({ name }) => this.copyFile(`${from}${name}`, `${to}${name}`, options))
-    ]
-
-    const creationResults = await awaitComposedFetch(promises)
+    ])
 
     return [folderResponse].concat(...creationResults) // Alternative to Array.prototype.flat
   }
@@ -407,7 +405,7 @@ class SolidAPI {
    * @returns {Promise<Response[]>} Resolves with an array of creation responses.
    * The first one will be the folder specified by "to".
    * If it is a folder, the others will be creation responses from the contents in arbitrary order.
-   * @throws {ComposedFetchError|FetchError|Error}
+   * @throws {ComposedFetchError}
    */
   copy (from, to, options) {
     // TBD: Rewrite to detect folders not by url (ie remove areFolders)
@@ -417,6 +415,7 @@ class SolidAPI {
     if (areFiles(from, to)) {
       return this.copyFile(from, to, options)
         .then(_responseToArray)
+        .catch(toComposedError)
     }
 
     throw new Error('Cannot copy from a folder url to a file url or vice versa')
@@ -426,16 +425,14 @@ class SolidAPI {
    * Delete all folders and files inside a folder
    * @param {string} url
    * @returns {Promise<Response[]>} Resolves with a response for each deletion request
-   * @throws {ComposedFetchError|FetchError|Error}
+   * @throws {ComposedFetchError}
    */
   async deleteFolderContents (url) {
-    const { folders, files } = await this.readFolder(url)
-    const deletionResults = await awaitComposedFetch([
+    const { folders, files } = await this.readFolder(url).catch(toComposedError)
+    return composedFetch([
       ...folders.map(({ url }) => this.deleteFolderRecursively(url)),
       ...files.map(({ url }) => this.delete(url))
     ])
-
-    return [].concat(...deletionResults) // Flatten array
   }
 
   /**
@@ -444,11 +441,11 @@ class SolidAPI {
    * @returns {Promise<Response[]>} Resolves with an array of deletion responses.
    * The first one will be the folder specified by "url".
    * The others will be the deletion responses from the contents in arbitrary order
-   * @throws {ComposedFetchError|FetchError|Error}
+   * @throws {ComposedFetchError}
    */
   async deleteFolderRecursively (url) {
     const resolvedResponses = await this.deleteFolderContents(url)
-    resolvedResponses.unshift(await this.delete(url))
+    resolvedResponses.unshift(await this.delete(url).catch(toComposedError))
 
     return resolvedResponses
   }
@@ -460,7 +457,7 @@ class SolidAPI {
    * @param {string} to
    * @param {RequestOptions} [options]
    * @returns {Promise<Response[]>} Responses of the newly created items
-   * @throws {ComposedFetchError|FetchError|Error}
+   * @throws {ComposedFetchError}
    */
   async move (from, to, options) {
     const copyResponse = await this.copy(from, to, options)
@@ -480,7 +477,7 @@ class SolidAPI {
    * @param {string} newName
    * @param {RequestOptions} [options]
    * @returns {Promise<Response[]>} Response of the newly created items
-   * @throws {ComposedFetchError|FetchError|Error}
+   * @throws {ComposedFetchError}
    */
   rename (url, newName, options) {
     const to = getParentUrl(url) + newName + (areFolders(url) ? '/' : '')
@@ -524,7 +521,7 @@ class SolidAPI {
    * @private // We don't need two public readFolder methods?
    * @param {string} folderUrl
    * @param {object} [options]
-   * @returns {FolderData}
+   * @returns {Promise<FolderData>}
    */
   async processFolder (folderUrl, options = { withLinks: false }) {
     if (!folderUrl.endsWith('/')) folderUrl = folderUrl + '/'

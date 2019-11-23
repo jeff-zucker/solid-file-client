@@ -186,21 +186,10 @@
                 })
             } catch (err) {
                 console.error(err)
-                if (err instanceof FetchError) {
-                    addErrorLog(err.message)
-                } else if (err instanceof ComposedFetchError) {
-                    err.rejectedErrors.forEach(err => {
-                        console.error(err)
-                        addErrorLog(err)
-                    })
-                    err.successful.map(responseToMsg).forEach(msg => {
-                        console.log(msg)
-                        addSuccessLog(msg)
-                    })
-                } else {
-                    const msg = `Unexpected error: ${err.message}`
+                err.rejectedErrors.forEach(err => {
+                    console.error(err)
                     addErrorLog(err)
-                }
+                })
             }
             setCopyStatus(false)
             setLogStatus(true)
