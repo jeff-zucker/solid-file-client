@@ -8,22 +8,45 @@ import SolidApi from './SolidApi'
 
 const defaultPopupUri = 'https://solid.community/common/popup.html'
 
-/** TBD
- * @typedef {Object} Session
- *
+/**
+ * @typedef {Object} SessionAuthorization
+ * @property {string} client_id
+ * @property {string} access_token
+ * @property {string} id_token
  */
 
-/** TBD
+/**
+ * @typedef {Object} Session
+ * @property {string} idp
+ * @property {string} webId
+ * @property {string} issuer
+ * @property {string} credentialType
+ * @property {string} sessionKey
+ * @property {string} idClaims
+ * @property {SessionAuthorization} authorization
+ */
+
+/**
+ * (optionally authenticated) fetch method similar to window.fetch
+ * @callback fetch
+ * @param {string} url
+ * @param {RequestInit} [options]
+ * @returns {Promise<Response>}
+ */
+
+/**
  * @typedef {Object} SolidAuthClient
- * @param {function(string, Object): Promise<Response>} fetch
- * @param {function({{ popupUri: string }}): Promise<Session>} popupLogin
- * @param {function(): Promise<Session>} currentSession
- * @param {function(): Promise<any>} logout
+ * @property {fetch} fetch
+ * @property {function(string, LoginOptions): Promise<Session|undefined>} login
+ * @property {function({{ popupUri: string }}): Promise<Session>} popupLogin
+ * @property {function(): Promise<Session>} currentSession
+ * @property {function(function(Session?)): void} trackSession
+ * @property {function(): Promise} logout
  */
 
 /**
  * @typedef {object} SolidFileClientOptions
- * @property {boolean|string} [enableLogging=false] - set to true to output all logging to the console or e.g. solid-file-client:fetch for partial logs
+ * @property {boolean|string} [enableLogging=false] - true for all logging or e.g. solid-file-client:fetch for partial logs
  */
 
 /**
@@ -32,11 +55,10 @@ const defaultPopupUri = 'https://solid.community/common/popup.html'
  */
 
 /**
- * Class for working with the solid API
+ * Class for working with files on Solid Pods
  * @extends SolidApi
  * @example
  * const { auth } = require('solid-auth-client')
- * const SolidApi = require('solid-auth-api')
  * const fileClient = new SolidFileClient(auth)
  * await fileClient.popupLogin()
  * fileClient.createFolder('https:/.../foo/bar/')
@@ -102,13 +124,13 @@ class SolidFileClient extends SolidApi {
    * @returns {Promise<Session|undefined>} session if logged in, else undefined
    */
   async checkSession () {
-    let session = await this._auth.currentSession()
+    const session = await this._auth.currentSession()
     if (session) return session.webId
     else return undefined
   }
 
   /**
-   * Return the currently active webId if available
+   * Return the currently active session if available
    * @returns {Promise<Session|undefined>} session if logged in, else undefined
    */
   async currentSession () {
@@ -118,7 +140,7 @@ class SolidFileClient extends SolidApi {
   // TBD: Update parameters and return value
   /**
      * Get credentials from the current session
-     * @param {any}
+     * @param {any} fn
      * @returns {object}
      */
   getCredentials (fn) {
@@ -211,17 +233,16 @@ class SolidFileClient extends SolidApi {
 
   async deleteFile (url, options) { return this.delete(url, options) }
 
-
   async moveFile (url, options) { return this.move(url, options) }
 
   async moveFolder (url, options) { return this.move(url, options) }
 
   // DELETE FOLDER
-  async deleteFolderRecursively (url, options) { 
-     return this.deleteFolderRecursively(url, options) 
+  async deleteFolderRecursively (url, options) {
+    return this.deleteFolderRecursively(url, options)
   }
   async deleteFolder (url, options) {
-    return this.delete(url, options) 
+    return this.delete(url, options)
   }
 
   // UPDATE FILE
@@ -231,7 +252,7 @@ class SolidFileClient extends SolidApi {
   }
 
   async createFile (url, content, contentType) {
-     return super.createFile( url, content, contentType )
+    return super.createFile(url, content, contentType)
   }
 
   /* OLD CREATE-FILE

@@ -4,15 +4,13 @@
 <dt><a href="#SolidAPI">SolidAPI</a></dt>
 <dd></dd>
 <dt><a href="#SolidFileClient">SolidFileClient</a> ⇐ <code>SolidApi</code></dt>
-<dd><p>Class for working with the solid API</p>
+<dd><p>Class for working with files on Solid Pods</p>
 </dd>
 </dl>
 
 ## Constants
 
 <dl>
-<dt><a href="#defaultWriteOptions">defaultWriteOptions</a> : <code><a href="#WriteOptions">WriteOptions</a></code></dt>
-<dd></dd>
 <dt><a href="#defaultPopupUri">defaultPopupUri</a></dt>
 <dd><p>TBD
 maybe eventually reintroduce the fetch API response interface
@@ -32,12 +30,18 @@ const defaultInitOptions = { throwErrors:false }</p>
 <dd></dd>
 <dt><a href="#FolderData">FolderData</a> : <code>object</code></dt>
 <dd></dd>
+<dt><a href="#fetch">fetch</a> ⇒ <code>Promise.&lt;Response&gt;</code></dt>
+<dd><p>(optionally authenticated) fetch method similar to window.fetch</p>
+</dd>
+<dt><a href="#SessionAuthorization">SessionAuthorization</a> : <code>Object</code></dt>
+<dd></dd>
 <dt><a href="#Session">Session</a> : <code>Object</code></dt>
-<dd><p>TBD</p>
+<dd></dd>
+<dt><a href="#fetch">fetch</a> ⇒ <code>Promise.&lt;Response&gt;</code></dt>
+<dd><p>(optionally authenticated) fetch method similar to window.fetch</p>
 </dd>
 <dt><a href="#SolidAuthClient">SolidAuthClient</a> : <code>Object</code></dt>
-<dd><p>TBD</p>
-</dd>
+<dd></dd>
 <dt><a href="#SolidFileClientOptions">SolidFileClientOptions</a> : <code>object</code></dt>
 <dd></dd>
 <dt><a href="#LoginCredentials">LoginCredentials</a> : <code>object</code></dt>
@@ -63,6 +67,7 @@ const defaultInitOptions = { throwErrors:false }</p>
     * [.createItem(url, content, contentType, link, [options])](#SolidAPI+createItem) ⇒ <code>Promise.&lt;Response&gt;</code>
     * [.createFolder(url, [options])](#SolidAPI+createFolder) ⇒ <code>Promise.&lt;Response&gt;</code>
     * [.createFile(url, content, [options])](#SolidAPI+createFile) ⇒ <code>Promise.&lt;Response&gt;</code>
+    * [.putFile(url, content, [options])](#SolidAPI+putFile) ⇒ <code>Promise.&lt;Response&gt;</code>
     * [.readFolder(url)](#SolidAPI+readFolder) ⇒ [<code>Promise.&lt;FolderData&gt;</code>](#FolderData)
     * [.copyFile(from, to, [options])](#SolidAPI+copyFile) ⇒ <code>Promise.&lt;Response&gt;</code>
     * [.copyFolder(from, to, [options])](#SolidAPI+copyFolder) ⇒ <code>Promise.&lt;Array.&lt;Response&gt;&gt;</code>
@@ -78,10 +83,10 @@ const defaultInitOptions = { throwErrors:false }</p>
 Provide API methods which use the passed fetch method
 
 
-| Param | Type | Description |
-| --- | --- | --- |
-| fetch | <code>function</code> | (optionally authenticated) fetch method similar to window.fetch |
-| [options] | [<code>SolidApiOptions</code>](#SolidApiOptions) |  |
+| Param | Type |
+| --- | --- |
+| fetch | [<code>fetch</code>](#fetch) | 
+| [options] | [<code>SolidApiOptions</code>](#SolidApiOptions) | 
 
 <a name="SolidAPI+fetch"></a>
 
@@ -89,7 +94,11 @@ Provide API methods which use the passed fetch method
 Fetch a resource with the passed fetch method
 
 **Kind**: instance method of [<code>SolidAPI</code>](#SolidAPI)  
-**Returns**: <code>Promise.&lt;Response&gt;</code> - - resolves if response.ok is true, else rejects the response  
+**Returns**: <code>Promise.&lt;Response&gt;</code> - resolves if response.ok is true, else rejects the response  
+**Throws**:
+
+- <code>Response</code><code>Error</code> 
+
 
 | Param | Type |
 | --- | --- |
@@ -102,6 +111,10 @@ Fetch a resource with the passed fetch method
 Send get request
 
 **Kind**: instance method of [<code>SolidAPI</code>](#SolidAPI)  
+**Throws**:
+
+- <code>Response</code><code>Error</code> 
+
 
 | Param | Type |
 | --- | --- |
@@ -114,6 +127,10 @@ Send get request
 Send delete request
 
 **Kind**: instance method of [<code>SolidAPI</code>](#SolidAPI)  
+**Throws**:
+
+- <code>Response</code><code>Error</code> 
+
 
 | Param | Type |
 | --- | --- |
@@ -126,6 +143,10 @@ Send delete request
 Send post request
 
 **Kind**: instance method of [<code>SolidAPI</code>](#SolidAPI)  
+**Throws**:
+
+- <code>Response</code><code>Error</code> 
+
 
 | Param | Type |
 | --- | --- |
@@ -138,6 +159,10 @@ Send post request
 Send put request
 
 **Kind**: instance method of [<code>SolidAPI</code>](#SolidAPI)  
+**Throws**:
+
+- <code>Response</code><code>Error</code> 
+
 
 | Param | Type |
 | --- | --- |
@@ -150,6 +175,10 @@ Send put request
 Send patch request
 
 **Kind**: instance method of [<code>SolidAPI</code>](#SolidAPI)  
+**Throws**:
+
+- <code>Response</code><code>Error</code> 
+
 
 | Param | Type |
 | --- | --- |
@@ -162,6 +191,10 @@ Send patch request
 Send head request
 
 **Kind**: instance method of [<code>SolidAPI</code>](#SolidAPI)  
+**Throws**:
+
+- <code>Response</code><code>Error</code> 
+
 
 | Param | Type |
 | --- | --- |
@@ -174,6 +207,10 @@ Send head request
 Send options request
 
 **Kind**: instance method of [<code>SolidAPI</code>](#SolidAPI)  
+**Throws**:
+
+- <code>Response</code><code>Error</code> 
+
 
 | Param | Type |
 | --- | --- |
@@ -186,6 +223,14 @@ Send options request
 Check if item exists
 
 **Kind**: instance method of [<code>SolidAPI</code>](#SolidAPI)  
+**Throws**:
+
+- <code>Response</code><code>Error</code> 
+
+**Todo**
+
+- [ ] Discuss how it should behave on 403, etc
+
 
 | Param | Type |
 | --- | --- |
@@ -195,6 +240,8 @@ Check if item exists
 ```js
 if (await api.itemExists(url)) {
   // Do something
+} else {
+  // Do something else
 }
 ```
 <a name="SolidAPI+createItem"></a>
@@ -206,6 +253,10 @@ Per default existing items will be replaced.
 You can modify this default behaviour with the options
 
 **Kind**: instance method of [<code>SolidAPI</code>](#SolidAPI)  
+**Throws**:
+
+- <code>Response</code><code>Error</code> 
+
 
 | Param | Type | Description |
 | --- | --- | --- |
@@ -223,6 +274,10 @@ Per default it will resolve when the folder already existed
 
 **Kind**: instance method of [<code>SolidAPI</code>](#SolidAPI)  
 **Returns**: <code>Promise.&lt;Response&gt;</code> - Response of HEAD request if it already existed, else of creation request  
+**Throws**:
+
+- <code>Response</code><code>Error</code> 
+
 
 | Param | Type |
 | --- | --- |
@@ -233,9 +288,31 @@ Per default it will resolve when the folder already existed
 
 ### solidAPI.createFile(url, content, [options]) ⇒ <code>Promise.&lt;Response&gt;</code>
 Create a new file.
-Per default it will overwrite if the file already exists
+Per default it will overwrite existing files
 
 **Kind**: instance method of [<code>SolidAPI</code>](#SolidAPI)  
+**Throws**:
+
+- <code>Response</code><code>Error</code> 
+
+
+| Param | Type |
+| --- | --- |
+| url | <code>string</code> | 
+| content | <code>Blob</code> \| <code>String</code> | 
+| [options] | [<code>WriteOptions</code>](#WriteOptions) | 
+
+<a name="SolidAPI+putFile"></a>
+
+### solidAPI.putFile(url, content, [options]) ⇒ <code>Promise.&lt;Response&gt;</code>
+Create a file using PUT
+Per default it will overwrite existing files
+
+**Kind**: instance method of [<code>SolidAPI</code>](#SolidAPI)  
+**Throws**:
+
+- <code>Response</code><code>Error</code> 
+
 
 | Param | Type |
 | --- | --- |
@@ -249,6 +326,10 @@ Per default it will overwrite if the file already exists
 Fetch and parse a folder
 
 **Kind**: instance method of [<code>SolidAPI</code>](#SolidAPI)  
+**Throws**:
+
+- <code>Response</code><code>Error</code> 
+
 
 | Param | Type |
 | --- | --- |
@@ -262,6 +343,10 @@ Overwrites per default
 
 **Kind**: instance method of [<code>SolidAPI</code>](#SolidAPI)  
 **Returns**: <code>Promise.&lt;Response&gt;</code> - - Response from the new file created  
+**Throws**:
+
+- <code>Response</code><code>Error</code> 
+
 
 | Param | Type | Description |
 | --- | --- | --- |
@@ -280,6 +365,10 @@ Merges folders if already existing
 **Returns**: <code>Promise.&lt;Array.&lt;Response&gt;&gt;</code> - Resolves with an array of creation responses.
 The first one will be the folder specified by "to".
 The others will be creation responses from the contents in arbitrary order.  
+**Throws**:
+
+- <code>Array.&lt;Response&gt;</code><code>Error</code> if one or more fetch requests failed an array of the responses.
+
 
 | Param | Type |
 | --- | --- |
@@ -298,6 +387,10 @@ Merges folders if already existing
 **Returns**: <code>Promise.&lt;Array.&lt;Response&gt;&gt;</code> - Resolves with an array of creation responses.
 The first one will be the folder specified by "to".
 If it is a folder, the others will be creation responses from the contents in arbitrary order.  
+**Throws**:
+
+- <code>Array.&lt;Response&gt;</code><code>Error</code> if one or more fetch requests failed an array of the responses.
+
 
 | Param | Type |
 | --- | --- |
@@ -312,6 +405,10 @@ Delete all folders and files inside a folder
 
 **Kind**: instance method of [<code>SolidAPI</code>](#SolidAPI)  
 **Returns**: <code>Promise.&lt;Array.&lt;Response&gt;&gt;</code> - Resolves with a response for each deletion request  
+**Throws**:
+
+- <code>Array.&lt;Response&gt;</code><code>Error</code> if one or more fetch requests failed an array of the responses.
+
 
 | Param | Type |
 | --- | --- |
@@ -326,6 +423,10 @@ Delete a folder and its contents recursively
 **Returns**: <code>Promise.&lt;Array.&lt;Response&gt;&gt;</code> - Resolves with an array of deletion responses.
 The first one will be the folder specified by "url".
 The others will be the deletion responses from the contents in arbitrary order  
+**Throws**:
+
+- <code>Array.&lt;Response&gt;</code><code>Error</code> if one or more fetch requests failed an array of the responses.
+
 
 | Param | Type |
 | --- | --- |
@@ -339,6 +440,10 @@ Shortcut for copying and deleting items
 
 **Kind**: instance method of [<code>SolidAPI</code>](#SolidAPI)  
 **Returns**: <code>Promise.&lt;Array.&lt;Response&gt;&gt;</code> - Responses of the newly created items  
+**Throws**:
+
+- <code>Array.&lt;Response&gt;</code><code>Error</code> if one or more fetch requests failed an array of the responses.
+
 
 | Param | Type |
 | --- | --- |
@@ -354,6 +459,10 @@ Shortcut for moving items within the same directory
 
 **Kind**: instance method of [<code>SolidAPI</code>](#SolidAPI)  
 **Returns**: <code>Promise.&lt;Array.&lt;Response&gt;&gt;</code> - Response of the newly created items  
+**Throws**:
+
+- <code>Array.&lt;Response&gt;</code><code>Error</code> if one or more fetch requests failed an array of the responses.
+
 
 | Param | Type |
 | --- | --- |
@@ -364,7 +473,7 @@ Shortcut for moving items within the same directory
 <a name="SolidFileClient"></a>
 
 ## SolidFileClient ⇐ <code>SolidApi</code>
-Class for working with the solid API
+Class for working with files on Solid Pods
 
 **Kind**: global class  
 **Extends**: <code>SolidApi</code>  
@@ -392,7 +501,6 @@ Class for working with the solid API
 **Example**  
 ```js
 const { auth } = require('solid-auth-client')
-const SolidApi = require('solid-auth-api')
 const fileClient = new SolidFileClient(auth)
 await fileClient.popupLogin()
 fileClient.createFolder('https:/.../foo/bar/')
@@ -433,7 +541,7 @@ Return the currently active webId if available
 <a name="SolidFileClient+currentSession"></a>
 
 ### solidFileClient.currentSession() ⇒ <code>Promise.&lt;(Session\|undefined)&gt;</code>
-Return the currently active webId if available
+Return the currently active session if available
 
 **Kind**: instance method of [<code>SolidFileClient</code>](#SolidFileClient)  
 **Returns**: <code>Promise.&lt;(Session\|undefined)&gt;</code> - session if logged in, else undefined  
@@ -484,10 +592,6 @@ Fetch an item and parse it
 | url | <code>string</code> | 
 | [contentType] | <code>string</code> | 
 
-<a name="defaultWriteOptions"></a>
-
-## defaultWriteOptions : [<code>WriteOptions</code>](#WriteOptions)
-**Kind**: global constant  
 <a name="defaultPopupUri"></a>
 
 ## defaultPopupUri
@@ -549,24 +653,71 @@ const defaultInitOptions = { throwErrors:false }
 | folders | [<code>Array.&lt;Item&gt;</code>](#Item) | 
 | files | [<code>Array.&lt;Item&gt;</code>](#Item) | 
 
-<a name="Session"></a>
+<a name="fetch"></a>
 
-## Session : <code>Object</code>
-TBD
-
-**Kind**: global typedef  
-<a name="SolidAuthClient"></a>
-
-## SolidAuthClient : <code>Object</code>
-TBD
+## fetch ⇒ <code>Promise.&lt;Response&gt;</code>
+(optionally authenticated) fetch method similar to window.fetch
 
 **Kind**: global typedef  
 
 | Param | Type |
 | --- | --- |
-| fetch | <code>function</code> | 
+| url | <code>string</code> | 
+| [options] | <code>RequestInit</code> | 
+
+<a name="SessionAuthorization"></a>
+
+## SessionAuthorization : <code>Object</code>
+**Kind**: global typedef  
+**Properties**
+
+| Name | Type |
+| --- | --- |
+| client_id | <code>string</code> | 
+| access_token | <code>string</code> | 
+| id_token | <code>string</code> | 
+
+<a name="Session"></a>
+
+## Session : <code>Object</code>
+**Kind**: global typedef  
+**Properties**
+
+| Name | Type |
+| --- | --- |
+| idp | <code>string</code> | 
+| webId | <code>string</code> | 
+| issuer | <code>string</code> | 
+| credentialType | <code>string</code> | 
+| sessionKey | <code>string</code> | 
+| idClaims | <code>string</code> | 
+| authorization | [<code>SessionAuthorization</code>](#SessionAuthorization) | 
+
+<a name="fetch"></a>
+
+## fetch ⇒ <code>Promise.&lt;Response&gt;</code>
+(optionally authenticated) fetch method similar to window.fetch
+
+**Kind**: global typedef  
+
+| Param | Type |
+| --- | --- |
+| url | <code>string</code> | 
+| [options] | <code>RequestInit</code> | 
+
+<a name="SolidAuthClient"></a>
+
+## SolidAuthClient : <code>Object</code>
+**Kind**: global typedef  
+**Properties**
+
+| Name | Type |
+| --- | --- |
+| fetch | [<code>fetch</code>](#fetch) | 
+| login | <code>function</code> | 
 | popupLogin | <code>function</code> | 
 | currentSession | <code>function</code> | 
+| trackSession | <code>function</code> | 
 | logout | <code>function</code> | 
 
 <a name="SolidFileClientOptions"></a>
@@ -577,7 +728,7 @@ TBD
 
 | Name | Type | Default | Description |
 | --- | --- | --- | --- |
-| [enableLogging] | <code>boolean</code> \| <code>string</code> | <code>false</code> | set to true to output all logging to the console or e.g. solid-file-client:fetch for partial logs |
+| [enableLogging] | <code>boolean</code> \| <code>string</code> | <code>false</code> | true for all logging or e.g. solid-file-client:fetch for partial logs |
 
 <a name="LoginCredentials"></a>
 
