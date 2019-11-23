@@ -1,4 +1,3 @@
-// import { getParentUrl, getItemName, areFolders, areFiles, LINK } from './utils/apiUtils'
 import debug from 'debug'
 import apiUtils from './utils/apiUtils'
 import promiseUtils from './utils/promiseUtils'
@@ -12,13 +11,13 @@ const { _parseLinkHeader, _urlJoin } = folderUtils
 
 /**
  * @typedef {Object} WriteOptions
- * @property {boolean} [overwriteFiles=true] - replace existing files
- * @property {boolean} [overwriteFolders=false] - delete existing folders and their contents
- * @property {boolean} [createPath=true] - create parent containers if they don't exist
- * @property {boolean} [copyAcl=true] - Unused yet
- * @property {boolean} [copyMeta=true] - Unused yet
+ * @property {boolean} [overwriteFiles=true] replace existing files
+ * @property {boolean} [overwriteFolders=false] delete existing folders and their contents
+ * @property {boolean} [createPath=true] create parent containers if they don't exist
+ * @property {boolean} [copyAcl=true] Unused yet
+ * @property {boolean} [copyMeta=true] Unused yet
  */
-/** @type WriteOptions */
+
 const defaultWriteOptions = {
   overwriteFiles: true,
   overwriteFolders: false,
@@ -29,14 +28,12 @@ const defaultWriteOptions = {
 
 /**
  * @typedef {object} SolidApiOptions
- * @property {boolean|string} [enableLogging=false] - set to true to output all logging to the console or e.g. solid-file-client:fetch for partial logs
+ * @property {boolean|string} [enableLogging=false] set to true to output all logging to the console or e.g. solid-file-client:fetch for partial logs
  */
 
 const defaultSolidApiOptions = {
   enableLogging: false
 }
-
-// TBD: Update this
 
 /**
  * @typedef Item
@@ -56,10 +53,18 @@ const defaultSolidApiOptions = {
  * @property {Item[]} files
  */
 
+/**
+ * (optionally authenticated) fetch method similar to window.fetch
+ * @callback fetch
+ * @param {string} url
+ * @param {RequestInit} [options]
+ * @returns {Promise<Response>}
+ */
+
 class SolidAPI {
   /**
    * Provide API methods which use the passed fetch method
-   * @param {function(string, RequestInit): Promise<Response>} fetch - (optionally authenticated) fetch method similar to window.fetch
+   * @param {fetch} fetch
    * @param {SolidApiOptions} [options]
    */
   constructor (fetch, options) {
@@ -68,10 +73,10 @@ class SolidAPI {
     this.rdf = new RdfQuery(fetch)
 
     if (options.enableLogging) {
-      if (typeof options.enableLogging === 'boolean') {
-        debug.enable('solid-file-client:*')
-      } else {
+      if (typeof options.enableLogging === 'string') {
         debug.enable(options.enableLogging)
+      } else {
+        debug.enable('solid-file-client:*')
       }
     }
   }
@@ -80,7 +85,8 @@ class SolidAPI {
    * Fetch a resource with the passed fetch method
    * @param {string} url
    * @param {RequestInit} [options]
-   * @returns {Promise<Response>} - resolves if response.ok is true, else rejects the response
+   * @returns {Promise<Response>} resolves if response.ok is true, else rejects the response
+   * @throws {Response|Error}
    */
   fetch (url, options) {
     return this._fetch(url, options)
@@ -96,6 +102,7 @@ class SolidAPI {
    * @param {string} url
    * @param {RequestInit} [options]
    * @returns {Promise<Response>}
+   * @throws {Response|Error}
    */
   get (url, options) {
     return this.fetch(url, {
@@ -109,6 +116,7 @@ class SolidAPI {
    * @param {string} url
    * @param {RequestInit} [options]
    * @returns {Promise<Response>}
+   * @throws {Response|Error}
    */
   delete (url, options) {
     return this.fetch(url, {
@@ -122,6 +130,7 @@ class SolidAPI {
    * @param {string} url
    * @param {RequestInit} [options]
    * @returns {Promise<Response>}
+   * @throws {Response|Error}
    */
   post (url, options) {
     return this.fetch(url, {
@@ -135,6 +144,7 @@ class SolidAPI {
    * @param {string} url
    * @param {RequestInit} [options]
    * @returns {Promise<Response>}
+   * @throws {Response|Error}
    */
   put (url, options) {
     return this.fetch(url, {
@@ -148,6 +158,7 @@ class SolidAPI {
    * @param {string} url
    * @param {RequestInit} [options]
    * @returns {Promise<Response>}
+   * @throws {Response|Error}
    */
   patch (url, options) {
     return this.fetch(url, {
@@ -161,6 +172,7 @@ class SolidAPI {
    * @param {string} url
    * @param {RequestInit} [options]
    * @returns {Promise<Response>}
+   * @throws {Response|Error}
    */
   head (url, options) {
     return this.fetch(url, {
@@ -174,6 +186,7 @@ class SolidAPI {
    * @param {string} url
    * @param {RequestInit} [options]
    * @returns {Promise<Response>}
+   * @throws {Response|Error}
    */
   options (url, options) {
     return this.fetch(url, {
@@ -186,15 +199,19 @@ class SolidAPI {
    * Check if item exists
    * @param {string} url
    * @returns {Promise<boolean>}
+   * @throws {Response|Error}
+   * @todo Discuss how it should behave on 403, etc
    * @example
    * if (await api.itemExists(url)) {
    *   // Do something
+   * } else {
+   *   // Do something else
    * }
    */
   async itemExists (url) {
     return this.head(url)
       .then(() => true)
-      .catch(() => false)
+      .catch(() => false) // TODO: Check if error status is 404
   }
 
   /**
@@ -208,6 +225,7 @@ class SolidAPI {
    * @param {string} link - header for Container/Resource, see LINK in apiUtils
    * @param {WriteOptions} [options]
    * @returns {Promise<Response>}
+   * @throws {Response|Error}
    */
   async createItem (url, content, contentType, link, options) {
     options = {
@@ -243,6 +261,7 @@ class SolidAPI {
    * @param {string} url
    * @param {WriteOptions} [options]
    * @returns {Promise<Response>} Response of HEAD request if it already existed, else of creation request
+   * @throws {Response|Error}
    */
   async createFolder (url, options) {
     options = {
@@ -273,6 +292,7 @@ class SolidAPI {
    * @param {Blob|String} content
    * @param {WriteOptions} [options]
    * @returns {Promise<Response>}
+   * @throws {Response|Error}
    */
   createFile (url, content, contentType, options) {
     return this.createItem(url, content, contentType, LINK.RESOURCE, options)
@@ -285,6 +305,7 @@ class SolidAPI {
    * @param {Blob|String} content
    * @param {WriteOptions} [options]
    * @returns {Promise<Response>}
+   * @throws {Response|Error}
    */
   async putFile (url, content, contentType, options) {
     options = {
@@ -316,6 +337,7 @@ class SolidAPI {
    * Fetch and parse a folder
    * @param {string} url
    * @returns {Promise<FolderData>}
+   * @throws {Response|Error}
    */
   async readFolder (url) {
     return this.processFolder(url)
@@ -328,6 +350,7 @@ class SolidAPI {
    * @param {string} to - Url where it should be copied to
    * @param {WriteOptions} [options]
    * @returns {Promise<Response>} - Response from the new file created
+   * @throws {Response|Error}
    */
   async copyFile (from, to, options) {
     if (typeof from !== 'string' || typeof to !== 'string') {
@@ -356,8 +379,8 @@ class SolidAPI {
     if (typeof from !== 'string' || typeof to !== 'string') {
       throw new Error(`The from and to parameters of copyFile must be strings. Found: ${from} and ${to}`)
     }
-    const { folders, files } = await this.readFolder(from).catch(responseErrToArray)
-    const folderResponse = await this.createFolder(to, options).catch(responseErrToArray)
+    const { folders, files } = await this.readFolder(from).catch(_responseErrToArray)
+    const folderResponse = await this.createFolder(to, options).catch(_responseErrToArray)
 
     const promises = [
       ...folders.map(({ name }) => this.copyFolder(`${from}${name}/`, `${to}${name}/`, options)),
@@ -388,8 +411,8 @@ class SolidAPI {
     }
     if (areFiles(from, to)) {
       return this.copyFile(from, to, options)
-        .then(responseToArray)
-        .catch(responseErrToArray)
+        .then(_responseToArray)
+        .catch(_responseErrToArray)
     }
 
     throw new Error('Cannot copy from a folder url to a file url or vice versa')
@@ -402,7 +425,7 @@ class SolidAPI {
    * @throws {Response[]|Error} if one or more fetch requests failed an array of the responses.
    */
   async deleteFolderContents (url) {
-    const { folders, files } = await this.readFolder(url).catch(responseErrToArray)
+    const { folders, files } = await this.readFolder(url).catch(_responseErrToArray)
     const deletionResults = await promiseAllWithFlattenedErrors([
       ...folders.map(({ url }) => this.deleteFolderRecursively(url)),
       ...files.map(({ url }) => this.delete(url))
@@ -421,7 +444,7 @@ class SolidAPI {
    */
   async deleteFolderRecursively (url) {
     const resolvedResponses = await this.deleteFolderContents(url)
-    resolvedResponses.unshift(await this.delete(url).catch(responseErrToArray))
+    resolvedResponses.unshift(await this.delete(url).catch(_responseErrToArray))
 
     return resolvedResponses
   }
@@ -441,8 +464,8 @@ class SolidAPI {
       await this.deleteFolderRecursively(from)
     } else {
       await this.delete(from)
-        .then(responseToArray)
-        .catch(responseErrToArray)
+        .then(_responseToArray)
+        .catch(_responseErrToArray)
     }
     return copyResponse
   }
@@ -462,7 +485,7 @@ class SolidAPI {
   }
 
   /**
-   * Throw error if response.ok is set to false
+   * Throw response if response.ok is set to false
    * @private
    * @param {Response} response
    * @returns {Response} same response
@@ -475,6 +498,8 @@ class SolidAPI {
     return response
   }
 
+  // TBD: Move this code inside readFolder?
+  // TBD: Update this comment when the withLinks PR is merged
   /**
    * processFolder
    *
@@ -530,7 +555,7 @@ class SolidAPI {
       //   itemRecord = _getFileLinks(thisFile.value, itemRecord)
       // }
       if (itemRecord.itemType.match('Container')) {
-        itemRecord.type = "folder"
+        itemRecord.type = 'folder'
         folderItems = folderItems.concat(itemRecord)
       } else { fileItems = fileItems.concat(itemRecord) }
     }
@@ -550,27 +575,28 @@ class SolidAPI {
    * returns an associative array of the item's properties
    */
   // TBD: Update type declaration
+  // TBD: What type are the items in the stmts array?
   /**
    * @private
    * @param {string} url
-   * @param {any} stmts
+   * @param {any[]} stmts
    * @returns {Item}
    */
   _processStatements (url, stmts) {
-	let ianaMediaType = "http://www.w3.org/ns/iana/media-types/"
-    let processed = { url: url }
+    const ianaMediaType = 'http://www.w3.org/ns/iana/media-types/'
+    const processed = { url: url }
     stmts.forEach(stm => {
-      let predicate = stm.predicate.value.replace(/.*\//, '').replace(/.*#/, '')
+      const predicate = stm.predicate.value.replace(/.*\//, '').replace(/.*#/, '')
       let object = stm.object.value.match(ianaMediaType) ? stm.object.value.replace(ianaMediaType, '') : stm.object.value.replace(/.*\//, '')
       if (!predicate.match('type')) object = object.replace(/.*#/, '')
-      else if (object !== "ldp#Resource" && object !== "ldp#Container") {
-        processed[predicate] = [ ...(processed[predicate] || []), object.replace('#Resource', '') ]   // keep only contentType and ldp#BasicContainer
+      else if (object !== 'ldp#Resource' && object !== 'ldp#Container') {
+        processed[predicate] = [ ...(processed[predicate] || []), object.replace('#Resource', '') ] // keep only contentType and ldp#BasicContainer
       }
     })
-    for (var key in processed) {
+    for (const key in processed) {
       if (processed[key].length === 1) processed[key] = processed[key][0]
     }
-    if ( processed.type === undefined ) processed["type"] = "application/octet-stream"
+    if (processed.type === undefined) processed['type'] = 'application/octet-stream'
     processed['itemType'] = processed.type.includes('ldp#BasicContainer')
       ? 'Container'
       : 'Resource'
@@ -579,6 +605,7 @@ class SolidAPI {
     return processed
   }
 
+  // TBD: Remove outdated comments
   /*
    * _packageFolder
    *
@@ -599,6 +626,7 @@ class SolidAPI {
     const name = fullName.replace(/.*\//, '')
     const parent = fullName.substr(0, fullName.lastIndexOf('/')) + '/'
 */
+    /** @type {FolderData} */
     let returnVal = {}
     returnVal.type = 'folder' // for backwards compatability :-(
     returnVal.name = getItemName(folderUrl)
@@ -634,6 +662,14 @@ class SolidAPI {
   }
 
   /**
+   * @typedef {Object} LinkObject
+   * @property {string} url
+   * @property {"Container"|"Resource"|"AccessControl"|"Metadata"} type
+   * @property {string} content-type // Note: content-type will probably not be interpreted correctly by JSDoc
+   */
+  // TBD: If a ressource has a meta file but no acl file, how would the result look like?
+  //      [metaRecord] ? Making it an object would prevent unexpected ordering (or filling with undefineds)
+  /**
    * @private // For now
    * getLinks (TBD)
    *
@@ -644,6 +680,8 @@ class SolidAPI {
    *   url
    *   type (one of Container, Resource, AccessControl, or Metadata)
    *   content-type (text/turtle, etc.)
+   * @param {string} itemUrl
+   * @returns {Promise<LinkObject[]>}
    */
   async getLinks (itemUrl) {
     let res = await this.fetch(itemUrl, { method: 'HEAD' })
@@ -716,6 +754,10 @@ class SolidAPI {
    * creates a link object for a container or any item it holds
    * type is one of Resource, Container, AccessControl, Metatdata
    * content-type is from the link's header
+   * @param {string} linkUrl
+   * @param {"Container"|"Resource"|"AccessControl"|"Metadata"} linkType
+   * @param {string} contentType
+   * @returns {LinkObject}
    */
   _getLinkObject (linkUrl, linkType, contentType) {
     return {
@@ -728,9 +770,11 @@ class SolidAPI {
 
 /**
  * If the error is a response, it will be rethrown as an array
- * @param {Response|Error} err 
+ * @private
+ * @param {Response|Response[]|Error} err
+ * @throws {Response[]|Error}
  */
-function responseErrToArray(err) {
+function _responseErrToArray (err) {
   if (err instanceof Error || !err.status) {
     throw err
   } else {
@@ -740,9 +784,11 @@ function responseErrToArray(err) {
 
 /**
  * return the response as array
- * @param {Response} res 
+ * @private
+ * @param {Response|Response[]} res
+ * @returns {Response[]}
  */
-function responseToArray(res) {
+function _responseToArray (res) {
   if (Array.isArray(res)) {
     return res
   } else {

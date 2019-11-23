@@ -8,22 +8,45 @@ import SolidApi from './SolidApi'
 
 const defaultPopupUri = 'https://solid.community/common/popup.html'
 
-/** TBD
- * @typedef {Object} Session
- *
+/**
+ * @typedef {Object} SessionAuthorization
+ * @property {string} client_id
+ * @property {string} access_token
+ * @property {string} id_token
  */
 
-/** TBD
+/**
+ * @typedef {Object} Session
+ * @property {string} idp
+ * @property {string} webId
+ * @property {string} issuer
+ * @property {string} credentialType
+ * @property {string} sessionKey
+ * @property {string} idClaims
+ * @property {SessionAuthorization} authorization
+ */
+
+/**
+ * (optionally authenticated) fetch method similar to window.fetch
+ * @callback fetch
+ * @param {string} url
+ * @param {RequestInit} [options]
+ * @returns {Promise<Response>}
+ */
+
+/**
  * @typedef {Object} SolidAuthClient
- * @param {function(string, Object): Promise<Response>} fetch
- * @param {function({{ popupUri: string }}): Promise<Session>} popupLogin
- * @param {function(): Promise<Session>} currentSession
- * @param {function(): Promise<any>} logout
+ * @property {fetch} fetch
+ * @property {function(string, LoginOptions): Promise<Session|undefined>} login
+ * @property {function({{ popupUri: string }}): Promise<Session>} popupLogin
+ * @property {function(): Promise<Session>} currentSession
+ * @property {function(function(Session?)): void} trackSession
+ * @property {function(): Promise} logout
  */
 
 /**
  * @typedef {object} SolidFileClientOptions
- * @property {boolean|string} [enableLogging=false] - set to true to output all logging to the console or e.g. solid-file-client:fetch for partial logs
+ * @property {boolean|string} [enableLogging=false] - true for all logging or e.g. solid-file-client:fetch for partial logs
  */
 
 /**
@@ -32,11 +55,10 @@ const defaultPopupUri = 'https://solid.community/common/popup.html'
  */
 
 /**
- * Class for working with the solid API
+ * Class for working with files on Solid Pods
  * @extends SolidApi
  * @example
  * const { auth } = require('solid-auth-client')
- * const SolidApi = require('solid-auth-api')
  * const fileClient = new SolidFileClient(auth)
  * await fileClient.popupLogin()
  * fileClient.createFolder('https:/.../foo/bar/')
@@ -54,11 +76,6 @@ class SolidFileClient extends SolidApi {
     this._auth = auth
   }
 
-  /* TBD
-   * redo the comments for the login/session methods, they are wrong
-   * in several respects
-   */
-
   // TBD: Clarify if this is for solid-auth-cli only
   /**
    * Redirect the user to a login page if in the browser
@@ -75,6 +92,8 @@ class SolidFileClient extends SolidApi {
     return session.webId
   }
 
+  // TBD: What happens if the session returned by popupLogin is undefined?
+  //      (I guess this happens when the user just closes the popup. Maybe it also rejects in this case)
   /**
    * Open a popup prompting the user to login
    * @param {string} [popupUri]
@@ -102,23 +121,23 @@ class SolidFileClient extends SolidApi {
    * @returns {Promise<Session|undefined>} session if logged in, else undefined
    */
   async checkSession () {
-    let session = await this._auth.currentSession()
+    const session = await this._auth.currentSession()
     if (session) return session.webId
     else return undefined
   }
 
   /**
-   * Return the currently active webId if available
+   * Return the currently active session if available
    * @returns {Promise<Session|undefined>} session if logged in, else undefined
    */
   async currentSession () {
     return this._auth.currentSession()
   }
 
-  // TBD: Update parameters and return value
+  // TBD: What type is fn? What type is returned?
   /**
      * Get credentials from the current session
-     * @param {any}
+     * @param {any} fn
      * @returns {object}
      */
   getCredentials (fn) {
@@ -137,13 +156,16 @@ class SolidFileClient extends SolidApi {
      * Fetch an item and return content as text,json,or blob as needed
      * @param {string} url
      * @param {RequestInit} [request]
-     * @returns {Promise<string|Response|Blob>}
+     * @returns {Promise<string|Blob|Response>}
      */
   async readFile (url, request) {
     // let self = this
+    // TBD: Would be more concise as: const res = await this.get(url, request)
+    //      (catching and throwing the same thing does not have an effect afaik)
     let res
     try { res = await this.get(url, request) } catch (e) { throw e }
     if (!res.ok) throw res
+    // TBD: Same as with res
     let type
     try { type = res.headers.get('content-type') } catch (e) {
       throw e
@@ -151,16 +173,20 @@ class SolidFileClient extends SolidApi {
     // TBD: I've changed it to return something. Please check if this is the desired behaviour
     // TBD: Update this to use res.blob()
     if (type && type.match(/(image|audio|video)/)) {
+      // TBD: Could be replaced with: return res.buffer() // or return res.blob()
       let blob = await res.buffer()
       return blob
     }
     if (res.text) {
-      let text = res.text()
+      let text = res.text() // TDB: Use await res.text() instead? Or return res.text()
       return text
     }
     return res
   }
 
+  // TBD: What is returned?
+  // TBD: Remove contentType if not used anymore
+  // TBD: Remove comment in function if it is not of use anymore
   /**
    * fetchAndParse
    *
@@ -205,35 +231,42 @@ class SolidFileClient extends SolidApi {
   }
 
   // TBD: Update type declarations (JSDoc)
+  // TBD: What types are s, p, o, g? What is returned?
+  // TBD: None of these needs the async declaration. Only needed if await is used.
   async query (url, s, p, o, g) { return this.rdf.query(url, s, p, o, g) }
 
+  // TBD: Why do we wrap head here? Why name it "read" if it only forwards head?
   async readHead (url, options) { return super.head(url, options) }
 
   async deleteFile (url, options) { return this.delete(url, options) }
-
 
   async moveFile (url, options) { return this.move(url, options) }
 
   async moveFolder (url, options) { return this.move(url, options) }
 
   // DELETE FOLDER
-  async deleteFolderRecursively (url, options) { 
-     return this.deleteFolderRecursively(url, options) 
+  // TBD: Use super.deleteFolderRecursively instead? Or don't specify it at all?
+  async deleteFolderRecursively (url, options) {
+    return this.deleteFolderRecursively(url, options)
   }
+
   async deleteFolder (url, options) {
-    return this.delete(url, options) 
+    return this.delete(url, options)
   }
 
   // UPDATE FILE
+  // TBD: Forward to putFile
   async updateFile (url, content, contentType) {
     if (await this.itemExists(url)) { await this.delete(url) }
     return this.createFile(url, content, contentType)
   }
 
+  // TBD: Why do we declare it another time?
   async createFile (url, content, contentType) {
-     return super.createFile( url, content, contentType )
+    return super.createFile(url, content, contentType)
   }
 
+  // TBD: Remove this comment?
   /* OLD CREATE-FILE
   /*
     async createFile(url,content, contentType) {
@@ -251,6 +284,7 @@ class SolidFileClient extends SolidApi {
   }
   */
 
+  // TBD: Remove this comment?
   /* TBD
    *
    * copyFile, copyFolder, moveFile, moveFolder
