@@ -76,11 +76,6 @@ class SolidFileClient extends SolidApi {
     this._auth = auth
   }
 
-  /* TBD
-   * redo the comments for the login/session methods, they are wrong
-   * in several respects
-   */
-
   // TBD: Clarify if this is for solid-auth-cli only
   /**
    * Redirect the user to a login page if in the browser
@@ -97,6 +92,8 @@ class SolidFileClient extends SolidApi {
     return session.webId
   }
 
+  // TBD: What happens if the session returned by popupLogin is undefined?
+  //      (I guess this happens when the user just closes the popup. Maybe it also rejects in this case)
   /**
    * Open a popup prompting the user to login
    * @param {string} [popupUri]
@@ -137,7 +134,7 @@ class SolidFileClient extends SolidApi {
     return this._auth.currentSession()
   }
 
-  // TBD: Update parameters and return value
+  // TBD: What type is fn? What type is returned?
   /**
      * Get credentials from the current session
      * @param {any} fn
@@ -159,13 +156,16 @@ class SolidFileClient extends SolidApi {
      * Fetch an item and return content as text,json,or blob as needed
      * @param {string} url
      * @param {RequestInit} [request]
-     * @returns {Promise<string|Response|Blob>}
+     * @returns {Promise<string|Blob|Response>}
      */
   async readFile (url, request) {
     // let self = this
+    // TBD: Would be more concise as: const res = await this.get(url, request)
+    //      (catching and throwing the same thing does not have an effect afaik)
     let res
     try { res = await this.get(url, request) } catch (e) { throw e }
     if (!res.ok) throw res
+    // TBD: Same as with res
     let type
     try { type = res.headers.get('content-type') } catch (e) {
       throw e
@@ -173,16 +173,20 @@ class SolidFileClient extends SolidApi {
     // TBD: I've changed it to return something. Please check if this is the desired behaviour
     // TBD: Update this to use res.blob()
     if (type && type.match(/(image|audio|video)/)) {
+      // TBD: Could be replaced with: return res.buffer() // or return res.blob()
       let blob = await res.buffer()
       return blob
     }
     if (res.text) {
-      let text = res.text()
+      let text = res.text() // TDB: Use await res.text() instead? Or return res.text()
       return text
     }
     return res
   }
 
+  // TBD: What is returned?
+  // TBD: Remove contentType if not used anymore
+  // TBD: Remove comment in function if it is not of use anymore
   /**
    * fetchAndParse
    *
@@ -227,8 +231,11 @@ class SolidFileClient extends SolidApi {
   }
 
   // TBD: Update type declarations (JSDoc)
+  // TBD: What types are s, p, o, g? What is returned?
+  // TBD: None of these needs the async declaration. Only needed if await is used.
   async query (url, s, p, o, g) { return this.rdf.query(url, s, p, o, g) }
 
+  // TBD: Why do we wrap head here? Why name it "read" if it only forwards head?
   async readHead (url, options) { return super.head(url, options) }
 
   async deleteFile (url, options) { return this.delete(url, options) }
@@ -238,23 +245,28 @@ class SolidFileClient extends SolidApi {
   async moveFolder (url, options) { return this.move(url, options) }
 
   // DELETE FOLDER
+  // TBD: Use super.deleteFolderRecursively instead? Or don't specify it at all?
   async deleteFolderRecursively (url, options) {
     return this.deleteFolderRecursively(url, options)
   }
+
   async deleteFolder (url, options) {
     return this.delete(url, options)
   }
 
   // UPDATE FILE
+  // TBD: Forward to putFile
   async updateFile (url, content, contentType) {
     if (await this.itemExists(url)) { await this.delete(url) }
     return this.createFile(url, content, contentType)
   }
 
+  // TBD: Why do we declare it another time?
   async createFile (url, content, contentType) {
     return super.createFile(url, content, contentType)
   }
 
+  // TBD: Remove this comment?
   /* OLD CREATE-FILE
   /*
     async createFile(url,content, contentType) {
@@ -272,6 +284,7 @@ class SolidFileClient extends SolidApi {
   }
   */
 
+  // TBD: Remove this comment?
   /* TBD
    *
    * copyFile, copyFolder, moveFile, moveFolder

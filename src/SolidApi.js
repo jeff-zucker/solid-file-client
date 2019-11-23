@@ -498,6 +498,8 @@ class SolidAPI {
     return response
   }
 
+  // TBD: Move this code inside readFolder?
+  // TBD: Update this comment when the withLinks PR is merged
   /**
    * processFolder
    *
@@ -573,10 +575,11 @@ class SolidAPI {
    * returns an associative array of the item's properties
    */
   // TBD: Update type declaration
+  // TBD: What type are the items in the stmts array?
   /**
    * @private
    * @param {string} url
-   * @param {any} stmts
+   * @param {any[]} stmts
    * @returns {Item}
    */
   _processStatements (url, stmts) {
@@ -602,6 +605,7 @@ class SolidAPI {
     return processed
   }
 
+  // TBD: Remove outdated comments
   /*
    * _packageFolder
    *
@@ -658,6 +662,14 @@ class SolidAPI {
   }
 
   /**
+   * @typedef {Object} LinkObject
+   * @property {string} url
+   * @property {"Container"|"Resource"|"AccessControl"|"Metadata"} type
+   * @property {string} content-type // Note: content-type will probably not be interpreted correctly by JSDoc
+   */
+  // TBD: If a ressource has a meta file but no acl file, how would the result look like?
+  //      [metaRecord] ? Making it an object would prevent unexpected ordering (or filling with undefineds)
+  /**
    * @private // For now
    * getLinks (TBD)
    *
@@ -668,6 +680,8 @@ class SolidAPI {
    *   url
    *   type (one of Container, Resource, AccessControl, or Metadata)
    *   content-type (text/turtle, etc.)
+   * @param {string} itemUrl
+   * @returns {Promise<LinkObject[]>}
    */
   async getLinks (itemUrl) {
     let res = await this.fetch(itemUrl, { method: 'HEAD' })
@@ -740,6 +754,10 @@ class SolidAPI {
    * creates a link object for a container or any item it holds
    * type is one of Resource, Container, AccessControl, Metatdata
    * content-type is from the link's header
+   * @param {string} linkUrl
+   * @param {"Container"|"Resource"|"AccessControl"|"Metadata"} linkType
+   * @param {string} contentType
+   * @returns {LinkObject}
    */
   _getLinkObject (linkUrl, linkType, contentType) {
     return {
