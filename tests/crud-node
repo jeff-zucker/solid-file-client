@@ -99,7 +99,7 @@ async function run(cfg){
 
 async function updateFile(url,expected){
   try {
-    let res = await fc.updateFile(url,expected)
+    let res = await fc.updateFile(url,expected,"text/turtle")
     let got = await fc.readFile(url)
     return got===expected
   }
@@ -107,7 +107,6 @@ async function updateFile(url,expected){
 }
 async function getFolder(url,file){
   let res = await fc.readFolder(url)
-//  if(res.body && res.body.files) return true
   if(res && res.files) return true
 }
 async function readFile(url,text){
@@ -184,12 +183,22 @@ async function t(method,...args){
   return await fc[method](...args).catch(e=>{ return e })
 }
 function ok ( label,expected,got ) {
+  /*
+   * use composed errors
+   */
+  if(typeof(got)==='object' && !got.status) {
+     got.status = got.rejected[0].status
+  } 
   got = got.status || got
   tests = tests + 1;   
-  if(expected===got) passes = passes + 1
-  else fails = fails+1
-  if(expected===got)  console.log( "    ok "+label )
-  else console.log( "    FAIL "+label + " : expected : "+expected+" got : "+got );
+  if(expected===got) {
+    passes = passes + 1
+    console.log( "    ok "+label )
+  }
+  else { 
+    fails = fails+1
+    console.log( "    FAIL "+label + " : expected : "+expected+" got : "+got );
+  }
 }
 
 async function prepTest(cfg){
