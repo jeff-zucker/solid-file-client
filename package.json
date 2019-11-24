@@ -44,7 +44,7 @@
   },
   "peerDependencies": {
     "rdflib": "^1.0.6",
-    "solid-auth-cli": "1.0.9",
+    "solid-auth-cli": "1.0.10",
     "solid-auth-client": "^2.3.0"
   },
   "devDependencies": {
@@ -64,7 +64,7 @@
     "rdflib": "^0.20.1",
     "regenerator-runtime": "^0.13.1",
     "rimraf": "^2.6.3",
-    "solid-auth-cli": "^1.0.9",
+    "solid-auth-cli": "^1.0.10",
     "solid-namespace": "^0.2.0",
     "standard": "^12.0.1",
     "webpack": "^4.27.1",
@@ -73,6 +73,6 @@
   "dependencies": {
     "debug": "^4.1.1",
     "jest-cli": "^24.9.0",
-    "solid-rest": "^1.0.8"
+    "solid-rest": "^1.0.9"
   }
 }
