@@ -1,5 +1,5 @@
-const contextSetup = require('./contextSetup')
-const { default: SolidApi } = require('../../src/SolidApi')
+import contextSetup from './contextSetup'
+import SolidApi from '../../src/SolidApi'
 
 let _api
 
@@ -273,7 +273,7 @@ class FilePlaceholder extends File {
   }
 }
 
-module.exports = {
+export default {
   Folder,
   File,
   BaseFolder,

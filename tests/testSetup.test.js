@@ -1,6 +1,9 @@
-import { File, FolderPlaceholder, FilePlaceholder, BaseFolder } from './utils/TestFolderGenerator'
-import { getTestContainer, contextSetup, getFetch } from './utils/contextSetup'
+import TestFolderGenerator from './utils/TestFolderGenerator'
+import contextSetupModule from './utils/contextSetup'
 import SolidAPI from '../src/SolidApi'
+
+const { File, FolderPlaceholder, FilePlaceholder, BaseFolder } = TestFolderGenerator
+const { getTestContainer, contextSetup, getFetch } = contextSetupModule
 
 const inexistentFolder = new FolderPlaceholder('inexistent')
 const inexistentFile = new FilePlaceholder('inexistent.abc')
