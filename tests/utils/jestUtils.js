@@ -23,8 +23,9 @@ export async function rejectsWithStatus (promise, status) {
     await promise
     expect('promise did not reject').toBe(false)
   } catch (err) {
-    expect(err).toBeInstanceOf(FetchError)
-    expect(err.response).toHaveProperty('status', status)
+    expect(err).toBeInstanceOf(ComposedFetchError)
+    expect(err.rejected).toHaveLength(1)
+    expect(err.rejected[0]).toHaveProperty('status', status)
   }
 }
 

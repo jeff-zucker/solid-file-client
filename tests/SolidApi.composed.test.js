@@ -318,7 +318,7 @@ describe('composed methods', () => {
           return expect(api.move(childTwo.url, childOne.url)).resolves.toBeDefined()
         })
         test('rejects moving folder to existing folder with similar contents with overwriteFiles=false', async () => {
-          await expect(api.move(childTwo.url, childOne.url, { overwriteFiles: false })).rejects.toEqual(expect.arrayContaining([expect.any(Error)]))
+          await expect(api.move(childTwo.url, childOne.url, { overwriteFiles: false })).rejects.toEqual(expect.any(ComposedFetchError))
           await expect(api.itemExists(childTwo.url)).resolves.toBe(true)
         })
         test('overwrites new folder contents and deletes old one', async () => {

@@ -39,7 +39,7 @@ class ComposedFetchError extends Error {
       if (rejectedErrors.length === 1) {
         this.message = rejectedErrors[0].message
       } else {
-        this.message = this.name + rejectedErrors.map(err => err.message).join('\n')
+        this.message = `${this.name} ${rejectedErrors.map(err => err.message).join('\n')}`
       }
     }
 
@@ -66,9 +66,11 @@ const defaultErrorDescriptions = {
  */
 function assertResponseOk (res) {
   if (!res.ok) {
-    if (res.status in defaultErrorDescriptions)
-      throw new FetchError(res, `${res.status} ${res.url} - ${defaultErrorDescriptions[res.status]}`)
-    throw new FetchError(res)
+    const fetchErr = (res.status in defaultErrorDescriptions) ?
+      new FetchError(res, `${res.status} ${res.url} - ${defaultErrorDescriptions[res.status]}`)
+      : new FetchError(res)
+
+    throw new ComposedFetchError({ successful: [], rejectedErrors: [ fetchErr ] })
   }
   return res
 }
@@ -105,47 +107,49 @@ async function composedFetch(promises) {
   const res = await promisesSettled(promises)
 
   /** @type {Response[]} */
-  const successful = []
-  /** @type {FetchError[]} */
-  const rejectedErrors = []
+  const successful = [].concat(...res.filter(({ status }) => status === 'fulfilled').map(({ value }) => value))
+  /** @type {ComposedFetchError[]} */
+  const rejectedErrors = res.filter(({ status }) => status === 'rejected').map(({ reason }) => reason)
 
-  res.forEach(settled => {
-    if (settled.status === 'fulfilled') {
-      if (Array.isArray(settled.value)) {
-        successful.push(...settled.value)
-      } else {
-        successful.push(settled.value)
-      }
-    } else if (settled.status === 'rejected') {
-      const err = settled.reason
-      if (err instanceof ComposedFetchError) {
-        rejectedErrors.push(...err.rejectedErrors)
-      } else if (err instanceof FetchError) {
-        rejectedErrors.push(err)
-      } else {
-        throw new ComposedFetchError({ successful: [], rejectedErrors: [] }, `Unexpected Error: ${err.message}`)
-      }
-    }
-  })
-
-  // Throw when at least one error occurred
   if (rejectedErrors.length) {
-    throw new ComposedFetchError({ successful, rejectedErrors })
+    // Merge messages of all elements without rejectedErrors to prevent loosing them
+    const errorsWithoutResponse = []
+    const errors = []
+    rejectedErrors.forEach(err => {
+      if (!err.rejectedErrors || !err.rejectedErrors.length) {
+        errorsWithoutResponse.push(err)
+      } else {
+        successful.push(...err.successful)
+        errors.push(...err.rejectedErrors)
+      }
+    })
+
+    if (errorsWithoutResponse.length) {
+      const msg = errorsWithoutResponse.map(err => err.message).join('\n')
+      throw new ComposedFetchError({ successful, rejectedErrors: errors }, msg)
+    } else {
+      throw new ComposedFetchError({ successful, rejectedErrors: errors })
+    }
   }
 
   return successful
 }
 
 /**
- * Convert a FetchError to a ComposedFetchError
- * @param {FetchError} fetchError 
+ * Convert a FetchError to a ComposedFetchError and rethrow it
+ * @param {Error} err 
  * @throws {ComposedFetchError}
  */
-function toComposedError(fetchError) {
-  if (fetchError instanceof FetchError) {
-    throw new ComposedFetchError({ successful: [], rejectedErrors: [ fetchError ]}, fetchError.message)
+function toComposedError(err) {
+  if (err instanceof ComposedFetchError) {
+    throw err
+  } else if (err instanceof FetchError) {
+    throw new ComposedFetchError({ successful: [], rejectedErrors: [ err ]}, err.message)
+  } else if (err instanceof Error) {
+    throw new ComposedFetchError({ successful: [], rejectedErrors: [] }, err.message)
+  } else {
+    throw err
   }
-  throw fetchError
 }
 
 export default {

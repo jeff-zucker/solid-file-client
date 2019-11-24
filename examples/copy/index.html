@@ -164,7 +164,6 @@
         const overwriteFoldersInput = document.getElementById('overwrite-folders')
 
         document.getElementById('copy-form').addEventListener('submit', async e => {
-            console.log('sdkfsldkfs')
             e.preventDefault()
             const from = fromInput.value
             const to = destInput.value
@@ -186,9 +185,10 @@
                 })
             } catch (err) {
                 console.error(err)
+                addErrorLog(err.message)
                 err.rejectedErrors.forEach(err => {
                     console.error(err)
-                    addErrorLog(err)
+                    addErrorLog(err.message)
                 })
             }
             setCopyStatus(false)
