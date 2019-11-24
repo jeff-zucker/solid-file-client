@@ -72,7 +72,6 @@
   },
   "dependencies": {
     "debug": "^4.1.1",
-    "jest-cli": "^24.9.0",
     "solid-rest": "^1.0.9"
   }
 }
