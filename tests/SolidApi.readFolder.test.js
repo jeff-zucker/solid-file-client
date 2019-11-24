@@ -31,8 +31,12 @@ js:
 
 
 describe('readFolder', () => {
+    const headerLink = '<file1.acl>; rel="acl"'
     const sampleResponse = {
         text: () => Promise.resolve(sampleFolder),
+        headers: {
+            get: key => (key === 'link') ? headerLink : null
+        },
         ok: true
     }
     const fetch = jest.fn(() => Promise.resolve(sampleResponse))
@@ -50,6 +54,6 @@ describe('readFolder', () => {
         expect(res.folders).toHaveLength(1)
         expect(res.files).toHaveLength(1)
     })
-})
 
-test.todo('Add more tests')
+    test.todo('Add more tests')
+})

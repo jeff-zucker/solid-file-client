@@ -1,11 +1,15 @@
+
 import SolidApi from '../src/SolidApi'
 import apiUtils from '../src/utils/apiUtils'
-import { Folder, File, FolderPlaceholder, FilePlaceholder, BaseFolder } from './utils/TestFolderGenerator'
-import { getFetch, getTestContainer, contextSetup } from './utils/contextSetup'
-import { rejectsWithStatus, resolvesWithStatus, rejectsWithStatuses } from './utils/jestUtils'
+import TestFolderGenerator from './utils/TestFolderGenerator'
+import contextSetupModule from './utils/contextSetup'
 import errorUtils from '../src/utils/errorUtils'
+import { rejectsWithStatuses, resolvesWithStatus, rejectsWithStatus } from './utils/jestUtils'
 
-const { FetchError, ComposedFetchError } = errorUtils
+const { getFetch, getTestContainer, contextSetup } = contextSetupModule
+const { Folder, File, FolderPlaceholder, FilePlaceholder, BaseFolder } = TestFolderGenerator
+
+const { ComposedFetchError } = errorUtils
 
 /** @type {SolidApi} */
 let api

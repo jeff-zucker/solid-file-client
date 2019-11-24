@@ -1,4 +1,5 @@
-import { contextSetup, getTestContainer, getPrefix, prefixes } from './utils/contextSetup'
+import contextSetupModule from './utils/contextSetup'
+const { contextSetup, getTestContainer, getPrefix, prefixes } = contextSetupModule
 
 async function setup () {
   try {

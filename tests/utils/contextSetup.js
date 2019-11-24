@@ -1,4 +1,5 @@
-const auth = require('solid-auth-cli')
+import auth from 'solid-auth-cli'
+import TestFolderGenerator from './TestFolderGenerator'
 
 const prefixes = {
   file: 'file://',
@@ -46,7 +47,7 @@ async function contextSetup () {
 
 function getTestContainer () {
   if (!testContainer) {
-    const { Folder } = require('./TestFolderGenerator')
+    const { Folder } = TestFolderGenerator
     testContainer = new Folder('test-folder')
   }
   return testContainer
@@ -131,7 +132,7 @@ function assertReady (getter) {
   return getter()
 }
 
-module.exports = {
+export default {
   contextSetup,
   prefixes,
   getTestContainer,
