@@ -1,18 +1,29 @@
 import contextSetup from './contextSetup'
 import SolidApi from '../../src/SolidApi'
+import FileApi from './FileApi'
 
 let _api
 
 /**
- * Return the api for the current active context
- * @returns {SolidApi}
+ * Return true when the file mock should be used instead of SolidApi
+ * @returns {boolean}
+ */
+const useFileApi = () => contextSetup.getPrefix() === contextSetup.prefixes.file
+
+/**
+ * If useFileApi returns true, return a FileApi object, else a SolidApi
+ * @returns {SolidApi|FileApi}
  */
 const getApi = () => {
-  if (!_api && contextSetup.isReady()) {
+  if (useFileApi()) {
+    if (!_api) {
+      _api = new FileApi(contextSetup.prefixes.file)
+    }
+  } else {
+    if (!_api && !contextSetup.isReady()) {
+      throw new Error('Tried to access api before the testing environment has been initialized')
+    }
     _api = new SolidApi(contextSetup.getFetch())
-  }
-  if (!_api) {
-    throw new Error('Tried to access api before the testing environment has been initialized')
   }
   return _api
 }
