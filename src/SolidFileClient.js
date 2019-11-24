@@ -1,11 +1,5 @@
 import SolidApi from './SolidApi'
 
-/** TBD
- * maybe eventually reintroduce the fetch API response interface
- * for now throwErrors will be the only option so no need for this line
- * const defaultInitOptions = { throwErrors:false }
- */
-
 const defaultPopupUri = 'https://solid.community/common/popup.html'
 
 /**
@@ -65,7 +59,10 @@ const defaultPopupUri = 'https://solid.community/common/popup.html'
  *   .then(response => console.log(`Created: ${response.url}`))
  */
 class SolidFileClient extends SolidApi {
-  /** backwards incompatible change : users need to use new SolidFileClient(auth) */
+  /**
+   * backwards incompatible change : 
+   *    users need to use new SolidFileClient(auth) 
+   */
 
   /**
    * @param {SolidAuthClient} auth - An auth client, for instance solid-auth-client or solid-auth-cli
@@ -75,6 +72,10 @@ class SolidFileClient extends SolidApi {
     super(auth.fetch.bind(auth), options)
     this._auth = auth
   }
+
+
+/* START OF SESSION FUNCTIONS */
+
 
   // TBD: Clarify if this is for solid-auth-cli only
   /**
@@ -152,6 +153,9 @@ class SolidFileClient extends SolidApi {
     return this._auth.logout()
   }
 
+/* END OF SESSION FUNCTIONS */
+
+
   /**
      * Fetch an item and return content as text,json,or blob as needed
      * @param {string} url
@@ -159,135 +163,37 @@ class SolidFileClient extends SolidApi {
      * @returns {Promise<string|Blob|Response>}
      */
   async readFile (url, request) {
-    // let self = this
-    // TBD: Would be more concise as: const res = await this.get(url, request)
-    //      (catching and throwing the same thing does not have an effect afaik)
-    let res
-    try { res = await this.get(url, request) } catch (e) { throw e }
-    if (!res.ok) throw res
-    // TBD: Same as with res
-    let type
-    try { type = res.headers.get('content-type') } catch (e) {
-      throw e
-    }
-    // TBD: I've changed it to return something. Please check if this is the desired behaviour
-    // TBD: Update this to use res.blob()
-    if (type && type.match(/(image|audio|video)/)) {
-      // TBD: Could be replaced with: return res.buffer() // or return res.blob()
-      let blob = await res.buffer()
-      return blob
-    }
-    if (res.text) {
-      let text = res.text() // TDB: Use await res.text() instead? Or return res.text()
-      return text
-    }
+    const res = await this.get(url, request)
+    const type = res.headers.get('content-type') 
+    if (type && type.match(/(image|audio|video)/)){ return await res.blob() }
+    if (res.text){ return await res.text()  }
     return res
   }
 
-  // TBD: What is returned?
-  // TBD: Remove contentType if not used anymore
-  // TBD: Remove comment in function if it is not of use anymore
-  /**
-   * fetchAndParse
-   *
-   * backwards incompatible change : dropping support for JSON parsing, this is only for RDF
-   * backwards incompatible change : now reurns an rdf-query/N3 quad-store rather than an rdflib store
-   * backwards incompatible change : parsed quads are returned, not a response object with store in body
-   *
-   * Fetch an item and parse it
-   * @param {string} url
-   * @param {string} [contentType]
-   * @returns {Promise<object>}
-   */
-  async fetchAndParse (url, contentType) {
-    return this.rdf.query(url)
+  /* BELOW HERE ARE ALL ALIASES TO SOLID.API FUNCTIONS */
 
-    /*
-      TBD: REFACTOR USING RDF-QUERY
+  readHead (url, options) { return super.head(url, options) }
 
-          contentType = contentType || folderUtils.guessFileType(url) || "text/turtle"
-          if( contentType==='application/json' ){
-            try {
-              let res = await this.fetch(url).catch(e=>{return this._err(e)})
-              const obj = await JSON.parse(res);
-              return(
-                this._throwErrors ? obj : { ok : true, body : obj }
-              )
-            }
-            catch(e) { return this._err(e) }
-          }
-          let store = $rdf.graph()
-          let fetcher = $rdf.fetcher(store,this._auth)
-          await fetcher.load(url).catch(e=>{return this._err(e)})
-          if(this._throwErrors) return store
-          else return store ? { ok:true, body:store } : { ok:false }
-        }
-        let store = $rdf.graph()
-        let fetcher = $rdf.fetcher(store, this._auth)
-        await fetcher.load(url).catch(e => { return this._err(e) })
-        if (this._throwErrors) return store
-        else return store ? { ok: true, body: store } : { ok: false }
-    */
-  }
+  deleteFile (url, options) { return this.delete(url, options) }
 
-  // TBD: Update type declarations (JSDoc)
-  // TBD: What types are s, p, o, g? What is returned?
-  // TBD: None of these needs the async declaration. Only needed if await is used.
-  async query (url, s, p, o, g) { return this.rdf.query(url, s, p, o, g) }
+  deleteFolder (url, options) { return super.delete(url, options) }
 
-  // TBD: Why do we wrap head here? Why name it "read" if it only forwards head?
-  async readHead (url, options) { return super.head(url, options) }
-
-  async deleteFile (url, options) { return this.delete(url, options) }
-
-  async moveFile (url, options) { return this.move(url, options) }
-
-  async moveFolder (url, options) { return this.move(url, options) }
-
-  // DELETE FOLDER
-  // TBD: Use super.deleteFolderRecursively instead? Or don't specify it at all?
-  async deleteFolderRecursively (url, options) {
-    return this.deleteFolderRecursively(url, options)
-  }
-
-  async deleteFolder (url, options) {
-    return this.delete(url, options)
-  }
-
-  // UPDATE FILE
-  async updateFile (url, content, contentType) {
+  updateFile (url, content, contentType) {
     return super.putFile(url, content, contentType)
   }
 
-  // TBD: Why do we declare it another time?
-  async createFile (url, content, contentType) {
-    return super.createFile(url, content, contentType)
-  }
+  moveFile (url, options) { return this.move(url, options) }
 
-  // TBD: Remove this comment?
-  /* OLD CREATE-FILE
-  /*
-    async createFile(url,content, contentType) {
-       let ext = url.replace(/.*\./,'')
-       contentType = contentType || "text/turtle"
-       if(ext && ext==="ttl" && contentType==="text/turtle")
-          url=url.replace(".ttl","")
-    }
-  async createFile (url, content, contentType) {
-    return this._fetch(url, {
-      method: 'PUT',
-      body: content,
-      headers: { 'Content-type': contentType }
-    })
-  }
-  */
+  moveFolder (url, options) { return this.move(url, options) }
 
-  // TBD: Remove this comment?
-  /* TBD
+  /**
+   * fetchAndParse
    *
-   * copyFile, copyFolder, moveFile, moveFolder
-   *
+   * backwards incompatible change : 
+   *   this method is no longer supported
+   *   you may use rdflib directly instead
    */
+
 }
 
 export default SolidFileClient

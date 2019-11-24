@@ -4,7 +4,7 @@ CONNECT login, popupLogin, logout, currentSession
 CREATE  createFile, createFolder
 READ    readFile, readFolder, readHead, itemExists
 UPDATE  updateFile, copyFile, copyFolder, moveFile, moveFolder
-DELETE  deleteFile, deleteFolder
+DELETE  deleteFile, deleteFolder, deleteFolderRecursively
 
 Not included
   fetchAndParse
@@ -160,7 +160,6 @@ async function getConfig(scheme){
   let [base,webId] = await getBase(scheme)
   let parent  = base   + "test-folder/"
   let folder  = parent + "default/"
-//  let badFile ="app://ls/example.com/badurl"
   let badFile = folder+"badurl"  // updated because of "CORS error"
   return {
     scheme:    scheme,
@@ -175,7 +174,6 @@ async function getConfig(scheme){
     badFolder: badFile+"/",
     expectedText:  "<> a <#test>.",
     expectedText2: "<> a <#revisedtest>.",
-//    profile: "https://jeffz.solid.community/profile/card#me"
     profile: webId // updated to webId
   }
 }
@@ -208,6 +206,7 @@ async function prepTest(cfg){
   await deleteTestFolders(cfg,cfg.folder+"noSuchThing/")
   await deleteTestFolders(cfg,cfg.folder+"deep-folder/")
   await deleteTestFolders(cfg,cfg.folder)
+
   console.log("Beginnning test")
 }
 
