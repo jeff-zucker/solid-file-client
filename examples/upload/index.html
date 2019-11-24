@@ -1,0 +1,103 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+    <!-- Required meta tags -->
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+
+    <!-- Bootstrap CSS -->
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css"
+        integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
+
+    <title>Solid Upload</title>
+</head>
+
+<body>
+
+    <div class="container">
+        <div class="py-5 text-center">
+            <h2>Solid Upload</h2>
+            <p class="lead">Upload files from your computer to your pod.</p>
+        </div>
+
+        <div class="row">
+            <div class="col-md-4 order-md-2 mb-4">
+                <h4 class="d-flex justify-content-between align-items-center mb-3">
+                    <span class="text-muted">Login to your Pod</span>
+                </h4>
+                <div class="logged-out">
+                    <button id="login" class="btn btn-primary">Login</button>
+                </div>
+                <div class="logged-in">
+                    <p class="text-muted">Logged in as <span class="webid"></span></p>
+                    <button id="logout" class="btn btn-secondary">Logout</button>
+                </div>
+            </div>
+            <div class="col-md-8 order-md-1">
+                <form id="upload-form" class="needs-validation">
+                    <h4 class="mb-3">Settings</h4>
+                    <div class="mb-3">
+                        <label for="container">Folder where your files will be stored</label>
+                        <div class="input-group">
+                            <div class="input-group-prepend">
+                                <span class="input-group-text">Folder</span>
+                            </div>
+                            <input type="text" class="form-control" id="container"
+                                placeholder="https://solid.example.org/folder/" required>
+                            <div class="invalid-feedback" style="width: 100%;">
+                                Please specify where your files should be uploaded to.
+                            </div>
+                        </div>
+                    </div>
+
+                    <h4 class="mb-3">Files</h4>
+                    <div class="mb-3">
+                        <input type="file" id="files" multiple>
+                    </div>
+                    <hr class="mb-4">
+
+                    <div class="not-uploading">
+                        <button class="btn btn-primary btn-lg btn-block" type="submit">Start Uploading</button>
+                    </div>
+                    <div class="uploading">
+                        <button class="btn btn-primary btn-lg btn-block disabled" type="submit">
+                            Uploading...
+                            <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+                        </button>
+                    </div>
+                    <ul class="logs my-2 list-group"></ul>
+                </form>
+            </div>
+        </div>
+
+        <footer class="my-5 pt-5 text-muted text-center text-small">
+            <!-- TODO -->
+            <p class="mb-1">Implemented using solid-file-client</p>
+            <ul class="list-inline">
+                <li class="list-inline-item"><a href="#">Source Code</a></li>
+                <li class="list-inline-item"><a href="#">Docs</a></li>
+                <li class="list-inline-item"><a href="#">Bugs</a></li>
+            </ul>
+        </footer>
+    </div>
+
+    <!-- Optional JavaScript -->
+    <!-- jQuery first, then Popper.js, then Bootstrap JS -->
+    <script src="https://code.jquery.com/jquery-3.3.1.slim.min.js"
+        integrity="sha384-q8i/X+965DzO0rT7abK41JStQIAqVgRVzpbzo5smXKp4YfRvH+8abtTE1Pi6jizo"
+        crossorigin="anonymous"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js"
+        integrity="sha384-UO2eT0CpHqdSJQ6hJty5KVphtPhzWj9WO1clHTMGa3JDZwrnQq4sF86dIHNDz0W1"
+        crossorigin="anonymous"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js"
+        integrity="sha384-JjSmVgyd0p3pXB1rRibZUAYoIIy6OrQ6VrjIEaFf/nJGzIxFDsf4x0xIM+B07jRM"
+        crossorigin="anonymous"></script>
+
+    <!-- Solid Upload -->
+    <script src="../solid-auth-client/solid-auth-client.bundle.js"></script>
+    <script src="../../dist/window/solid-file-client.bundle.js"></script>
+    <script src="./upload.js" type="application/javascript"></script>
+</body>
+
+</html>
