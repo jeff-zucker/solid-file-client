@@ -255,10 +255,8 @@ class SolidFileClient extends SolidApi {
   }
 
   // UPDATE FILE
-  // TBD: Forward to putFile
   async updateFile (url, content, contentType) {
-    if (await this.itemExists(url)) { await this.delete(url) }
-    return this.createFile(url, content, contentType)
+    return super.putFile(url, content, contentType)
   }
 
   // TBD: Why do we declare it another time?

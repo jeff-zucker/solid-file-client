@@ -1,11 +1,15 @@
+
 import SolidApi from '../src/SolidApi'
 import apiUtils from '../src/utils/apiUtils'
 import TestFolderGenerator from './utils/TestFolderGenerator'
 import contextSetupModule from './utils/contextSetup'
+import errorUtils from '../src/utils/errorUtils'
 import { rejectsWithStatuses, resolvesWithStatus, rejectsWithStatus } from './utils/jestUtils'
 
 const { getFetch, getTestContainer, contextSetup } = contextSetupModule
 const { Folder, File, FolderPlaceholder, FilePlaceholder, BaseFolder } = TestFolderGenerator
+
+const { ComposedFetchError } = errorUtils
 
 /** @type {SolidApi} */
 let api
@@ -222,7 +226,7 @@ describe('composed methods', () => {
       })
 
       describe('copyFolder', () => {
-        test('rejects with 404 on inexistent folder', async () => rejectsWithStatuses(api.copyFolder(inexistentFolder.url, inexistentFolder.url), [404]))
+        test('rejects with 404 on inexistent folder', async () => rejectsWithStatus(api.copyFolder(inexistentFolder.url, inexistentFolder.url), 404))
         test('rejects if no second url is specified', () => expect(api.copyFolder(emptyFolder.url)).rejects.toBeDefined())
         test('resolves and copies empty folder', async () => {
           await expect(api.copyFolder(emptyFolder.url, folderPlaceholder.url)).resolves.toBeDefined()
@@ -256,7 +260,7 @@ describe('composed methods', () => {
           await expect(api.itemExists(`${parentFolder.url}${childFile.name}`)).resolves.toBe(true)
         })
         test('rejects when merging folders and files exist with option overwriteFiles=false', () => {
-          return expect(api.copyFolder(childOne.url, childTwo.url, { overwriteFiles: false })).rejects.toEqual(expect.arrayContaining([expect.any(Error)]))
+          return expect(api.copyFolder(childOne.url, childTwo.url, { overwriteFiles: false })).rejects.toThrow(/already existed/)
         })
         test('deletes old contents when copying to an existing folder with overwriteFolders=true', async () => {
           await expect(api.copyFolder(childTwo.url, childOne.url, { overwriteFolders: true })).resolves.toBeDefined()
@@ -318,7 +322,7 @@ describe('composed methods', () => {
           return expect(api.move(childTwo.url, childOne.url)).resolves.toBeDefined()
         })
         test('rejects moving folder to existing folder with similar contents with overwriteFiles=false', async () => {
-          await expect(api.move(childTwo.url, childOne.url, { overwriteFiles: false })).rejects.toEqual(expect.arrayContaining([expect.any(Error)]))
+          await expect(api.move(childTwo.url, childOne.url, { overwriteFiles: false })).rejects.toEqual(expect.any(ComposedFetchError))
           await expect(api.itemExists(childTwo.url)).resolves.toBe(true)
         })
         test('overwrites new folder contents and deletes old one', async () => {

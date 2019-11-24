@@ -83,6 +83,7 @@ class RdfQuery {
    * @returns {Promise<N3.N3Store>}
   */
   async _loadFromUrl(url) {
+    // TBD: Should fail when the server responds with text/html
     const res = await this._fetch(url, { 
         headers: { "Accept": "text/turtle" }
     })    // needed for https://<podName>/ when there is an index.html
