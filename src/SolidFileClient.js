@@ -1,4 +1,7 @@
 import SolidApi from './SolidApi'
+import apiLinks from './apiLinks'
+
+const {getLinks, getItemLinks} = apiLinks
 
 const defaultPopupUri = 'https://solid.community/common/popup.html'
 
@@ -170,21 +173,58 @@ class SolidFileClient extends SolidApi {
     return res
   }
 
+  // TBD object.acl object.meta
+  async getItemLinks (url) {
+  	let links = await getItemLinks(url)
+  	return links
+  }
+
+  // TBD array of existings links
+  async getLinks (url) {
+  	let links = await getLinks(url)
+  	return links
+  }
+
   /* BELOW HERE ARE ALL ALIASES TO SOLID.API FUNCTIONS */
 
   readHead (url, options) { return super.head(url, options) }
 
-  deleteFile (url, options) { return this.delete(url, options) }
+  async deleteFile (url) {
+//  	const urlAcl = await this.getLinks(url, true)
+//  	if (typeof urlAcl[0] === 'object') { let del = await this.delete(urlAcl[0].url) }  // TBD throw complex error
+    let links = await this.getItemLinks(url)
+    if (links.acl) this.delete(links.acl)
+  	return this.delete(url)
+  }
 
-  deleteFolder (url, options) { return super.delete(url, options) }
+  async deleteFolder (url, options) { return super.deleteFolderRecursively(url) }
 
-  updateFile (url, content, contentType) {
+  async updateFile (url, content, contentType) {
     return super.putFile(url, content, contentType)
   }
 
-  moveFile (url, options) { return this.move(url, options) }
+//  async copyFile (from, to, options) { return super.copyFile(from, to, options = { withAcl: true }) }
+  
+  async copyFolder (from, to, options) { return super.copyFolder(from, to , options) }
 
-  moveFolder (url, options) { return this.move(url, options) }
+  // TBD error checking
+  async moveFile (from, to) { 
+    await this.copyFile(from, to, { withAcl: true })
+    	.then(res => {
+    		if (res.status === '200') { return this.deleteFile(from) }
+    		else { return this.deleteFile(to) }
+    	})
+        .catch(toComposedError) 
+  }
+
+  // TBD error checking
+  async moveFolder (from, to) {
+  	const res = await this.copyFolder(from, to)
+  	  if (res.ok) {
+  	  	if (res.status === '200') { await this.deleteFolder(from) }
+  	  	else { await this.deleteFolder(to) }
+  	  }
+  } 
 
   /**
    * fetchAndParse

@@ -3,11 +3,15 @@ import apiUtils from './utils/apiUtils'
 import folderUtils from './utils/folderUtils'
 import RdfQuery from './utils/rdf-query'
 import errorUtils from './utils/errorUtils'
+import apiLinks from './apiLinks'
+
 
 const fetchLog = debug('solid-file-client:fetch')
 const { getParentUrl, getItemName, areFolders, areFiles, LINK } = apiUtils
 const { _parseLinkHeader, _urlJoin } = folderUtils
 const { ComposedFetchError, assertResponseOk, composedFetch, toComposedError } = errorUtils
+const {getLinks, getItemLinks} = apiLinks
+
 
 /**
  * @typedef {Object} WriteOptions
@@ -360,9 +364,28 @@ class SolidAPI {
    * @throws {ComposedFetchError}
    */
   async copyFile (from, to, options) {
+  	    options = {
+      ...defaultWriteOptions,
+      ...options
+    }
     if (typeof from !== 'string' || typeof to !== 'string') {
       throw toComposedError(new Error(`The from and to parameters of copyFile must be strings. Found: ${from} and ${to}`))
     }
+    // need to edit the file.acl
+    if (options.withAcl && (getItemName(to) !== getItemName(from))) {
+    	throw toComposedError(new Error( `Cannot copyFile with Acl for different filenames. Found : ${getItemName(from)} and ${getItemName(to)}`))
+    }
+    let resFile = await this._copyFile(from, to, options).catch(toComposedError)
+  	if (resFile.ok && options.withAcl) {
+  		const fromAcl = await getLinks(from, options.withAcl)
+  		if (fromAcl[0]) {
+	  		const toAcl = await getItemLinks(to, options.withAcl)
+	  		let resAcl = await this._copyFile(fromAcl[0].url, toAcl.acl, options).catch(toComposedError)
+  		}
+  	}
+  }
+
+  async _copyFile (from, to, options) {
     const response = await this.get(from)
     const content = await response.blob()
     const contentType = response.headers.get('content-type')
@@ -383,11 +406,15 @@ class SolidAPI {
    * @throws {ComposedFetchError}
    */
   async copyFolder (from, to, options) {
-    if (typeof from !== 'string' || typeof to !== 'string') {
-      toComposedError(new Error(`The from and to parameters of copyFile must be strings. Found: ${from} and ${to}`))
+  	    options = {
+      ...defaultWriteOptions,
+      ...options
     }
-    const { folders, files } = await this.readFolder(from, options).catch(toComposedError)
-    const folderResponse = await this.createFolder(to, options).catch(toComposedError)
+    if (typeof from !== 'string' || typeof to !== 'string') {
+      throw toComposedError(new Error(`The from and to parameters of copyFolder must be strings. Found: ${from} and ${to}`))
+    }
+    const { folders, files } = await this.readFolder(from, { withAcl: false }).catch(toComposedError) // toFile.acl build by copyFile and _copyFolder
+    const folderResponse = await this._copyFolder(from, to, options).catch(toComposedError)
 
     const creationResults = await composedFetch([
       ...folders.map(({ name }) => this.copyFolder(`${from}${name}/`, `${to}${name}/`, options)),
@@ -397,6 +424,32 @@ class SolidAPI {
     return [folderResponse].concat(...creationResults) // Alternative to Array.prototype.flat
   }
 
+  /**
+   * non recursive copy of a folder with .acl
+   * Overwrites files per default.
+   * Merges folders if already existing
+   * @param {string} from
+   * @param {string} to
+   * @param {WriteOptions} [options]
+   * @returns {Promise<Response[]>} Resolves with an array of creation responses.
+   * The first one will be the folder specified by "to".
+   * @throws {ComposedFetchError}
+   */
+  async _copyFolder (from, to, options) {
+  	    options = {
+      ...defaultWriteOptions,
+      ...options
+    }
+    const folderResponse = await this.createFolder(to, options).catch(toComposedError)
+  	if (folderResponse.ok && options.withAcl) {
+  		const fromAcl = await getLinks(from, options.withAcl)
+  		if (fromAcl[0]) {
+	  		const toAcl = await getItemLinks(to, options.withAcl)
+	  		let resAcl = await this._copyFile(fromAcl[0].url, toAcl.acl, options).catch(toComposedError)
+  		}
+  	}      	
+  }
+  	
   /**
    * Copy a file (url ending with file name) or folder (url ending with "/").
    * Overwrites files per default.
@@ -527,10 +580,12 @@ async deleteFolderContents (url, options) {
    * @returns {Promise<FolderData>}
    */
   async readFolder (folderUrl, options = { withAcl: false }) {
-    if (!folderUrl.endsWith('/')) folderUrl = folderUrl + '/'
+  	console.log('readFolder withAcl ' + options.withAcl)
+    if (!folderUrl.endsWith('/')) {
+    	throw toComposedError(new Error(`Folder must end with a "\/". Found: ${folderUrl}`)) }
     let [rdf, folder, folderItems, fileItems] = [this.rdf, [], [], []] // eslint-disable-line no-unused-vars
-    // For folders always add to fileItems : .meta file and if options.withAcl === true also add .acl linkFile
-    fileItems = fileItems.concat(await this._getFolderLinks(folderUrl, options.withAcl))
+    // For folders always add to fileItems : .meta file
+    fileItems = fileItems.concat(await getLinks(folderUrl, options.withAcl))
     let files = await rdf.query(folderUrl, { thisDoc: '' }, { ldp: 'contains' })
     for (var f in files) {
       let thisFile = files[f].object
@@ -543,7 +598,7 @@ async deleteFolderContents (url, options) {
         fileItems = fileItems.concat(itemRecord)
         // add fileLink acl
 		if (options.withAcl) {
-          fileItems = fileItems.concat(await this._getFileLinks(thisFile.value, options.withAcl))
+          fileItems = fileItems.concat(await getLinks(thisFile.value, options.withAcl))  // allways { withAcl: false} if copyFile withAcl: true
         }
       }
     }
@@ -626,121 +681,6 @@ async deleteFolderContents (url, options) {
     return returnVal
   }
 
-  /**
-   * @private
-   * _geFolderLinks (TBD)
-   */
-  async _getFolderLinks (folderUrl, linkAcl) {
-    let folder = await this.getLinks(folderUrl, linkAcl)
-    return folder
-  }
-
-  /**
-   * @private
-   * _geFileLinks (TBD)
-   */
-  async _getFileLinks (itemUrl, linkAcl) {
-    let itemWithLinks = await this.getLinks(itemUrl, linkAcl)
-    return itemWithLinks
-  }
-
-  /**
-   * @private // For now
-   * getLinks (TBD)
-   *
-   * returns an array of records related to an item (resource or container)
-   *   0-2 : the .acl, .meta, and .meta.acl for the item if they exist
-   * each record includes these fields (see _getLinkObject)
-   *   url
-   *   type (contentType)
-   *   itemType ((AccessControl, or Metadata))
-   *   name
-   *   parent
-   */
-  async getLinks (itemUrl, linkAcl) {
-	let itemLinks = []
-	// don't getLinks for .acl files
-	if (itemUrl.endsWith('.acl')) return []
-    let res = await this.fetch(itemUrl, { method: 'HEAD' })
-    let linkHeader = await res.headers.get('link')
-	// linkHeader is null for index.html ??
-    if (linkHeader === null) return []
-    // get .meta, .acl links
-	let links = await this._findLinksInHeader(itemUrl, linkHeader, linkAcl)
-	if (links.acl) itemLinks = itemLinks.concat(links.acl)
-	if (links.meta) {
-		itemLinks = itemLinks.concat(links.meta)
-		// get .meta.acl link
-	    links.metaAcl = await this.getLinks(links.meta.url, linkAcl)
-	    if (links.metaAcl) itemLinks = itemLinks.concat(links.metaAcl)
-    }
-    return itemLinks
-  }
-
-  /**
-   * @private
-   * findLinksInHeader (TBD)
-   *
-   */
-  async _findLinksInHeader (originalUri, linkHeader, linkAcl) {
-    let matches = _parseLinkHeader(linkHeader, originalUri)
-    let final = {}
-    for (let i = 0; i < matches.length; i++) {
-      let split = matches[i].split('>')
-      let href = split[0].substring(1)
-      if (linkAcl && matches[i].match(/rel="acl"/)) { final.acl = await this._lookForLink('AccessControl', href, originalUri) }
-      // .meta only for folders
-      if (originalUri.endsWith('/') && matches[i].match(/rel="describedBy"/)) {
-        final.meta = await this._lookForLink('Metadata', href, originalUri)
-      }
-    }
-    return final
-  }
-
-  /**
-   * @private
-   * _lookForLink (TBD)
-   *
-   * - input
-   *     - linkType = one of AccessControl or Metatdata
-   *     - itemUrl  = address of the item associated with the link
-   *     - relative URL from the link's associated item's header (e.g. .acl)
-   * - creates an absolute Url for the link
-   * - looks for the link and, if found, returns a link object
-   * - else returns undefined
-   */
-  async _lookForLink (linkType, linkRelativeUrl, itemUrl) {
-    let linkUrl = _urlJoin(linkRelativeUrl, itemUrl)
-    try {
-      let res = await this.fetch(linkUrl, { method: 'HEAD' })
-      if (typeof res !== 'undefined' && res.ok) {
-        let contentType = res.headers.get('content-type')
-        return this._getLinkObject(linkUrl, linkType, contentType, itemUrl)
-      }
-    } catch (e) {} // ignore if not found
-  }
-
-  /**
-   * @private
-   * _getLinkObject (TBD)
-   *
-   * creates a link object for a container or any item it holds
-   * type is one of AccessControl, Metatdata
-   * content-type is from the link's header
-   * @param {string} linkUrl
-   * @param {string} contentType
-   * @param {"AccessControl"|"Metadata"} linkType
-   * @returns {LinkObject}
-   */
-  _getLinkObject (linkUrl, linkType, contentType, itemUrl) {
-    return {
-      url: linkUrl,
-      type: contentType,
-      itemType: linkType,
-      name: getItemName(linkUrl),
-      parent: getParentUrl(linkUrl)
-    }
-  }
 }
 
 /**
