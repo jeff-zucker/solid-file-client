@@ -1,7 +1,5 @@
 import SolidApi from './SolidApi'
-import apiLinks from './apiLinks'
-
-const {getLinks, getItemLinks} = apiLinks
+// import LinksUtils from './utils/linksUtils'
 
 const defaultPopupUri = 'https://solid.community/common/popup.html'
 
@@ -63,8 +61,8 @@ const defaultPopupUri = 'https://solid.community/common/popup.html'
  */
 class SolidFileClient extends SolidApi {
   /**
-   * backwards incompatible change : 
-   *    users need to use new SolidFileClient(auth) 
+   * backwards incompatible change :
+   *    users need to use new SolidFileClient(auth)
    */
 
   /**
@@ -74,11 +72,12 @@ class SolidFileClient extends SolidApi {
   constructor (auth, options) {
     super(auth.fetch.bind(auth), options)
     this._auth = auth
+    // const link = new LinkUtils()
+    // this.getLinks = link.getLinks
+    // this.getItemLinks = link.getItemLinks
   }
 
-
-/* START OF SESSION FUNCTIONS */
-
+  /* START OF SESSION FUNCTIONS */
 
   // TBD: Clarify if this is for solid-auth-cli only
   /**
@@ -156,8 +155,7 @@ class SolidFileClient extends SolidApi {
     return this._auth.logout()
   }
 
-/* END OF SESSION FUNCTIONS */
-
+  /* END OF SESSION FUNCTIONS */
 
   /**
      * Fetch an item and return content as text,json,or blob as needed
@@ -167,22 +165,10 @@ class SolidFileClient extends SolidApi {
      */
   async readFile (url, request) {
     const res = await this.get(url, request)
-    const type = res.headers.get('content-type') 
-    if (type && type.match(/(image|audio|video)/)){ return await res.blob() }
-    if (res.text){ return await res.text()  }
+    const type = res.headers.get('content-type')
+    if (type && type.match(/(image|audio|video)/)) { return res.blob() }
+    if (res.text) { return res.text() }
     return res
-  }
-
-  // TBD object.acl object.meta
-  async getItemLinks (url) {
-  	let links = await getItemLinks(url)
-  	return links
-  }
-
-  // TBD array of existings links
-  async getLinks (url) {
-  	let links = await getLinks(url)
-  	return links
   }
 
   /* BELOW HERE ARE ALL ALIASES TO SOLID.API FUNCTIONS */
@@ -190,11 +176,11 @@ class SolidFileClient extends SolidApi {
   readHead (url, options) { return super.head(url, options) }
 
   async deleteFile (url) {
-//  	const urlAcl = await this.getLinks(url, true)
-//  	if (typeof urlAcl[0] === 'object') { let del = await this.delete(urlAcl[0].url) }  // TBD throw complex error
+  // const urlAcl = await this.getLinks(url, true)
+  // if (typeof urlAcl[0] === 'object') { let del = await this.delete(urlAcl[0].url) }  // TBD throw complex error
     let links = await this.getItemLinks(url)
     if (links.acl) this.delete(links.acl)
-  	return this.delete(url)
+    return this.delete(url)
   }
 
   async deleteFolder (url, options) { return super.deleteFolderRecursively(url) }
@@ -203,37 +189,48 @@ class SolidFileClient extends SolidApi {
     return super.putFile(url, content, contentType)
   }
 
-//  async copyFile (from, to, options) { return super.copyFile(from, to, options = { withAcl: true }) }
-  
-  async copyFolder (from, to, options) { return super.copyFolder(from, to , options) }
+  async copyFile (from, to, options) { return super.copyFile(from, to, options) }
+
+  async copyFolder (from, to, options) { return super.copyFolder(from, to, options) }
 
   // TBD error checking
-  async moveFile (from, to) { 
+  async moveFile (from, to) {
     await this.copyFile(from, to, { withAcl: true })
-    	.then(res => {
-    		if (res.status === '200') { return this.deleteFile(from) }
-    		else { return this.deleteFile(to) }
-    	})
-        .catch(toComposedError) 
+      .then(res => {
+        if (res.status === '200') {
+          return this.deleteFile(from)
+        } else { return this.deleteFile(to) }
+      })
+      .catch(toComposedError)
   }
 
   // TBD error checking
   async moveFolder (from, to) {
-  	const res = await this.copyFolder(from, to)
-  	  if (res.ok) {
-  	  	if (res.status === '200') { await this.deleteFolder(from) }
-  	  	else { await this.deleteFolder(to) }
-  	  }
-  } 
+    const res = await this.copyFolder(from, to)
+    if (res.ok) {
+      if (res.status === '200') {
+        await this.deleteFolder(from)
+      } else { await this.deleteFolder(to) }
+    }
+  }
+
+  /* UTILITY FUNCTIONS */
+
+  // TBD object.acl object.meta
+  async getItemLinks (url) { return super.getItemLinks(url) }
+
+  // TBD array of existings links
+  async getLinks (url, options) { return super.getLinks(url, options) }
+  
+  // TBD: rdf.query ....
 
   /**
    * fetchAndParse
    *
-   * backwards incompatible change : 
+   * backwards incompatible change :
    *   this method is no longer supported
    *   you may use rdflib directly instead
    */
-
 }
 
 export default SolidFileClient
