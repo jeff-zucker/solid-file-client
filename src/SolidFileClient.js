@@ -221,7 +221,7 @@ class SolidFileClient extends SolidApi {
 
   // TBD array of existings links
   async getLinks (url, options) { return super.getLinks(url, options) }
-  
+
   // TBD: rdf.query ....
 
   /**

@@ -6,7 +6,7 @@ import errorUtils from './utils/errorUtils'
 import LinksUtils from './utils/linksUtils'
 
 const fetchLog = debug('solid-file-client:fetch')
-const { getParentUrl, getItemName, areFolders, areFiles, LINK } = apiUtils
+const { getRootUrl, getParentUrl, getItemName, areFolders, areFiles, LINK } = apiUtils
 const { ComposedFetchError, assertResponseOk, composedFetch, toComposedError } = errorUtils
 
 /**
@@ -373,17 +373,12 @@ class SolidAPI {
     if (typeof from !== 'string' || typeof to !== 'string') {
       throw toComposedError(new Error(`The from and to parameters of copyFile must be strings. Found: ${from} and ${to}`))
     }
-    // need to edit the file.acl
-    if (options.withAcl && (getItemName(to) !== getItemName(from))) {
-      throw toComposedError(new Error(`Cannot copyFile with Acl for different filenames. Found : ${getItemName(from)} and ${getItemName(to)}`))
+    if (from.endsWith('.acl') || from.endsWith('.acl')) {
+      throw toComposedError(new Error(`ACL files cannot be copied. Found: ${from} and ${to}`))
     }
     await this._copyFile(from, to, options).catch(toComposedError)
     if (options.withAcl) {
-      const fromAcl = await this.getLinks(from, options.withAcl)
-      if (fromAcl[0]) {
-        const toAcl = await this.getItemLinks(to, options.withAcl)
-        await this._copyFile(fromAcl[0].url, toAcl.acl, options).catch(toComposedError)
-      }
+      await this._copyFileAcl(from, to, options).catch(toComposedError)
     }
   }
 
@@ -393,6 +388,23 @@ class SolidAPI {
     const contentType = response.headers.get('content-type')
 
     return this.putFile(to, content, contentType, options)
+  }
+
+  async _copyFileAcl (from, to, options) {
+    let acl = await this.getLinks(from, options.withAcl)
+    if (acl[0]) {
+      let fromAcl = acl[0]
+      let toAcl = await this.getItemLinks(to, options.withAcl)
+      const response = await this.get(fromAcl.url)
+      let content = await response.text()
+      // turtle acl content : if object values are absolute URI's make them relative to the destination
+      if (content.includes(from)) {
+        content = content.replace(new RegExp('<' + from + '>', 'g'), '<./' + to.substr(to.lastIndexOf('/') + 1) + '>')
+        content = content.replace(new RegExp('<' + getRootUrl(from) + 'profile/card#me>'), '<./profile/card#me>')
+      }
+      const contentType = response.headers.get('content-type')
+      await this.putFile(toAcl.acl, content, contentType, options).catch(toComposedError)
+    }
   }
 
   /**
@@ -438,18 +450,9 @@ class SolidAPI {
    * @throws {ComposedFetchError}
    */
   async _copyFolder (from, to, options) {
-    options = {
-      ...defaultWriteOptions,
-      ...options
-    }
     await this.createFolder(to, options).catch(toComposedError)
     if (options.withAcl) {
-      const fromAcl = await this.getLinks(from, options.withAcl)
-      if (fromAcl[0]) {
-        const toAcl = await this.getItemLinks(to, options.withAcl)
-        // TBD check acl content
-        await this._copyFile(fromAcl[0].url, toAcl.acl, options).catch(toComposedError)
-      }
+      await this._copyFileAcl(from, to, options).catch(toComposedError)
     }
   }
 
