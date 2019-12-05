@@ -115,8 +115,6 @@
     <script src="../solid-auth-client/solid-auth-client.bundle.js"></script>
     <script src="../../dist/window/solid-file-client.bundle.js"></script>
     <script>
-        const { FetchError, ComposedFetchError } = SolidFileClient
-
         const fileClient = new SolidFileClient(solid.auth, { enableLogging: true })
 
         document.getElementById('login').addEventListener('click', e => fileClient.popupLogin())
@@ -184,8 +182,6 @@
                     addSuccessLog(msg)
                 })
             } catch (err) {
-                console.error(err)
-                addErrorLog(err.message)
                 err.rejectedErrors.forEach(err => {
                     console.error(err)
                     addErrorLog(err.message)

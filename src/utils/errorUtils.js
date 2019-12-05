@@ -1,4 +1,6 @@
-class FetchError extends Error {
+// Error classe for wrapping a single failed request as Error
+// Should be wrapped inside a FetchError
+class SingleResponseError extends Error {
   /**
    * @param {Response} response 
    * @param  {...any} params 
@@ -7,46 +9,61 @@ class FetchError extends Error {
     // Pass remaining arguments (including vendor specific ones) to parent constructor
     super(...params)
 
-    this.name = 'FetchError'
+    this.name = 'SingleResponseError'
     if (!params.length)
-      this.message = `${this.name} ${response.status} ${response.url}` // Default message
+      this.message = `${response.status} ${response.url}` // Default message
 
-    // Custom debugging information
     this.response = response
   }
 }
 
 /**
- * @typedef ComposedFetchResponses
- * @property {Response[]} successful
- * @property {Response[]} rejected
- * @property {FetchError[]} rejectedErrors
+ * @typedef FetchErrorData
+ * @property {Response[]} [successful]
+ * @property {SingleResponseError[]} [rejectedErrors]
+ * @property {Error[]} [errors]
  */
 
-class ComposedFetchError extends Error {
+class FetchError extends Error {
   /**
    * 
-   * @param {ComposedFetchResponses} errorData 
+   * @param {FetchErrorData} errorData 
    * @param  {...any} params 
    */
-  constructor({ successful, rejectedErrors }, ...params) {
+  constructor({ successful = [], rejectedErrors = [], errors = [] }, ...params) {
     // Pass remaining arguments (including vendor specific ones) to parent constructor
     super(...params)
 
-    this.name = 'ComposedFetchError'
-    if (!params.length) {
-      // No explicit error message provided
-      if (rejectedErrors.length === 1) {
-        this.message = rejectedErrors[0].message
-      } else {
-        this.message = `${this.name} ${rejectedErrors.map(err => err.message).join('\n')}`
-      }
+    this.name = 'SFCFetchError'
+
+    this.successful = successful
+    this.rejected = rejectedErrors.map(err => err.response)
+    this.rejectedErrors = rejectedErrors
+    this.errors = errors
+    this.ok = false
+
+    if (!rejectedErrors.length) {
+      // Other errors
+      this.message = `${this.name} ${errors.map(err => err.message).join('\n')}`
+      this.status = -1
+      this.statusText = this.message
+    } else if (rejectedErrors.length === 1 && !errors.length) {
+      // Single fetch error
+      this.message = `${this.name} ${rejectedErrors[0].message}`
+      this.status = rejectedErrors[0].status
+      this.statusText = rejectedErrors[0].statusText
+    } else {
+      // Multiple Fetch and possibly other errors 
+      this.message = `${this.name} ${[...rejectedErrors, ...errors].map(err => err.message).join('\n')}`
+      this.status = -2
+      this.statusText = this.message
     }
 
     // Custom debugging information
     this.successful = successful
     this.rejected = rejectedErrors.map(err => err.response)
     this.rejectedErrors = rejectedErrors
+    this.errors = errors
   }
 }
 
@@ -67,10 +84,10 @@ const defaultErrorDescriptions = {
 function assertResponseOk (res) {
   if (!res.ok) {
     const fetchErr = (res.status in defaultErrorDescriptions) ?
-      new FetchError(res, `${res.status} ${res.url} - ${defaultErrorDescriptions[res.status]}`)
-      : new FetchError(res)
+      new SingleResponseError(res, `${res.status} ${res.url} - ${defaultErrorDescriptions[res.status]}`)
+      : new SingleResponseError(res)
 
-    throw new ComposedFetchError({ successful: [], rejectedErrors: [ fetchErr ] })
+    throw new FetchError({ successful: [], rejectedErrors: [ fetchErr ] })
   }
   return res
 }
@@ -98,55 +115,41 @@ async function promisesSettled(promises) {
 
 /**
  * Wait for all promises to settle and then return an array of the responses on success.
- * If an error occured create a ComposedFetchError with all rejected promises
+ * If an error occured create a FetchError with all rejected promises
  * @param {Promise<Response|Response[]>[]} promises
  * @returns {Response[]}
- * @throws {ComposedFetchError}
+ * @throws {FetchError}
  */
 async function composedFetch(promises) {
   const res = await promisesSettled(promises)
 
   /** @type {Response[]} */
   const successful = [].concat(...res.filter(({ status }) => status === 'fulfilled').map(({ value }) => value))
-  /** @type {ComposedFetchError[]} */
-  const rejectedErrors = res.filter(({ status }) => status === 'rejected').map(({ reason }) => reason)
+  /** @type {FetchError[]} */
+  const rejectedPromises = res.filter(({ status }) => status === 'rejected').map(({ reason }) => reason)
 
-  if (rejectedErrors.length) {
-    // Merge messages of all elements without rejectedErrors to prevent loosing them
-    const errorsWithoutResponse = []
-    const errors = []
-    rejectedErrors.forEach(err => {
-      if (!err.rejectedErrors || !err.rejectedErrors.length) {
-        errorsWithoutResponse.push(err)
-      } else {
-        successful.push(...err.successful)
-        errors.push(...err.rejectedErrors)
-      }
-    })
+  if (rejectedPromises.length) {
+    const errors = [].concat(...rejectedPromises.map(err => err.errors))
+    const rejectedErrors = [].concat(...rejectedPromises.map(err => err.rejectedErrors))
 
-    if (errorsWithoutResponse.length) {
-      const msg = errorsWithoutResponse.map(err => err.message).join('\n')
-      throw new ComposedFetchError({ successful, rejectedErrors: errors }, msg)
-    } else {
-      throw new ComposedFetchError({ successful, rejectedErrors: errors })
-    }
+    throw new FetchError({ successful, rejectedErrors, errors })
   }
 
   return successful
 }
 
 /**
- * Convert a FetchError to a ComposedFetchError and rethrow it
- * @param {Error} err 
- * @throws {ComposedFetchError}
+ * Convert some kind of error to a FetchError and rethrow it
+ * @param {Error|SingleResponseError|FetchError} err 
+ * @throws {FetchError}
  */
-function toComposedError(err) {
-  if (err instanceof ComposedFetchError) {
+function toFetchError(err) {
+  if (err instanceof FetchError) {
     throw err
-  } else if (err instanceof FetchError) {
-    throw new ComposedFetchError({ successful: [], rejectedErrors: [ err ]}, err.message)
+  } else if (err instanceof SingleResponseError) {
+    throw new FetchError({ rejectedErrors: [ err ] })
   } else if (err instanceof Error) {
-    throw new ComposedFetchError({ successful: [], rejectedErrors: [] }, err.message)
+    throw new FetchError({ errors: [err] })
   } else {
     throw err
   }
@@ -154,9 +157,9 @@ function toComposedError(err) {
 
 export default {
   FetchError,
-  ComposedFetchError,
+  SingleResponseError,
   assertResponseOk,
   composedFetch,
   promisesSettled,
-  toComposedError
+  toFetchError
 }

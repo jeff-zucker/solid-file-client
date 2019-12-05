@@ -1,8 +1,8 @@
 import SolidFileClient from './SolidFileClient'
 import errorUtils from './utils/errorUtils'
 
-const { FetchError, ComposedFetchError } = errorUtils
+const { FetchError, SingleResponseError } = errorUtils
 SolidFileClient.FetchError = FetchError
-SolidFileClient.ComposedFetchError = ComposedFetchError
+SolidFileClient.SingleResponseError = SingleResponseError
 
 export default SolidFileClient
