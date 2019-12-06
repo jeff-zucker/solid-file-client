@@ -397,10 +397,16 @@ class SolidAPI {
       let toAcl = await this.getItemLinks(to, options.withAcl)
       const response = await this.get(fromAcl.url)
       let content = await response.text()
-      // turtle acl content : if object values are absolute URI's make them relative to the destination
+      // turtle acl content :
+      let toName = to.substr(to.lastIndexOf('/') + 1)
+      let fromName = from.substr(from.lastIndexOf('/') + 1)
       if (content.includes(from)) {
-        content = content.replace(new RegExp('<' + from + '>', 'g'), '<./' + to.substr(to.lastIndexOf('/') + 1) + '>')
+        // if object values are absolute URI's make them relative to the destination
+        content = content.replace(new RegExp('<' + from + '>', 'g'), '<./' + toName + '>')
         content = content.replace(new RegExp('<' + getRootUrl(from) + 'profile/card#me>'), '<./profile/card#me>')
+      } else if (toName !== fromName) {
+        // if relative replace file destination
+        content = content.replace(new RegExp(fromName + '>', 'g'), toName + '>')
       }
       const contentType = response.headers.get('content-type')
       await this.putFile(toAcl.acl, content, contentType, options).catch(toComposedError)
