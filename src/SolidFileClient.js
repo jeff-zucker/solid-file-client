@@ -1,5 +1,7 @@
 import SolidApi from './SolidApi'
-// import LinksUtils from './utils/linksUtils'
+import errorUtils from './utils/errorUtils'
+
+const { toFetchError } = errorUtils
 
 const defaultPopupUri = 'https://solid.community/common/popup.html'
 
@@ -201,7 +203,7 @@ class SolidFileClient extends SolidApi {
           return this.deleteFile(from)
         } else { return this.deleteFile(to) }
       })
-      .catch(toComposedError)
+      .catch(toFetchError)
   }
 
   // TBD error checking

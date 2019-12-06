@@ -7,7 +7,7 @@ import LinksUtils from './utils/linksUtils'
 
 const fetchLog = debug('solid-file-client:fetch')
 const { getRootUrl, getParentUrl, getItemName, areFolders, areFiles, LINK } = apiUtils
-const { ComposedFetchError, assertResponseOk, composedFetch, toComposedError } = errorUtils
+const { FetchError, assertResponseOk, composedFetch, toFetchError } = errorUtils
 
 /**
  * @typedef {Object} WriteOptions
@@ -92,7 +92,7 @@ class SolidAPI {
    * @param {string} url
    * @param {RequestInit} [options]
    * @returns {Promise<Response>} resolves if response.ok is true, else rejects the response
-   * @throws {ComposedFetchError}
+   * @throws {FetchError}
    */
   fetch (url, options) {
     return this._fetch(url, options)
@@ -108,7 +108,7 @@ class SolidAPI {
    * @param {string} url
    * @param {RequestInit} [options]
    * @returns {Promise<Response>}
-   * @throws {ComposedFetchError}
+   * @throws {FetchError}
    */
   get (url, options) {
     return this.fetch(url, {
@@ -122,7 +122,7 @@ class SolidAPI {
    * @param {string} url
    * @param {RequestInit} [options]
    * @returns {Promise<Response>}
-   * @throws {ComposedFetchError}
+   * @throws {FetchError}
    */
   delete (url, options) {
     return this.fetch(url, {
@@ -136,7 +136,7 @@ class SolidAPI {
    * @param {string} url
    * @param {RequestInit} [options]
    * @returns {Promise<Response>}
-   * @throws {ComposedFetchError}
+   * @throws {FetchError}
    */
   post (url, options) {
     return this.fetch(url, {
@@ -150,7 +150,7 @@ class SolidAPI {
    * @param {string} url
    * @param {RequestInit} [options]
    * @returns {Promise<Response>}
-   * @throws {ComposedFetchError}
+   * @throws {FetchError}
    */
   put (url, options) {
     return this.fetch(url, {
@@ -164,7 +164,7 @@ class SolidAPI {
    * @param {string} url
    * @param {RequestInit} [options]
    * @returns {Promise<Response>}
-   * @throws {ComposedFetchError}
+   * @throws {FetchError}
    */
   patch (url, options) {
     return this.fetch(url, {
@@ -178,7 +178,7 @@ class SolidAPI {
    * @param {string} url
    * @param {RequestInit} [options]
    * @returns {Promise<Response>}
-   * @throws {ComposedFetchError}
+   * @throws {FetchError}
    */
   head (url, options) {
     return this.fetch(url, {
@@ -192,7 +192,7 @@ class SolidAPI {
    * @param {string} url
    * @param {RequestInit} [options]
    * @returns {Promise<Response>}
-   * @throws {ComposedFetchError}
+   * @throws {FetchError}
    */
   options (url, options) {
     return this.fetch(url, {
@@ -218,7 +218,7 @@ class SolidAPI {
       .then(() => true)
       .catch(err => {
         // Only return false when the server returned 404. Else throw
-        if (!(err instanceof ComposedFetchError && err.rejected[0].status === 404)) {
+        if (!(err instanceof FetchError && err.rejected[0].status === 404)) {
           throw err
         }
         return false
@@ -236,7 +236,7 @@ class SolidAPI {
    * @param {string} link - header for Container/Resource, see LINK in apiUtils
    * @param {WriteOptions} [options]
    * @returns {Promise<Response>}
-   * @throws {ComposedFetchError}
+   * @throws {FetchError}
    */
   async createItem (url, content, contentType, link, options) {
     options = {
@@ -247,7 +247,7 @@ class SolidAPI {
 
     if (await this.itemExists(url)) {
       if ((link === LINK.RESOURCE && !options.overwriteFiles) || (link === LINK.CONTAINER && !options.overwriteFolders)) {
-        toComposedError(new Error('Item already existed: ' + url))
+        toFetchError(new Error('Item already existed: ' + url))
       }
       await this.delete(url) // TBD: Should we throw here if a folder has contents?
     } else if (options.createPath) {
@@ -272,7 +272,7 @@ class SolidAPI {
    * @param {string} url
    * @param {WriteOptions} [options]
    * @returns {Promise<Response>} Response of HEAD request if it already existed, else of creation request
-   * @throws {ComposedFetchError}
+   * @throws {FetchError}
    */
   async createFolder (url, options) {
     options = {
@@ -288,7 +288,7 @@ class SolidAPI {
       }
       await this.deleteFolderRecursively(url)
     } catch (e) {
-      if (!(e instanceof ComposedFetchError && e.rejected[0].status === 404)) {
+      if (!(e instanceof FetchError && e.rejected[0].status === 404)) {
         throw e
       }
     }
@@ -303,7 +303,7 @@ class SolidAPI {
    * @param {Blob|String} content
    * @param {WriteOptions} [options]
    * @returns {Promise<Response>}
-   * @throws {ComposedFetchError}
+   * @throws {FetchError}
    */
   createFile (url, content, contentType, options) {
     return this.createItem(url, content, contentType, LINK.RESOURCE, options)
@@ -316,7 +316,7 @@ class SolidAPI {
    * @param {Blob|String} content
    * @param {WriteOptions} [options]
    * @returns {Promise<Response>}
-   * @throws {ComposedFetchError}
+   * @throws {FetchError}
    */
   async putFile (url, content, contentType, options) {
     options = {
@@ -326,7 +326,7 @@ class SolidAPI {
     // Options which are not like the default PUT behaviour
     if (!options.overwriteFiles && await this.itemExists(url)) {
       // TODO: Discuss how this should be thrown
-      toComposedError(new Error('File already existed: ' + url))
+      toFetchError(new Error('File already existed: ' + url))
     }
     if (!options.createPath && !(await this.itemExists(getParentUrl(url)))) {
       // Incosistent with createFile (createFile returns 404 response)
@@ -349,7 +349,7 @@ class SolidAPI {
    * Fetch and parse a folder
    * @param {string} url
    * @returns {Promise<FolderData>}
-   * @throws {ComposedFetchError}
+   * @throws {FetchError}
    */
 
   async readFolder (url, options) {
@@ -363,7 +363,7 @@ class SolidAPI {
    * @param {string} to - Url where it should be copied to
    * @param {WriteOptions} [options]
    * @returns {Promise<Response>} - Response from the new file created
-   * @throws {ComposedFetchError}
+   * @throws {FetchError}
    */
   async copyFile (from, to, options) {
     options = {
@@ -371,14 +371,14 @@ class SolidAPI {
       ...options
     }
     if (typeof from !== 'string' || typeof to !== 'string') {
-      throw toComposedError(new Error(`The from and to parameters of copyFile must be strings. Found: ${from} and ${to}`))
+      throw toFetchError(new Error(`The from and to parameters of copyFile must be strings. Found: ${from} and ${to}`))
     }
     if (from.endsWith('.acl') || from.endsWith('.acl')) {
-      throw toComposedError(new Error(`ACL files cannot be copied. Found: ${from} and ${to}`))
+      throw toFetchError(new Error(`ACL files cannot be copied. Found: ${from} and ${to}`))
     }
-    await this._copyFile(from, to, options).catch(toComposedError)
+    await this._copyFile(from, to, options).catch(toFetchError)
     if (options.withAcl) {
-      await this._copyFileAcl(from, to, options).catch(toComposedError)
+      await this._copyFileAcl(from, to, options).catch(toFetchError)
     }
   }
 
@@ -409,7 +409,7 @@ class SolidAPI {
         content = content.replace(new RegExp(fromName + '>', 'g'), toName + '>')
       }
       const contentType = response.headers.get('content-type')
-      await this.putFile(toAcl.acl, content, contentType, options).catch(toComposedError)
+      await this.putFile(toAcl.acl, content, contentType, options).catch(toFetchError)
     }
   }
 
@@ -423,7 +423,7 @@ class SolidAPI {
    * @returns {Promise<Response[]>} Resolves with an array of creation responses.
    * The first one will be the folder specified by "to".
    * The others will be creation responses from the contents in arbitrary order.
-   * @throws {ComposedFetchError}
+   * @throws {FetchError}
    */
   async copyFolder (from, to, options) {
     options = {
@@ -431,10 +431,10 @@ class SolidAPI {
       ...options
     }
     if (typeof from !== 'string' || typeof to !== 'string') {
-      throw toComposedError(new Error(`The from and to parameters of copyFolder must be strings. Found: ${from} and ${to}`))
+      throw toFetchError(new Error(`The from and to parameters of copyFolder must be strings. Found: ${from} and ${to}`))
     }
-    const { folders, files } = await this.readFolder(from, { withAcl: false }).catch(toComposedError) // toFile.acl build by copyFile and _copyFolder
-    const folderResponse = await this._copyFolder(from, to, options).catch(toComposedError)
+    const { folders, files } = await this.readFolder(from, { withAcl: false }).catch(toFetchError) // toFile.acl build by copyFile and _copyFolder
+    const folderResponse = await this._copyFolder(from, to, options).catch(toFetchError)
 
     const creationResults = await composedFetch([
       ...folders.map(({ name }) => this.copyFolder(`${from}${name}/`, `${to}${name}/`, options)),
@@ -453,12 +453,12 @@ class SolidAPI {
    * @param {WriteOptions} [options]
    * @returns {Promise<Response[]>} Resolves with an array of creation responses.
    * The first one will be the folder specified by "to".
-   * @throws {ComposedFetchError}
+   * @throws {FetchError}
    */
   async _copyFolder (from, to, options) {
-    await this.createFolder(to, options).catch(toComposedError)
+    await this.createFolder(to, options).catch(toFetchError)
     if (options.withAcl) {
-      await this._copyFileAcl(from, to, options).catch(toComposedError)
+      await this._copyFileAcl(from, to, options).catch(toFetchError)
     }
   }
 
@@ -472,7 +472,7 @@ class SolidAPI {
    * @returns {Promise<Response[]>} Resolves with an array of creation responses.
    * The first one will be the folder specified by "to".
    * If it is a folder, the others will be creation responses from the contents in arbitrary order.
-   * @throws {ComposedFetchError}
+   * @throws {FetchError}
    */
   copy (from, to, options) {
     // TBD: Rewrite to detect folders not by url (ie remove areFolders)
@@ -482,21 +482,21 @@ class SolidAPI {
     if (areFiles(from, to)) {
       return this.copyFile(from, to, options)
         .then(_responseToArray)
-        .catch(toComposedError)
+        .catch(toFetchError)
     }
 
-    toComposedError(new Error('Cannot copy from a folder url to a file url or vice versa'))
+    toFetchError(new Error('Cannot copy from a folder url to a file url or vice versa'))
   }
 
   /**
    * Delete all folders and files inside a folder
    * @param {string} url
    * @returns {Promise<Response[]>} Resolves with a response for each deletion request
-   * @throws {ComposedFetchError}
+   * @throws {FetchError}
    */
   async deleteFolderContents (url, options) {
     options = { ...defaultDeleteOptions, ...options } // should delete .acl by default for deletefolderRecursively
-    const { folders, files } = await this.readFolder(url, options).catch(toComposedError)
+    const { folders, files } = await this.readFolder(url, options).catch(toFetchError)
     return composedFetch([
       ...folders.map(({ url }) => this.deleteFolderRecursively(url)),
       ...files.map(({ url }) => this.delete(url))
@@ -509,11 +509,11 @@ class SolidAPI {
    * @returns {Promise<Response[]>} Resolves with an array of deletion responses.
    * The first one will be the folder specified by "url".
    * The others will be the deletion responses from the contents in arbitrary order
-   * @throws {ComposedFetchError}
+   * @throws {FetchError}
    */
   async deleteFolderRecursively (url) {
     const resolvedResponses = await this.deleteFolderContents(url)
-    resolvedResponses.unshift(await this.delete(url).catch(toComposedError))
+    resolvedResponses.unshift(await this.delete(url).catch(toFetchError))
 
     return resolvedResponses
   }
@@ -525,7 +525,7 @@ class SolidAPI {
    * @param {string} to
    * @param {RequestOptions} [options]
    * @returns {Promise<Response[]>} Responses of the newly created items
-   * @throws {ComposedFetchError}
+   * @throws {FetchError}
    */
   async move (from, to, options) {
     const copyResponse = await this.copy(from, to, options)
@@ -545,7 +545,7 @@ class SolidAPI {
    * @param {string} newName
    * @param {RequestOptions} [options]
    * @returns {Promise<Response[]>} Response of the newly created items
-   * @throws {ComposedFetchError}
+   * @throws {FetchError}
    */
   rename (url, newName, options) {
     const to = getParentUrl(url) + newName + (areFolders(url) ? '/' : '')

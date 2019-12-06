@@ -9,8 +9,6 @@ import { rejectsWithStatuses, resolvesWithStatus, rejectsWithStatus } from './ut
 const { getFetch, getTestContainer, contextSetup } = contextSetupModule
 const { Folder, File, FolderPlaceholder, FilePlaceholder, BaseFolder } = TestFolderGenerator
 
-const { ComposedFetchError } = errorUtils
-
 /** @type {SolidApi} */
 let api
 
@@ -321,8 +319,8 @@ describe('composed methods', () => {
         test('resolves moving folder with depth 1 to folder with depth 1', () => {
           return expect(api.move(childTwo.url, childOne.url)).resolves.toBeDefined()
         })
-        test('rejects moving folder to existing folder with similar contents with overwriteFiles=false', async () => {
-          await expect(api.move(childTwo.url, childOne.url, { overwriteFiles: false })).rejects.toEqual(expect.any(ComposedFetchError))
+        test.only('rejects moving folder to existing folder with similar contents with overwriteFiles=false', async () => {
+          await expect(api.move(childTwo.url, childOne.url, { overwriteFiles: false })).rejects.toThrow(/already existed/)
           await expect(api.itemExists(childTwo.url)).resolves.toBe(true)
         })
         test('overwrites new folder contents and deletes old one', async () => {
