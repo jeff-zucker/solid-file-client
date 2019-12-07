@@ -1,6 +1,6 @@
 // import debug from 'debug'
 import apiUtils from './apiUtils'
-import ApiLinks from './linksUtils'
+import LinksUtils from './linksUtils'
 import RdfQuery from './rdf-query'
 
 const { getParentUrl, getItemName, areFolders, areFiles, LINK } = apiUtils
@@ -17,13 +17,6 @@ class FolderUtils {
 
   constructor(fetch, options) {
     options = { defaultSolidApiOptions, ...defaultReadOptions, ...options }
-    // TBD rdf and link have to be declared earlier ?? SolidApi ? or SoloidFileClient ? index.js 
-    // this.rdf = new RdfQuery(this.fetch.bind(this))
-    // const rdf = new RdfQuery()
-    // this.rdf = rdf
-    // const link = new linksUtils()
-    // this.getLinks = link.getLinks
-    // this.getItemLinks = link.getItemLinks
   }
 
 

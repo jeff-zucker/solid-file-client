@@ -376,13 +376,19 @@ class SolidAPI {
     if (from.endsWith('.acl') || from.endsWith('.acl')) {
       throw toFetchError(new Error(`ACL files cannot be copied. Found: ${from} and ${to}`))
     }
-    await this._copyFile(from, to, options).catch(toFetchError)
+    return this._copyFile(from, to, options)
+      .then(_responseToArray)
+      .catch(toFetchError)
+  }
+
+  async _copyFile (from, to, options) {
+    await this._copyFileOnly(from, to, options).catch(toFetchError)
     if (options.withAcl) {
       await this._copyFileAcl(from, to, options).catch(toFetchError)
     }
   }
 
-  async _copyFile (from, to, options) {
+  async _copyFileOnly (from, to, options) {
     const response = await this.get(from)
     const content = await response.blob()
     const contentType = response.headers.get('content-type')
@@ -438,7 +444,7 @@ class SolidAPI {
 
     const creationResults = await composedFetch([
       ...folders.map(({ name }) => this.copyFolder(`${from}${name}/`, `${to}${name}/`, options)),
-      ...files.map(({ name }) => this.copyFile(`${from}${name}`, `${to}${name}`, options))
+      ...files.map(({ name }) => this._copyFile(`${from}${name}`, `${to}${name}`, options))
     ])
 
     return [folderResponse].concat(...creationResults) // Alternative to Array.prototype.flat
@@ -481,8 +487,6 @@ class SolidAPI {
     }
     if (areFiles(from, to)) {
       return this.copyFile(from, to, options)
-        .then(_responseToArray)
-        .catch(toFetchError)
     }
 
     toFetchError(new Error('Cannot copy from a folder url to a file url or vice versa'))
