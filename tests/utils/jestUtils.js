@@ -4,7 +4,7 @@
 import { getPrefix, prefixes } from './contextSetup'
 import SolidFileClient from '../../src'
 
-const { FetchError, ComposedFetchError } = SolidFileClient
+const { FetchError } = SolidFileClient
 
 /**
  * @param {Promise<Response>} promise
@@ -23,7 +23,7 @@ export async function rejectsWithStatus (promise, status) {
     await promise
     expect('promise did not reject').toBe(false)
   } catch (err) {
-    expect(err).toBeInstanceOf(ComposedFetchError)
+    expect(err).toBeInstanceOf(FetchError)
     expect(err.rejected).toHaveLength(1)
     expect(err.rejected[0]).toHaveProperty('status', status)
   }
@@ -38,7 +38,7 @@ export async function rejectsWithStatuses (promise, statuses) {
     await promise
     expect('promise did not reject').toBe(false)
   } catch (err) {
-    expect(err).toBeInstanceOf(ComposedFetchError)
+    expect(err).toBeInstanceOf(FetchError)
     err.rejected.forEach((res, i) => expect(res).toHaveProperty('status', statuses[i]))
   }
 }

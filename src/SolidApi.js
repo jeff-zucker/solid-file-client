@@ -1,13 +1,13 @@
 import debug from 'debug'
 import apiUtils from './utils/apiUtils'
-import folderUtils from './utils/folderUtils'
+import FolderUtils from './utils/folderUtils'
 import RdfQuery from './utils/rdf-query'
 import errorUtils from './utils/errorUtils'
+import LinksUtils from './utils/linksUtils'
 
 const fetchLog = debug('solid-file-client:fetch')
-const { getParentUrl, getItemName, areFolders, areFiles, LINK } = apiUtils
-const { _parseLinkHeader, _urlJoin } = folderUtils
-const { ComposedFetchError, assertResponseOk, composedFetch, toComposedError } = errorUtils
+const { getRootUrl, getParentUrl, getItemName, areFolders, areFiles, LINK } = apiUtils
+const { FetchError, assertResponseOk, composedFetch, toFetchError } = errorUtils
 
 /**
  * @typedef {Object} WriteOptions
@@ -72,7 +72,11 @@ class SolidAPI {
   constructor (fetch, options) {
     options = { ...defaultSolidApiOptions, ...options }
     this._fetch = fetch
+    this.processFolder = new FolderUtils().processFolder
     this.rdf = new RdfQuery(this.fetch.bind(this))
+    const link = new LinksUtils()
+    this.getLinks = link.getLinks
+    this.getItemLinks = link.getItemLinks
 
     if (options.enableLogging) {
       if (typeof options.enableLogging === 'string') {
@@ -88,7 +92,7 @@ class SolidAPI {
    * @param {string} url
    * @param {RequestInit} [options]
    * @returns {Promise<Response>} resolves if response.ok is true, else rejects the response
-   * @throws {ComposedFetchError}
+   * @throws {FetchError}
    */
   fetch (url, options) {
     return this._fetch(url, options)
@@ -104,7 +108,7 @@ class SolidAPI {
    * @param {string} url
    * @param {RequestInit} [options]
    * @returns {Promise<Response>}
-   * @throws {ComposedFetchError}
+   * @throws {FetchError}
    */
   get (url, options) {
     return this.fetch(url, {
@@ -118,7 +122,7 @@ class SolidAPI {
    * @param {string} url
    * @param {RequestInit} [options]
    * @returns {Promise<Response>}
-   * @throws {ComposedFetchError}
+   * @throws {FetchError}
    */
   delete (url, options) {
     return this.fetch(url, {
@@ -132,7 +136,7 @@ class SolidAPI {
    * @param {string} url
    * @param {RequestInit} [options]
    * @returns {Promise<Response>}
-   * @throws {ComposedFetchError}
+   * @throws {FetchError}
    */
   post (url, options) {
     return this.fetch(url, {
@@ -146,7 +150,7 @@ class SolidAPI {
    * @param {string} url
    * @param {RequestInit} [options]
    * @returns {Promise<Response>}
-   * @throws {ComposedFetchError}
+   * @throws {FetchError}
    */
   put (url, options) {
     return this.fetch(url, {
@@ -160,7 +164,7 @@ class SolidAPI {
    * @param {string} url
    * @param {RequestInit} [options]
    * @returns {Promise<Response>}
-   * @throws {ComposedFetchError}
+   * @throws {FetchError}
    */
   patch (url, options) {
     return this.fetch(url, {
@@ -174,7 +178,7 @@ class SolidAPI {
    * @param {string} url
    * @param {RequestInit} [options]
    * @returns {Promise<Response>}
-   * @throws {ComposedFetchError}
+   * @throws {FetchError}
    */
   head (url, options) {
     return this.fetch(url, {
@@ -188,7 +192,7 @@ class SolidAPI {
    * @param {string} url
    * @param {RequestInit} [options]
    * @returns {Promise<Response>}
-   * @throws {ComposedFetchError}
+   * @throws {FetchError}
    */
   options (url, options) {
     return this.fetch(url, {
@@ -214,8 +218,9 @@ class SolidAPI {
       .then(() => true)
       .catch(err => {
         // Only return false when the server returned 404. Else throw
-        if (!(err instanceof ComposedFetchError && err.rejected[0].status === 404))
+        if (!(err instanceof FetchError && err.rejected[0].status === 404)) {
           throw err
+        }
         return false
       })
   }
@@ -231,7 +236,7 @@ class SolidAPI {
    * @param {string} link - header for Container/Resource, see LINK in apiUtils
    * @param {WriteOptions} [options]
    * @returns {Promise<Response>}
-   * @throws {ComposedFetchError}
+   * @throws {FetchError}
    */
   async createItem (url, content, contentType, link, options) {
     options = {
@@ -242,7 +247,7 @@ class SolidAPI {
 
     if (await this.itemExists(url)) {
       if ((link === LINK.RESOURCE && !options.overwriteFiles) || (link === LINK.CONTAINER && !options.overwriteFolders)) {
-        toComposedError(new Error('Item already existed: ' + url))
+        toFetchError(new Error('Item already existed: ' + url))
       }
       await this.delete(url) // TBD: Should we throw here if a folder has contents?
     } else if (options.createPath) {
@@ -267,7 +272,7 @@ class SolidAPI {
    * @param {string} url
    * @param {WriteOptions} [options]
    * @returns {Promise<Response>} Response of HEAD request if it already existed, else of creation request
-   * @throws {ComposedFetchError}
+   * @throws {FetchError}
    */
   async createFolder (url, options) {
     options = {
@@ -283,7 +288,7 @@ class SolidAPI {
       }
       await this.deleteFolderRecursively(url)
     } catch (e) {
-      if (!(e instanceof ComposedFetchError && e.rejected[0].status === 404)) {
+      if (!(e instanceof FetchError && e.rejected[0].status === 404)) {
         throw e
       }
     }
@@ -298,7 +303,7 @@ class SolidAPI {
    * @param {Blob|String} content
    * @param {WriteOptions} [options]
    * @returns {Promise<Response>}
-   * @throws {ComposedFetchError}
+   * @throws {FetchError}
    */
   createFile (url, content, contentType, options) {
     return this.createItem(url, content, contentType, LINK.RESOURCE, options)
@@ -311,7 +316,7 @@ class SolidAPI {
    * @param {Blob|String} content
    * @param {WriteOptions} [options]
    * @returns {Promise<Response>}
-   * @throws {ComposedFetchError}
+   * @throws {FetchError}
    */
   async putFile (url, content, contentType, options) {
     options = {
@@ -321,7 +326,7 @@ class SolidAPI {
     // Options which are not like the default PUT behaviour
     if (!options.overwriteFiles && await this.itemExists(url)) {
       // TODO: Discuss how this should be thrown
-      toComposedError(new Error('File already existed: ' + url))
+      toFetchError(new Error('File already existed: ' + url))
     }
     if (!options.createPath && !(await this.itemExists(getParentUrl(url)))) {
       // Incosistent with createFile (createFile returns 404 response)
@@ -344,12 +349,13 @@ class SolidAPI {
    * Fetch and parse a folder
    * @param {string} url
    * @returns {Promise<FolderData>}
-   * @throws {ComposedFetchError}
+   * @throws {FetchError}
    */
-/*  async readFolder (url, options) {
+
+  async readFolder (url, options) {
     return this.processFolder(url, options)
   }
-*/
+
   /**
    * Copy a file.
    * Overwrites per default
@@ -357,17 +363,60 @@ class SolidAPI {
    * @param {string} to - Url where it should be copied to
    * @param {WriteOptions} [options]
    * @returns {Promise<Response>} - Response from the new file created
-   * @throws {ComposedFetchError}
+   * @throws {FetchError}
    */
   async copyFile (from, to, options) {
-    if (typeof from !== 'string' || typeof to !== 'string') {
-      throw toComposedError(new Error(`The from and to parameters of copyFile must be strings. Found: ${from} and ${to}`))
+    options = {
+      ...defaultWriteOptions,
+      ...options
     }
+    if (typeof from !== 'string' || typeof to !== 'string') {
+      throw toFetchError(new Error(`The from and to parameters of copyFile must be strings. Found: ${from} and ${to}`))
+    }
+    if (from.endsWith('.acl') || from.endsWith('.acl')) {
+      throw toFetchError(new Error(`ACL files cannot be copied. Found: ${from} and ${to}`))
+    }
+    return this._copyFile(from, to, options)
+      .then(_responseToArray)
+      .catch(toFetchError)
+  }
+
+  async _copyFile (from, to, options) {
+    await this._copyFileOnly(from, to, options).catch(toFetchError)
+    if (options.withAcl) {
+      await this._copyFileAcl(from, to, options).catch(toFetchError)
+    }
+  }
+
+  async _copyFileOnly (from, to, options) {
     const response = await this.get(from)
     const content = await response.blob()
     const contentType = response.headers.get('content-type')
 
     return this.putFile(to, content, contentType, options)
+  }
+
+  async _copyFileAcl (from, to, options) {
+    let acl = await this.getLinks(from, options.withAcl)
+    if (acl[0]) {
+      let fromAcl = acl[0]
+      let toAcl = await this.getItemLinks(to, options.withAcl)
+      const response = await this.get(fromAcl.url)
+      let content = await response.text()
+      // turtle acl content :
+      let toName = to.substr(to.lastIndexOf('/') + 1)
+      let fromName = from.substr(from.lastIndexOf('/') + 1)
+      if (content.includes(from)) {
+        // if object values are absolute URI's make them relative to the destination
+        content = content.replace(new RegExp('<' + from + '>', 'g'), '<./' + toName + '>')
+        content = content.replace(new RegExp('<' + getRootUrl(from) + 'profile/card#me>'), '<./profile/card#me>')
+      } else if (toName !== fromName) {
+        // if relative replace file destination
+        content = content.replace(new RegExp(fromName + '>', 'g'), toName + '>')
+      }
+      const contentType = response.headers.get('content-type')
+      await this.putFile(toAcl.acl, content, contentType, options).catch(toFetchError)
+    }
   }
 
   /**
@@ -380,21 +429,43 @@ class SolidAPI {
    * @returns {Promise<Response[]>} Resolves with an array of creation responses.
    * The first one will be the folder specified by "to".
    * The others will be creation responses from the contents in arbitrary order.
-   * @throws {ComposedFetchError}
+   * @throws {FetchError}
    */
   async copyFolder (from, to, options) {
-    if (typeof from !== 'string' || typeof to !== 'string') {
-      toComposedError(new Error(`The from and to parameters of copyFile must be strings. Found: ${from} and ${to}`))
+    options = {
+      ...defaultWriteOptions,
+      ...options
     }
-    const { folders, files } = await this.readFolder(from, options).catch(toComposedError)
-    const folderResponse = await this.createFolder(to, options).catch(toComposedError)
+    if (typeof from !== 'string' || typeof to !== 'string') {
+      throw toFetchError(new Error(`The from and to parameters of copyFolder must be strings. Found: ${from} and ${to}`))
+    }
+    const { folders, files } = await this.readFolder(from, { withAcl: false }).catch(toFetchError) // toFile.acl build by copyFile and _copyFolder
+    const folderResponse = await this._copyFolder(from, to, options).catch(toFetchError)
 
     const creationResults = await composedFetch([
       ...folders.map(({ name }) => this.copyFolder(`${from}${name}/`, `${to}${name}/`, options)),
-      ...files.map(({ name }) => this.copyFile(`${from}${name}`, `${to}${name}`, options))
+      ...files.map(({ name }) => this._copyFile(`${from}${name}`, `${to}${name}`, options))
     ])
 
     return [folderResponse].concat(...creationResults) // Alternative to Array.prototype.flat
+  }
+
+  /**
+   * non recursive copy of a folder with .acl
+   * Overwrites files per default.
+   * Merges folders if already existing
+   * @param {string} from
+   * @param {string} to
+   * @param {WriteOptions} [options]
+   * @returns {Promise<Response[]>} Resolves with an array of creation responses.
+   * The first one will be the folder specified by "to".
+   * @throws {FetchError}
+   */
+  async _copyFolder (from, to, options) {
+    await this.createFolder(to, options).catch(toFetchError)
+    if (options.withAcl) {
+      await this._copyFileAcl(from, to, options).catch(toFetchError)
+    }
   }
 
   /**
@@ -407,7 +478,7 @@ class SolidAPI {
    * @returns {Promise<Response[]>} Resolves with an array of creation responses.
    * The first one will be the folder specified by "to".
    * If it is a folder, the others will be creation responses from the contents in arbitrary order.
-   * @throws {ComposedFetchError}
+   * @throws {FetchError}
    */
   copy (from, to, options) {
     // TBD: Rewrite to detect folders not by url (ie remove areFolders)
@@ -416,22 +487,20 @@ class SolidAPI {
     }
     if (areFiles(from, to)) {
       return this.copyFile(from, to, options)
-        .then(_responseToArray)
-        .catch(toComposedError)
     }
 
-    toComposedError(new Error('Cannot copy from a folder url to a file url or vice versa'))
+    toFetchError(new Error('Cannot copy from a folder url to a file url or vice versa'))
   }
 
   /**
    * Delete all folders and files inside a folder
    * @param {string} url
    * @returns {Promise<Response[]>} Resolves with a response for each deletion request
-   * @throws {ComposedFetchError}
+   * @throws {FetchError}
    */
-async deleteFolderContents (url, options) {
-	options = { ...defaultDeleteOptions, ...options }  // should delete .acl by default for deletefolderRecursively
-    const { folders, files } = await this.readFolder(url, options).catch(toComposedError)
+  async deleteFolderContents (url, options) {
+    options = { ...defaultDeleteOptions, ...options } // should delete .acl by default for deletefolderRecursively
+    const { folders, files } = await this.readFolder(url, options).catch(toFetchError)
     return composedFetch([
       ...folders.map(({ url }) => this.deleteFolderRecursively(url)),
       ...files.map(({ url }) => this.delete(url))
@@ -444,11 +513,11 @@ async deleteFolderContents (url, options) {
    * @returns {Promise<Response[]>} Resolves with an array of deletion responses.
    * The first one will be the folder specified by "url".
    * The others will be the deletion responses from the contents in arbitrary order
-   * @throws {ComposedFetchError}
+   * @throws {FetchError}
    */
   async deleteFolderRecursively (url) {
     const resolvedResponses = await this.deleteFolderContents(url)
-    resolvedResponses.unshift(await this.delete(url).catch(toComposedError))
+    resolvedResponses.unshift(await this.delete(url).catch(toFetchError))
 
     return resolvedResponses
   }
@@ -460,7 +529,7 @@ async deleteFolderContents (url, options) {
    * @param {string} to
    * @param {RequestOptions} [options]
    * @returns {Promise<Response[]>} Responses of the newly created items
-   * @throws {ComposedFetchError}
+   * @throws {FetchError}
    */
   async move (from, to, options) {
     const copyResponse = await this.copy(from, to, options)
@@ -480,266 +549,11 @@ async deleteFolderContents (url, options) {
    * @param {string} newName
    * @param {RequestOptions} [options]
    * @returns {Promise<Response[]>} Response of the newly created items
-   * @throws {ComposedFetchError}
+   * @throws {FetchError}
    */
   rename (url, newName, options) {
     const to = getParentUrl(url) + newName + (areFolders(url) ? '/' : '')
     return this.move(url, to, options)
-  }
-
-  // TBD: Move this code inside readFolder?
-  // TBD: Update this comment when the withLinks PR is merged
-  /**
-   * processFolder
-   *
-   * TBD :
-   *   - refactor all of the links=true methods (not ready yet)
-   *   - re-examine parseLinkHeader, return its full rdf
-   *   - re-examine error checking in full chain
-   *   - complete documentation of methods
-   *
-   * here's the current call stack
-   *
-   * processFolder (withAcl=false)
-   *   _processStatements
-   *   _packageFolder
-   * processFolder (withAcl=true)
-   *   _getFolderLinks
-   *   _getFileLinks
-   *     getLinks
-   *       _findLinksInHeader
-   *         _lookForLink
-   *           _getLinkObject
-   *
-   * returns the same thing the old solid-file-client did except
-   *   a) .acl and .meta files are included in the files array *if they exist*
-   *   b) additional fields such as content-type are added if available
-   *   c) it no longer returns the turtle representation
-   *
-   * parses a folder's turtle, developing a list of its contents
-   * by default, finds associated .acl and .meta
-   *
-   */
-  /**
-   * @private // We don't need two public readFolder methods?
-   * @param {string} folderUrl
-   * @param {object} [options]
-   * @returns {Promise<FolderData>}
-   */
-  async readFolder (folderUrl, options = { withAcl: false }) {
-    if (!folderUrl.endsWith('/')) folderUrl = folderUrl + '/'
-    let [rdf, folder, folderItems, fileItems] = [this.rdf, [], [], []] // eslint-disable-line no-unused-vars
-    // For folders always add to fileItems : .meta file and if options.withAcl === true also add .acl linkFile
-    fileItems = fileItems.concat(await this._getFolderLinks(folderUrl, options.withAcl))
-    let files = await rdf.query(folderUrl, { thisDoc: '' }, { ldp: 'contains' })
-    for (var f in files) {
-      let thisFile = files[f].object
-      let thisFileStmts = await rdf.query(null, thisFile)
-      let itemRecord = this._processStatements(thisFile.value, thisFileStmts)
-      if (itemRecord.itemType.match('Container')) {
-        itemRecord.type = 'folder'
-        folderItems = folderItems.concat(itemRecord)
-      }else {
-        fileItems = fileItems.concat(itemRecord)
-        // add fileLink acl
-		if (options.withAcl) {
-          fileItems = fileItems.concat(await this._getFileLinks(thisFile.value, options.withAcl))
-        }
-      }
-    }
-    return this._packageFolder(folderUrl, folderItems, fileItems)
-  }
-
-  /*
-   * _processStatements
-   *
-   * input
-   *  - item URL
-   *  - statements from the container's turtle with this item as subject
-   * finds properties of an item from its predicates and objects
-   *  - e.g. predicate = stat#size  object = 4096
-   *  - strips off full URLs of predicates and objects
-   *  - stores "type" property in types because v0.x of sfc needs type
-   * returns an associative array of the item's properties
-   */
-  // TBD: Update type declaration
-  // TBD: What type are the items in the stmts array?
-  /**
-   * @private
-   * @param {string} url
-   * @param {any[]} stmts
-   * @returns {Item}
-   */
-  _processStatements (url, stmts) {
-    const ianaMediaType = 'http://www.w3.org/ns/iana/media-types/'
-    const processed = { url: url }
-    stmts.forEach(stm => {
-      const predicate = stm.predicate.value.replace(/.*\//, '').replace(/.*#/, '')
-      let object = stm.object.value.match(ianaMediaType) ? stm.object.value.replace(ianaMediaType, '') : stm.object.value.replace(/.*\//, '')
-      if (!predicate.match('type')) object = object.replace(/.*#/, '')
-      else if (object !== "ldp#Resource" && object !== "ldp#Container") {
-        processed[predicate] = [ ...(processed[predicate] || []), object.replace('#Resource', '') ]   // keep only contentType and ldp#BasicContainer
-      }
-    })
-    for (const key in processed) {
-      if (processed[key].length === 1) processed[key] = processed[key][0]
-    }
-    if (processed.type === undefined) processed['type'] = 'application/octet-stream'
-    processed['itemType'] = processed.type.includes('ldp#BasicContainer')
-      ? 'Container'
-      : 'Resource'
-    processed.name = getItemName(url)
-    processed.parent = getParentUrl(url)
-    return processed
-  }
-
-  // TBD: Remove outdated comments
-  /*
-   * _packageFolder
-   *
-   * input  : folder's URL, arrays of folders and files it contains
-   * output : the hash expected by the end_user of readFolder
-   *          as shown in the existing documentation
-   */
-  /**
-   * @private
-   * @param {string} folderUrl
-   * @param {Item[]} folderItems
-   * @param {Item[]} fileItems
-   * @returns {FolderData}
-   */
-  _packageFolder (folderUrl, folderItems, fileItems) {
-    /*
-    const fullName = folderUrl.replace(/\/$/, '')
-    const name = fullName.replace(/.*\//, '')
-    const parent = fullName.substr(0, fullName.lastIndexOf('/')) + '/'
-*/
-    /** @type {FolderData} */
-    let returnVal = {}
-    returnVal.type = 'folder' // for backwards compatability :-(
-    returnVal.name = getItemName(folderUrl)
-    returnVal.parent = getParentUrl(folderUrl)
-    returnVal.url = folderUrl
-    returnVal.folders = folderItems
-    returnVal.files = fileItems
-    // returnVal.content,     // thinking of not sending the turtle
-    return returnVal
-  }
-
-  /**
-   * @private
-   * _geFolderLinks (TBD)
-   */
-  async _getFolderLinks (folderUrl, linkAcl) {
-    let folder = await this.getLinks(folderUrl, linkAcl)
-    return folder
-  }
-
-  /**
-   * @private
-   * _geFileLinks (TBD)
-   */
-  async _getFileLinks (itemUrl, linkAcl) {
-    let itemWithLinks = await this.getLinks(itemUrl, linkAcl)
-    return itemWithLinks
-  }
-
-  /**
-   * @private // For now
-   * getLinks (TBD)
-   *
-   * returns an array of records related to an item (resource or container)
-   *   0-2 : the .acl, .meta, and .meta.acl for the item if they exist
-   * each record includes these fields (see _getLinkObject)
-   *   url
-   *   type (contentType)
-   *   itemType ((AccessControl, or Metadata))
-   *   name
-   *   parent
-   */
-  async getLinks (itemUrl, linkAcl) {
-	let itemLinks = []
-	// don't getLinks for .acl files
-	if (itemUrl.endsWith('.acl')) return []
-    let res = await this.fetch(itemUrl, { method: 'HEAD' })
-    let linkHeader = await res.headers.get('link')
-	// linkHeader is null for index.html ??
-    if (linkHeader === null) return []
-    // get .meta, .acl links
-	let links = await this._findLinksInHeader(itemUrl, linkHeader, linkAcl)
-	if (links.acl) itemLinks = itemLinks.concat(links.acl)
-	if (links.meta) {
-		itemLinks = itemLinks.concat(links.meta)
-		// get .meta.acl link
-	    links.metaAcl = await this.getLinks(links.meta.url, linkAcl)
-	    if (links.metaAcl) itemLinks = itemLinks.concat(links.metaAcl)
-    }
-    return itemLinks
-  }
-
-  /**
-   * @private
-   * findLinksInHeader (TBD)
-   *
-   */
-  async _findLinksInHeader (originalUri, linkHeader, linkAcl) {
-    let matches = _parseLinkHeader(linkHeader, originalUri)
-    let final = {}
-    for (let i = 0; i < matches.length; i++) {
-      let split = matches[i].split('>')
-      let href = split[0].substring(1)
-      if (linkAcl && matches[i].match(/rel="acl"/)) { final.acl = await this._lookForLink('AccessControl', href, originalUri) }
-      // .meta only for folders
-      if (originalUri.endsWith('/') && matches[i].match(/rel="describedBy"/)) {
-        final.meta = await this._lookForLink('Metadata', href, originalUri)
-      }
-    }
-    return final
-  }
-
-  /**
-   * @private
-   * _lookForLink (TBD)
-   *
-   * - input
-   *     - linkType = one of AccessControl or Metatdata
-   *     - itemUrl  = address of the item associated with the link
-   *     - relative URL from the link's associated item's header (e.g. .acl)
-   * - creates an absolute Url for the link
-   * - looks for the link and, if found, returns a link object
-   * - else returns undefined
-   */
-  async _lookForLink (linkType, linkRelativeUrl, itemUrl) {
-    let linkUrl = _urlJoin(linkRelativeUrl, itemUrl)
-    try {
-      let res = await this.fetch(linkUrl, { method: 'HEAD' })
-      if (typeof res !== 'undefined' && res.ok) {
-        let contentType = res.headers.get('content-type')
-        return this._getLinkObject(linkUrl, linkType, contentType, itemUrl)
-      }
-    } catch (e) {} // ignore if not found
-  }
-
-  /**
-   * @private
-   * _getLinkObject (TBD)
-   *
-   * creates a link object for a container or any item it holds
-   * type is one of AccessControl, Metatdata
-   * content-type is from the link's header
-   * @param {string} linkUrl
-   * @param {string} contentType
-   * @param {"AccessControl"|"Metadata"} linkType
-   * @returns {LinkObject}
-   */
-  _getLinkObject (linkUrl, linkType, contentType, itemUrl) {
-    return {
-      url: linkUrl,
-      type: contentType,
-      itemType: linkType,
-      name: getItemName(linkUrl),
-      parent: getParentUrl(linkUrl)
-    }
   }
 }
 

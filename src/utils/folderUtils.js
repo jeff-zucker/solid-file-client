@@ -1,112 +1,156 @@
+// import debug from 'debug'
+import apiUtils from './apiUtils'
+import LinksUtils from './linksUtils'
+import RdfQuery from './rdf-query'
 
-  /**
-   *  input  : linkHeader from a res.headers.get("link") and the item url
-   *           sent by SolidApi.findLinkFiles()
-   * 
-   *  output : an array of strings, one for each link type (acl,meta,etc.)
-   *
-   * this is lifted from rdflib and truncated a bit
-   *
-   * note: please leave the formating as-is so it can be easily compared
-   *       with the original
-   */
-  function _parseLinkHeader (linkHeader, originalUri) {
-      if (!linkHeader) { return }
+const { getParentUrl, getItemName, areFolders, areFiles, LINK } = apiUtils
 
-      // const linkexp = /<[^>]*>\s*(\s*;\s*[^()<>@,;:"/[\]?={} \t]+=(([^()<>@,;:"/[]?={} \t]+)|("[^"]*")))*(,|$)/g
-      // const paramexp = /[^()<>@,;:"/[]?={} \t]+=(([^()<>@,;:"/[]?={} \t]+)|("[^"]*"))/g
-
-      // From https://www.dcode.fr/regular-expression-simplificator:
-      // const linkexp = /<[^>]*>\s*(\s*;\s*[^()<>@,;:"/[\]?={} t]+=["]))*[,$]/g
-      // const paramexp = /[^\\<>@,;:"\/\[\]?={} \t]+=["])/g
-      // Original:
-      const linkexp = /<[^>]*>\s*(\s*;\s*[^()<>@,;:"/[\]?={} \t]+=(([^\(\)<>@,;:"\/\[\]\?={} \t]+)|("[^"]*")))*(,|$)/g
-      // const paramexp = /[^\(\)<>@,;:"\/\[\]\?={} \t]+=(([^\(\)<>@,;:"\/\[\]\?={} \t]+)|("[^"]*"))/g
-
-      return linkHeader.match(linkexp)
+const defaultReadOptions = {
+  withAcl: true,
 }
+
+const defaultSolidApiOptions = {
+  enableLogging: true
+}
+
+class FolderUtils {
+
+  constructor(fetch, options) {
+    options = { defaultSolidApiOptions, ...defaultReadOptions, ...options }
+  }
 
 
   /**
-   * joins a path to a base path
+   * processFolder
    *
-   *  .urlJoin(".acl", "https://x.com/" )         -> https://x.com/.acl
-   *  .urlJoin("y.ttl.acl","https://x.com/y.ttl") -> https://x.com/y.ttl.acl
+   * TBD :
+   *   - refactor all of the links=true methods (not ready yet)
+   *   - re-examine parseLinkHeader, return its full rdf
+   *   - re-examine error checking in full chain
+   *   - complete documentation of methods
    *
-   * this is lifted from rdflib
+   * here's the current call stack
    *
-   * note: please leave the formating as-is so it can be easily compared
-   *       with the original
+   * processFolder
+   *   getLinks
+   *   rdf.query
+   *   _processStatements
+   *   _packageFolder
+   *
+   * returns the same thing the old solid-file-client did except
+   *   a) .acl and .meta files are included in the files array *if they exist*
+   *   b) additional fields such as content-type are added if available
+   *   c) it no longer returns the turtle representation
+   *
+   * parses a folder's turtle, developing a list of its contents
+   * by default, finds associated .acl and .meta
+   *
    */
-  function _urlJoin (given, base) {
-        var baseColon, baseScheme, baseSingle
-        var colon, lastSlash, path
-        var baseHash = base.indexOf('#')
-        if (baseHash > 0) {
-          base = base.slice(0, baseHash)
+  /**
+   * @private // We don't need two public readFolder methods?
+   * @param {string} folderUrl
+   * @param {object} [options]
+   * @returns {Promise<FolderData>}
+   */
+  async processFolder (folderUrl, options = { withAcl: false }) {
+  	// TBD return error
+    if (!folderUrl.endsWith('/')) folderUrl = folderUrl + '/'
+    let [folder, folderItems, fileItems] = [[], [], []] // eslint-disable-line no-unused-vars
+    // For folders always add to fileItems : .meta file and if options.withAcl === true also add .acl linkFile
+    fileItems = fileItems.concat(await this.getLinks(folderUrl, options.withAcl))
+    let files = await this.rdf.query(folderUrl, { thisDoc: '' }, { ldp: 'contains' })
+    for (let f in files) {
+      let thisFile = files[f].object
+      let thisFileStmts = await this.rdf.query(null, thisFile)
+      let itemRecord = _processStatements(thisFile.value, thisFileStmts)
+      if (itemRecord.itemType.match('Container')) {
+        itemRecord.type = 'folder'
+        folderItems = folderItems.concat(itemRecord)
+      }else {
+        fileItems = fileItems.concat(itemRecord)
+        // add fileLink acl
+		if (options.withAcl) {
+          fileItems = fileItems.concat(await this.getLinks(thisFile.value, options.withAcl))  // allways { withAcl: false} if copyFile withAcl: true
         }
-        if (given.length === 0) {
-          return base
-        }
-        if (given.indexOf('#') === 0) {
-          return base + given
-        }
-        colon = given.indexOf(':')
-        if (colon >= 0) {
-          return given
-        }
-        baseColon = base.indexOf(':')
-        if (base.length === 0) {
-          return given
-        }
-        if (baseColon < 0) {
-          alert('Invalid base: ' + base + ' in join with given: ' + given)
-          return given
-        }
-        baseScheme = base.slice(0, +baseColon + 1 || 9e9)
-        if (given.indexOf('//') === 0) {
-          return baseScheme + given
-        }
-        if (base.indexOf('//', baseColon) === baseColon + 1) {
-          baseSingle = base.indexOf('/', baseColon + 3)
-          if (baseSingle < 0) {
-            if (base.length - baseColon - 3 > 0) {
-              return base + '/' + given
-            } else {
-              return baseScheme + given
-            }
-          }
-        } else {
-          baseSingle = base.indexOf('/', baseColon + 1)
-          if (baseSingle < 0) {
-            if (base.length - baseColon - 1 > 0) {
-              return base + '/' + given
-            } else {
-              return baseScheme + given
-            }
-          }
-        }
-        if (given.indexOf('/') === 0) {
-          return base.slice(0, baseSingle) + given
-        }
-        path = base.slice(baseSingle)
-        lastSlash = path.lastIndexOf('/')
-        if (lastSlash < 0) {
-          return baseScheme + given
-        }
-        if (lastSlash >= 0 && lastSlash < path.length - 1) {
-          path = path.slice(0, +lastSlash + 1 || 9e9)
-        }
-        path += given
-        while (path.match(/[^\/]*\/\.\.\//)) {
-          path = path.replace(/[^\/]*\/\.\.\//, '')
-        }
-        path = path.replace(/\.\//g, '')
-        path = path.replace(/\/\.$/, '/')
-        return base.slice(0, baseSingle) + path
-      } // end of urlJoin
-
-export default {
-  _parseLinkHeader,
-  _urlJoin
+      }
+    }
+    return _packageFolder(folderUrl, folderItems, fileItems)
+  }
 }
+  /*
+   * _processStatements
+   *
+   * input
+   *  - item URL
+   *  - statements from the container's turtle with this item as subject
+   * finds properties of an item from its predicates and objects
+   *  - e.g. predicate = stat#size  object = 4096
+   *  - strips off full URLs of predicates and objects
+   *  - stores "type" property in types because v0.x of sfc needs type
+   * returns an associative array of the item's properties
+   */
+  // TBD: Update type declaration
+  // TBD: What type are the items in the stmts array?
+  /**
+   * @private
+   * @param {string} url
+   * @param {any[]} stmts
+   * @returns {Item}
+   */
+  function _processStatements (url, stmts) {
+    const ianaMediaType = 'http://www.w3.org/ns/iana/media-types/'
+    const processed = { url: url }
+    stmts.forEach(stm => {
+      const predicate = stm.predicate.value.replace(/.*\//, '').replace(/.*#/, '')
+      let object = stm.object.value.match(ianaMediaType) ? stm.object.value.replace(ianaMediaType, '') : stm.object.value.replace(/.*\//, '')
+      if (!predicate.match('type')) object = object.replace(/.*#/, '')
+      else if (object !== "ldp#Resource" && object !== "ldp#Container") {
+        processed[predicate] = [ ...(processed[predicate] || []), object.replace('#Resource', '') ]   // keep only contentType and ldp#BasicContainer
+      }
+    })
+    for (const key in processed) {
+      if (processed[key].length === 1) processed[key] = processed[key][0]
+    }
+    if (processed.type === undefined) processed['type'] = 'application/octet-stream'
+    processed['itemType'] = processed.type.includes('ldp#BasicContainer')
+      ? 'Container'
+      : 'Resource'
+    processed.name = getItemName(url)
+    processed.parent = getParentUrl(url)
+    return processed
+  }
+
+  // TBD: Remove outdated comments
+  /*
+   * _packageFolder
+   *
+   * input  : folder's URL, arrays of folders and files it contains
+   * output : the hash expected by the end_user of readFolder
+   *          as shown in the existing documentation
+   */
+  /**
+   * @private
+   * @param {string} folderUrl
+   * @param {Item[]} folderItems
+   * @param {Item[]} fileItems
+   * @returns {FolderData}
+   */
+  function _packageFolder (folderUrl, folderItems, fileItems) {
+    /*
+    const fullName = folderUrl.replace(/\/$/, '')
+    const name = fullName.replace(/.*\//, '')
+    const parent = fullName.substr(0, fullName.lastIndexOf('/')) + '/'
+*/
+    /** @type {FolderData} */
+    let returnVal = {}
+    returnVal.type = 'folder' // for backwards compatability :-(
+    returnVal.name = getItemName(folderUrl)
+    returnVal.parent = getParentUrl(folderUrl)
+    returnVal.url = folderUrl
+    returnVal.folders = folderItems
+    returnVal.files = fileItems
+    // returnVal.content,     // thinking of not sending the turtle
+    return returnVal
+  }
+
+export default FolderUtils
