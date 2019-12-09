@@ -16,6 +16,15 @@ In addition to allowing multiple versions, setting the forcePOST options flag to
 ```
   [TBD : example of reading the location header from a response to a POST]
 ```
+
+## forceGET
+
+Solid-file-client's readFile() method, by default returns either text or a blob depending on the content-type of the file.  Advanced users who want a raw GET, (i.e. return a Stream rather than text or a blob) may set the forceGET option flag to true.  
+```
+    readFile( url )                    // returns text or blob
+    readFile( url, { forceGET:true } ) // returns raw GET response
+```
+
 ## includeLinks
 
 One of Solid's unique features is the use of linked files.  Currently the two main types of linked files are .acl files which control access to the main file they are linked from and .meta files which describe additional features of the file they are linked from.  Solid-file-client, by default treats these linked files as tightly bound to the resource they are referencing.  In other words when you delete, move, or copy a file that has linked files, the linked files will also be deleted, moved, or copied.  These defaults should be sufficient for most basic usage.  Advanced users can loosen the bond between a resource and its linked files with the includeLinks option flag that defaults to true.
@@ -39,13 +48,6 @@ Solid-file-client makes a special case for access control (.acl) files.  These f
 ```
 The same option flag may be used with copyFolder(), moveFile(), and moveFolder().
 
-## prepareContent
-
-Solid-file-client's readFile() method, by default returns either text or a blob depending on the content-type of the file.  Advanced users who want a raw GET, (i.e. return a Stream rather than text or a blob) may set the prepareContent option flag which defaults to true.  
-```
-    readFile( url )                           // returns text or blob
-    readFile( url, { prepareContent:false } ) // returns raw GET response
-```
 ## acceptType
 
 In some situations Solid servers can serve multiple representations from a single URL.  A URL of /foo/ might return a folder listing or an index.html file.  A URL pointing to an RDF resource might return the resource as Turtle or as JSON-LD or some other RDF format.  In these cases, users may specify which of the alternate representations they want to see using the acceptType option flag.
