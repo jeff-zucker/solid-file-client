@@ -51,8 +51,6 @@ class SolidFileClient extends SolidApi {
     return res
   }
 
-  /* BELOW HERE ARE ALL ALIASES TO SOLID.API FUNCTIONS */
-
   readHead (url, options) { return super.head(url, options) }
 
   async deleteFile (url) {
