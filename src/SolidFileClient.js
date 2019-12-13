@@ -1,7 +1,4 @@
 import SolidApi from './SolidApi'
-import errorUtils from './utils/errorUtils'
-
-const { toFetchError } = errorUtils
 
 /**
  * @typedef {object} SolidFileClientOptions
@@ -35,7 +32,6 @@ class SolidFileClient extends SolidApi {
     // this.getLinks = link.getLinks
     // this.getItemLinks = link.getItemLinks
   }
-
 
   /**
      * Fetch an item and return content as text,json,or blob as needed
