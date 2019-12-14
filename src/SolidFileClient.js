@@ -1,7 +1,4 @@
 import SolidApi from './SolidApi'
-import errorUtils from './utils/errorUtils'
-
-const { toFetchError } = errorUtils
 
 /**
  * @typedef {object} SolidFileClientOptions
@@ -36,7 +33,6 @@ class SolidFileClient extends SolidApi {
     // this.getItemLinks = link.getItemLinks
   }
 
-
   /**
      * Fetch an item and return content as text,json,or blob as needed
      * @param {string} url
@@ -63,8 +59,6 @@ class SolidFileClient extends SolidApi {
 
   async deleteFolder (url, options) { return super.deleteFolderRecursively(url) }
 
-
-  // TBD remove or replace with patchFile() method
   async updateFile (url, content, contentType) {
     return super.putFile(url, content, contentType)
   }
@@ -72,28 +66,6 @@ class SolidFileClient extends SolidApi {
   async copyFile (from, to, options) { return super.copyFile(from, to, options) }
 
   async copyFolder (from, to, options) { return super.copyFolder(from, to, options) }
-
-  // TBD error checking
-  async moveFile (from, to) {
-    await this.copyFile(from, to, { withAcl: true })
-      .then(res => {
-        if (res.status === '200') {
-          return this.deleteFile(from)
-        } else { return this.deleteFile(to) }
-      })
-      .catch(toFetchError)
-  }
-
-  // TBD error checking
-  async moveFolder (from, to) {
-    const res = await this.copyFolder(from, to)
-    if (res.ok) {
-      if (res.status === '200') {
-        await this.deleteFolder(from)
-      } else { await this.deleteFolder(to) }
-    }
-  }
-
   /* UTILITY FUNCTIONS */
 
   // TBD object.acl object.meta

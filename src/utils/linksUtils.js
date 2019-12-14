@@ -31,12 +31,15 @@ class LinksUtils {
     if (itemUrl.endsWith('/')) {
       links.meta = await _lookForLink('Metadata', linksUrl.meta)
       if (links.meta) {
-        itemLinks = itemLinks.concat(links.meta)
         // get .meta.acl link
         if (linkAcl) {
           links.metaAcl = await this.getLinks(links.meta.url, linkAcl)
-          if (links.metaAcl) itemLinks = itemLinks.concat(links.metaAcl)
-        }
+          if (links.metaAcl[0]) {
+            links.meta.links = { acl: links.metaAcl[0].url }
+            itemLinks = itemLinks.concat(links.meta)
+            itemLinks = itemLinks.concat(links.metaAcl)
+          } else { itemLinks = itemLinks.concat(links.meta) }
+        } else { itemLinks = itemLinks.concat(links.meta) }
       }
     }
     return itemLinks

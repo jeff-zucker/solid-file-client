@@ -1,6 +1,6 @@
 // import debug from 'debug'
 import apiUtils from './apiUtils'
-import LinksUtils from './linksUtils'
+import ApiLinks from './linksUtils'
 import RdfQuery from './rdf-query'
 
 const { getParentUrl, getItemName, areFolders, areFiles, LINK } = apiUtils
@@ -57,7 +57,10 @@ class FolderUtils {
     if (!folderUrl.endsWith('/')) folderUrl = folderUrl + '/'
     let [folder, folderItems, fileItems] = [[], [], []] // eslint-disable-line no-unused-vars
     // For folders always add to fileItems : .meta file and if options.withAcl === true also add .acl linkFile
-    fileItems = fileItems.concat(await this.getLinks(folderUrl, options.withAcl))
+    let folderLinks = await this.getLinks(folderUrl, { withAcl: true })
+    let folderMeta = folderLinks.find(item => item.itemType === 'Metadata') || []
+    let linkItems = options.withAcl === true ? folderLinks : folderMeta
+    fileItems = fileItems.concat(linkItems)
     let files = await this.rdf.query(folderUrl, { thisDoc: '' }, { ldp: 'contains' })
     for (let f in files) {
       let thisFile = files[f].object
@@ -67,17 +70,22 @@ class FolderUtils {
         itemRecord.type = 'folder'
         folderItems = folderItems.concat(itemRecord)
       }else {
+        let itemRecordAcl = await this.getLinks(itemRecord.url, { withAcl: true })
+        itemRecord.links = itemRecordAcl[0] ? { acl: itemRecordAcl[0].url } : {}
         fileItems = fileItems.concat(itemRecord)
         // add fileLink acl
 		if (options.withAcl) {
-          fileItems = fileItems.concat(await this.getLinks(thisFile.value, options.withAcl))  // allways { withAcl: false} if copyFile withAcl: true
+          itemRecordAcl.links = {}
+          fileItems = fileItems.concat(itemRecordAcl)  // allways { withAcl: false} if copyFile withAcl: true
         }
+
       }
     }
-    return _packageFolder(folderUrl, folderItems, fileItems)
+    return _packageFolder(folderUrl, folderLinks, folderItems, fileItems)
   }
 }
-  /*
+
+/*
    * _processStatements
    *
    * input
@@ -135,18 +143,27 @@ class FolderUtils {
    * @param {Item[]} fileItems
    * @returns {FolderData}
    */
-  function _packageFolder (folderUrl, folderItems, fileItems) {
+  function _packageFolder (folderUrl, folderLinks, folderItems, fileItems) {
     /*
     const fullName = folderUrl.replace(/\/$/, '')
     const name = fullName.replace(/.*\//, '')
     const parent = fullName.substr(0, fullName.lastIndexOf('/')) + '/'
 */
     /** @type {FolderData} */
+    let objectLinks = {}
+    if (folderLinks[0]) {
+      folderLinks.forEach(item => {
+        if ( item.url.endsWith('/.acl')) objectLinks = Object.assign(objectLinks, { acl: item.url })
+        else if ( item.url.endsWith('/.meta')) objectLinks = Object.assign(objectLinks, { meta: item.url })
+        else if ( item.url.endsWith('/.meta.acl')) objectLinks = Object.assign(objectLinks, { metaAcl: item.url })
+      })
+    }
     let returnVal = {}
     returnVal.type = 'folder' // for backwards compatability :-(
     returnVal.name = getItemName(folderUrl)
     returnVal.parent = getParentUrl(folderUrl)
     returnVal.url = folderUrl
+    returnVal.links = objectLinks
     returnVal.folders = folderItems
     returnVal.files = fileItems
     // returnVal.content,     // thinking of not sending the turtle
