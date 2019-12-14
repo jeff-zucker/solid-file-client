@@ -59,28 +59,6 @@ class SolidFileClient extends SolidApi {
 
   async deleteFolder (url, options) { return super.deleteFolderRecursively(url) }
 
-  async updateFile (url, content, contentType) {
-    return super.putFile(url, content, contentType)
-  }
-
-  async copyFile (from, to, options) { return super.copyFile(from, to, options) }
-
-  async copyFolder (from, to, options) { return super.copyFolder(from, to, options) }
-  /* UTILITY FUNCTIONS */
-
-  // TBD object.acl object.meta
-  async getItemLinks (url) { return super.getItemLinks(url) }
-
-  // TBD array of existings links
-  async getLinks (url, options) { return super.getLinks(url, options) }
-
-  /**
-   * fetchAndParse
-   *
-   * backwards incompatible change :
-   *   this method is no longer supported
-   *   you may use rdflib directly instead
-   */
 }
 
 export default SolidFileClient
