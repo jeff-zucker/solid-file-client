@@ -73,7 +73,7 @@ such as images and music.
 
 In some cases Solid servers may offer multiple versions of a resource (for example Turtle and JSON-LD representations of the same file).  If you need to specify a given version, see [Working with Accept headers](#accept-headers).
 
-If you want the content as a ReadableStream, use the get() method - see [Low-level Methods](#low-level).
+If you want the content as a ReadableStream, use the get() method - see [Low-level Methods](#low-level-methods).
 
 ### readFolder( folderURL, options )
 
@@ -210,11 +210,11 @@ See also, the **getPossibleLinks()** method which finds the possible locations o
 
 ### <a name="low-level-methods">Low-level methods</a>
 
-Solid-File-Client provides a number of low-level methods which directly reflect the behavior of the Solid server without additional processes as are found in the high-level methods.  
+Solid-File-Client provides a number of low-level methods which either support advanced options or directly reflect the behavior of the Solid server without additional processes as are found in the high-level methods.  
 
 The low-level methods are :
 
-  fetch, get, put, post, delete, options, head, patch
+  fetch, get, put, post, delete, options, head, patch, getPossibleLinks
 
 See the [JSdoc for the API](docs/JSdoc/api.md) for more details of these methods.
 
