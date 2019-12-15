@@ -1,7 +1,6 @@
 # Solid-File-Client
 
 A library for managing Solid files and folders.
-
 <br>
 <a href="http://badge.fury.io/js/solid-file-client">![npm](https://badge.fury.io/js/solid-file-client.svg)</a>
 
