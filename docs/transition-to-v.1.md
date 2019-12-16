@@ -14,8 +14,13 @@ examples : **text.ttl** for **text/turtle**, no extension **bar** is considered 
 ## Method linked to libraries not included
 - fetchAndParse() is discarded 
 - session functions are discarded 
-- see examples in !!sessionUtils
-  - checkSession return webId || undefined (used to be session Object || false)
+- see examples in [sessionUtils](./sessionUtils)
+```
+var auth = solid.auth;
+const session = new sessionUtils(auth)
+const fc = new SolidFileClient(auth);         // from solid-file-client.bundle.js
+```
+checkSession return webId || undefined (used to be session Object || false)
 
 ## Other functions :
 - fc.update() is discarded, replaced by fc.putFile()
