@@ -1,14 +1,16 @@
-# Changes
-When stated contentType is allways needed
+# Changes introduced with v1.0.0
+When stated **contentType** is allways needed, and file should have a compatible extension
+
+examples : **text.ttl** for **text/turtle**, no extension **bar** is considered **octet/stream**
 
 ## Libraries
 - rdflib is not used anymore
 - solid-auth... :
-  - for browser : solid-auth-client is not included and must be added 
+  - for node.js/console : use **solid-auth-cli**
+  - for browser : **solid-auth-client** is not included and must be added 
 ```
     <script src="https://cdn.jsdelivr.net/npm/solid-auth-client@2.3.0/dist-lib/solid-auth-client.bundle.js"></script>
 ```
-  - for node.js/console : use solid-auth-cli
 ## Method linked to libraries not included
 - fetchAndParse() is discarded 
 - session functions are discarded 
