@@ -14,7 +14,7 @@ examples : **text.ttl** for **text/turtle**, no extension **bar** is considered 
 ## Method linked to libraries not included
 - fetchAndParse() is discarded 
 - session functions are discarded 
-- see examples in [sessionUtils](./sessionUtils)
+- see examples in [sessionUtils](./sessionUtils.js)
 ```
 var auth = solid.auth;
 const session = new sessionUtils(auth)
