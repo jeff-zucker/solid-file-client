@@ -19,11 +19,11 @@ There are a number of changes which are not backward compatible.  See [Guide for
 
 Here is the general process for a script using Solid-File-Client :
 
-    * Import the solid-file-client and solid-auth-cli(ent) libraries
-    * Instantiate an auth object
-    * Instantiate a file-client object using the auth object
-    * Use the auth object to login and for session management
-    * Use the file-client object to read and write files and folders
+* Import the solid-file-client and solid-auth-cli(ent) libraries
+* Instantiate an auth object
+* Instantiate a file-client object using the auth object
+* Use the auth object to login and for session management
+* Use the file-client object to read and write files and folders
 
 Here is a short node script illustrating the process.
 ```javascript
