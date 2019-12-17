@@ -90,4 +90,4 @@ a ReadableStream.  You can turn the stream into text with response.text().
 
 # More Help
 
-If you get stuck transitioning, contact me in the gitter chat (@jeffz) or in the forum (@jeff-zucker).
+If you get stuck transitioning, contact me in the gitter chat (@jeff-zucker) or in the forum (@jeffz).
