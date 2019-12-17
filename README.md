@@ -2,7 +2,7 @@
 h2 { 
     text-decoration:underline overline;
 }
-<style>
+</style>
 # Solid-File-Client
 
 A library for managing Solid files and folders.
