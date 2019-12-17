@@ -1,3 +1,13 @@
+<!--
+  To-Do
+  * Error Handling
+  * Node Upload Demo
+  * Folder turtle contents
+  * patch
+  * accept headers
+  * Otto's name
+-->
+
 # Solid-File-Client
 
 A library for managing Solid files and folders.
