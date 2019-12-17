@@ -61,6 +61,10 @@ Here is how to instantiate and use the two objects.
 ```
 ## Changes in Methods
 
+### upload()
+
+This method is no longer supported. The copyFile() and copyFolder() methods accomplish the same thing.
+
 ### createFile()
 
 This method now requires a content-type because that is more compatible with the spec and because
