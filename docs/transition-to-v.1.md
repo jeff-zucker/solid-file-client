@@ -88,10 +88,6 @@ Previously, this method returned the content of text files.  In the newer versio
 a ReadableStream.  You can turn the stream into text with response.text().
 
 
-## Other changes
-
-The rdflib library is no longer used by Solid-File-Client so you don't need to import or require it.
-
 # More Help
 
-If you get stuck transitioning, use the gitter chat or the forum, we'll be glad to help.
+If you get stuck transitioning, contact me in the gitter chat (@jeffz) or in the forum (@jeff-zucker).
