@@ -6,6 +6,15 @@ current version : <a href="http://badge.fury.io/js/solid-file-client@1.0.0">![np
 <br>
 previous version : <a href="http://badge.fury.io/js/solid-file-client">![npm](https://badge.fury.io/js/solid-file-client.svg)</a>
 
+<a name="">Introduction</a>
+<a name="">Installing</a>
+<a name="">Importing, Invoking, Logging In</a>
+<a name="">Error Handling</a>
+<a name="">High Level Methods</a>
+<a name="">Advanced Options</a>
+<a name="">Low-level Methods</a>
+<a name="">Note on Terminology</a>
+<a name="">Ackknowledgements</a>
 
 ## Introduction
 
@@ -15,7 +24,26 @@ Solid-File-Client is a JavaScript library with high-level methods to create, rea
 
 There are a number of changes which are not backward compatible.  See [Guide for transitioning to v.1](docs/transition-to-v.1.md) for details and hints for upgrading.
 
-### Installing
+### Using alternate storage spaces
+
+Solid-file-client can work with web resources (https://).  It can also work
+with resources stored in a browser's local storage (app://), or a local file system (file://).  See the [Upload Demo](examples/upload/index.html) for an example of copying files from a local filesystem to a pod in the browser and [TBD: Node Upload Demo]() for the same thing in node.  See [Solid-Rest](https://github.com/jeff-zucker/solid-rest) for a description of using browser local storage or accessing the local file system from node scripts.
+
+### Using with front-ends
+
+Several front-ends for Solid-File-Client have been built.  In a browser you can use GUIs like [Solid-file-manager](https://github.com/Otto-AA/solid-filemanager) or [Solid-IDE](https://github.com/jeff-zucker/solid-ide).  In node or from the command line, you can use [Solid-Shell](https://github.com/jeff-zucker/solid-shell).
+
+### Overview of writing methods
+
+By default, all high-level methods that create, copy, or move files or folders have these behaviors :
+
+  * the source always completely overwrites the target
+  * if the path to the item doesn't pre-exist, it will be created
+  * linked files (.acl and .meta) are copied/moved along with their resources
+
+For many purposes, these defaults will suffice.  However, if you need to, you may change any of them with option flags.  There are several options for merging folder trees as well as for using Solid's POST features. See the sections on [Overwriting](#overwriting), on [Creating Paths](#creating-paths), and on [Linked Files](#linked-files) for more information.
+
+## <a name="Installing">Installing</a>
 
 If you are writing scripts only for the browser, you may wish to use a CDN code repository rather than using a local version. See [here](docs/using-in-browser.md) for an example of using a CDN.
 
@@ -31,7 +59,7 @@ Once installed the executables will be found within the solid-file-client folder
 ```
 You can also clone or fork the github repository if you know how.
 
-### Importing, invoking, and logging-in
+## <a name="importing">Importing, invoking, and logging-in</a>
 
 Here is the general process for a script using Solid-File-Client :
 
@@ -64,30 +92,12 @@ in with node and command line scripts.  See [Using in a Browser](docs/using-in-b
 
 For more information on auth and session functions see [solid-auth-client](https://github.com/solid/solid-auth-client) for the browser and [solid-auth-cli](https://github.com/jeff-zucker/solid-auth-cli) for node.
 
-### Error Handling
+## <a name="error-handling">Error Handling</a>
 
 [TBD : Error Handling](docs/error-handling.md)
 
-### Using alternate storage spaces
 
-Solid-file-client can work with web resources (https://).  It can also work
-with resources stored in a browser's local storage (app://), or a local file system (file://).  See the [Upload Demo](examples/upload/index.html) for an example of copying files from a local filesystem to a pod in the browser and [TBD: Node Upload Demo]() for the same thing in node.  See [Solid-Rest](https://github.com/jeff-zucker/solid-rest) for a description of using browser local storage or accessing the local file system from node scripts.
-
-### Using with front-ends
-
-Several front-ends for Solid-File-Client have been built.  In a browser you can use GUIs like [Solid-file-manager](https://github.com/Otto-AA/solid-filemanager) or [Solid-IDE](https://github.com/jeff-zucker/solid-ide).  In node or from the command line, you can use [Solid-Shell](https://github.com/jeff-zucker/solid-shell).
-
-### Overview of writing methods
-
-By default, all high-level methods that create, copy, or move files or folders have these behaviors :
-
-  * the source always completely overwrites the target
-  * if the path to the item doesn't pre-exist, it will be created
-  * linked files (.acl and .meta) are copied/moved along with their resources
-
-For many purposes, these defaults will suffice.  However, if you need to, you may change any of them with option flags.  There are several options for merging folder trees as well as for using Solid's POST features. See the sections on [Overwriting](#overwriting), on [Creating Paths](#creating-paths), and on [Linked Files](#linked-files) for more information.
-
-## High-level Methods
+## <a name="high-level-methods">High-level Methods</a>
 
 ### createFile( fileURL, content, contentType, options )
 
@@ -188,7 +198,7 @@ Defaults :
 These default behaviors may all be modified.  For example, you can choose from several ways to merge the source and target folders.  See [Advanced Options](#advanced-options) for more details.
 
 
-## Advanced Options
+## <a name="advanced-options">Advanced Options</a>
 
 ### <a name="overwriting">Overwriting</a>
 
@@ -257,7 +267,7 @@ See also, the **getPossibleLinks()** method which finds the possible locations o
 
 [TBD : working with accept headers]
 
-### <a name="low-level-methods">Low-level methods</a>
+## <a name="low-level-methods">Low-level methods</a>
 
 Solid-File-Client provides a number of low-level methods which either support advanced options or directly reflect the behavior of the Solid server without additional processes as are found in the high-level methods.  
 
@@ -267,15 +277,15 @@ The low-level methods are :
 
 See the [JSdoc for the API](docs/JSdoc/api.md) for more details of these methods.
 
-## Note on terminology
+## <a name="terminology">Note on terminology</a>
 
 Solid servers can store data directly in a physical file system,  or use a database or other storage.  Instead of talking about "Files" and "Folders", it is more correct to talk about "Containers" and "Resources" - logical terms independent of the storage mechanism.  In this documentation, for simplicity, we've used the file/folder terminology with no implication that it represents a physical file system.
 
-## Contributors
+
+## <a name="acknowledgements">Acknowledgements</a>
+
 
 This library was originally authored by **Jeff Zucker**. Version 1.0.0 includes many additions and improvements that were the results of a collaboration between Jeff, **Alain Bourgeois**, and **Otto [TBD : name?]**.
-
-## Acknowledgements
 
 Many thanks for patches and issues from https://github.com/linonetwo, and https://github.com/scenaristeur.
 
