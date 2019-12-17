@@ -15,9 +15,38 @@ Solid-File-Client is a JavaScript library with high-level methods to create, rea
 
 There are a number of changes which are not backward compatible.  See [Guide for transitioning to v.1](docs/transition-to-v.1.md) for details and hints for upgrading.
 
-### Installing, invoking, and logging-in
+### Importing, invoking, and logging-in
 
-See [TBD : Using in a Browser](docs/using-in-a-browser.md) or [TBD : Using in Node](docs/using-in-node.md) for details of how to install and invoke this libary and how to log in and manage sessions once you have invoked it.
+Here is the general process for a script using Solid-File-Client :
+
+    * Import the solid-file-client and solid-auth-cli(ent) libraries
+    * Instantiate an auth object
+    * Instantiate a file-client object using the auth object
+    * Use the auth object to login and for session management
+    * Use the file-client object to read and write files and folders
+
+Here is a short node script illustrating the process.
+```javascript
+    const auth = require('solid-auth-cli')
+    const FC   = require('solid-file-client')
+    const fc   = new FC( auth )
+    async function run(){
+        let session = await auth.currentSession()
+        if (!session) { session = await auth.login() }
+        console.log(`Logged in as ${session.webId}.`)
+        if( fc.itemExists( someUrl ) {
+            let content = fc.readFile( someUrl )
+            // ... other file methods
+            // ... and/or other auth methods
+        }
+    }
+    run()
+```
+See [TBD : Using with Node](docs/using-with-node.md) for details of logging
+in with node and command line scripts.  See [Using in a Browser](docs/using-in-browser.md) for a detailed example of importing, invoking, and logging in from a browser script.
+
+
+For more information on auth and session functions see [solid-auth-client]() for the browser and [solid-auth-cli]() for node.
 
 ### Error Handling
 
