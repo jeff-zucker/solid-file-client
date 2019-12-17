@@ -1,3 +1,5 @@
+<a href="../README.md">back to README</a>
+
 # Transitioning from older versions of Solid-File-Client to version 1.x
 
 Version 1.x of Solid-File-Client introduces several changes which are not backward compatible.
