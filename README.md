@@ -11,7 +11,7 @@
 
 A library for managing Solid files and folders.
 
-current version : <a href="http://badge.fury.io/js/solid-file-client@1.0.0">![npm](https://badge.fury.io/js/solid-file-client@1.0.0.svg)</a>
+current version : <a href="http://badge.fury.io/js/solid-file-client@1.0.0">![npm](https://badge.fury.io/js/solid-file-client.svg)</a>
 <br>
 previous version : <a href="https://www.npmjs.com/package/solid-file-client/v/0.5.2"><img src="sfc-0.5.2.png"></a>
 
