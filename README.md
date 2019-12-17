@@ -180,8 +180,8 @@ By default, methods which create, copy, or move files or folders will overwrite 
 
 With any of the create/copy/move methods, you can use the [itemExists()](#itemExists) method to prevent overwriting items.
 ```javascript
-    if( !itemExists(x) ) {
-        createFolder(x) // only create if it doesn't already exist
+    if( !fc.itemExists(x) ) {
+        fc.createFolder(x) // only create if it doesn't already exist
     }
  ```
 With the **copyFolder()** and **moveFolder()** methods, you can elect to merge the source and target with preference for the source or preference for the target:
