@@ -57,6 +57,10 @@ For more information on auth and session functions see [solid-auth-client](https
 Solid-file-client can work with web resources (https://).  It can also work
 with resources stored in a browser's local storage (app://), or a local file system (file://).  See the [Upload Demo](examples/upload/index.html) for an example of copying files from a local filesystem to a pod in the browser.  See [Solid-Rest](https://github.com/jeff-zucker/solid-rest) for a description of using browser local storage or accessing the local file system from node scripts.
 
+### Using with front-ends
+
+Several front-ends for Solid-File-Client have been built.  In a browser you can use [Solid-file-manager]() or [Solid-IDE]().  In node, you can use [Solid-Shell]().
+
 ### Overview of writing methods
 
 By default, all high-level methods that create, copy, or move files or folders have these behaviors :
