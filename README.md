@@ -16,7 +16,7 @@ current version : <a href="http://badge.fury.io/js/solid-file-client@1.0.0">![np
 <br>
 previous version : <a href="http://badge.fury.io/js/solid-file-client">![npm](https://badge.fury.io/js/solid-file-client.svg)</a>
 
-Table of Contents : <a href="#introduction">Introduction</a> |
+<b>Table of Contents</b> : <a href="#introduction">Introduction</a> |
 <a href="#installing">Installing</a> |
 <a href="#importing">Importing, Invoking, Logging In</a> |
 <a href="#error-handling">Error Handling</a> |
