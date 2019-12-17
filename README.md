@@ -13,7 +13,7 @@ A library for managing Solid files and folders.
 
 current version : <a href="http://badge.fury.io/js/solid-file-client@1.0.0">![npm](https://badge.fury.io/js/solid-file-client@1.0.0.svg)</a>
 <br>
-previous version : <a href="http://badge.fury.io/js/solid-file-client">![npm](https://badge.fury.io/js/solid-file-client.svg)</a>
+previous version : <a href="http://badge.fury.io/js/solid-file-client@0.5.2"><img src="sfc-0.5.2.png></a>
 
 <b>Table of Contents</b> : <a href="#introduction">Introduction</a> |
 <a href="#installing">Installing</a> |
@@ -66,7 +66,7 @@ Once installed the executables will be found within the solid-file-client folder
     dist/node/solid-file-client.bundle.js      // for node scripts
     dist/windowo/solid-file-client.bundle.js   // for browser scripts
 ```
-You can also clone or fork the github repository if you know how.
+You can also clone or fork the github repository if wish.
 
 ## <a name="importing">Importing, invoking, and logging-in</a>
 
