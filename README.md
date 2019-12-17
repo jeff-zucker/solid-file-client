@@ -42,11 +42,11 @@ Here is a short node script illustrating the process.
     }
     run()
 ```
-See [TBD : Using with Node](docs/using-with-node.md) for details of logging
+See [Using with Node](docs/using-with-node.md) for details of logging
 in with node and command line scripts.  See [Using in a Browser](docs/using-in-browser.md) for a detailed example of importing, invoking, and logging in from a browser script.
 
 
-For more information on auth and session functions see [solid-auth-client]() for the browser and [solid-auth-cli]() for node.
+For more information on auth and session functions see [solid-auth-client](https://github.com/solid/solid-auth-client) for the browser and [solid-auth-cli](https://github.com/jeff-zucker/solid-auth-cli) for node.
 
 ### Error Handling
 
