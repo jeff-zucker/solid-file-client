@@ -271,10 +271,6 @@ See also, the **getPossibleLinks()** method which finds the possible locations o
 
 Solid-File-Client provides a number of low-level methods which either support advanced options or directly reflect the behavior of the Solid server without additional processes as are found in the high-level methods.  
 
-The low-level methods are :
-
-  fetch, get, put, post, delete, options, head, patch, getPossibleLinks
-
 See the [JSdoc for the API](docs/JSdoc/api.md) for more details of these methods.
 
 ## <a name="terminology">Note on terminology</a>
