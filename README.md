@@ -15,6 +15,22 @@ Solid-File-Client is a JavaScript library with high-level methods to create, rea
 
 There are a number of changes which are not backward compatible.  See [Guide for transitioning to v.1](docs/transition-to-v.1.md) for details and hints for upgrading.
 
+### Installing
+
+If you are writing scripts only for the browser, you may wish to use a CDN code repository rather than using a local version. See [here](docs/using-in-browser.md) for an example of using a CDN.
+
+If you are writing scripts for node or you want a local version, install using 
+npm
+
+  npm install solid-file-client@1.0.0 // or latest version
+
+Once installed the executables will be found within the solid-file-client folder :
+```
+    dist/node/solid-file-client.bundle.js      // for node scripts
+    dist/windowo/solid-file-client.bundle.js   // for browser scripts
+```
+You can also clone or fork the github repository if you know how.
+
 ### Importing, invoking, and logging-in
 
 Here is the general process for a script using Solid-File-Client :
