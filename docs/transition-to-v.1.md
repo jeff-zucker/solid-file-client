@@ -4,6 +4,11 @@ Version 1.x of Solid-File-Client introduces several changes which are not backwa
 If needed while transitioning, you may continue to use an older version of Solid-File-Client although it will not
 have the new features and will not be maintained. You can find below a list of the changes.
 
+To use the older version in node, you can npm install solid-file-client@0.5.2.
+In the browser, use CDN like this :
+```html
+    <script src="https://cdn.jsdelivr.net/npm/solid-file-client@0.5.2/dist/window/solid-file-client.bundle.js"></script>
+```
 
 ## Importing and Requireing libraries
 
@@ -51,7 +56,7 @@ Here is how to instantiate and use the two objects.
         ...
         
     }
-
+```
 ## Changes in Methods
 
 ### createFile()
