@@ -75,7 +75,7 @@ with resources stored in a browser's local storage (app://), or a local file sys
 
 ### Using with front-ends
 
-Several front-ends for Solid-File-Client have been built.  In a browser you can use [Solid-file-manager](https://github.com/Otto-AA/solid-filemanager) or [Solid-IDE](https://github.com/jeff-zucker/solid-ide).  In node, you can use [Solid-Shell](https://github.com/jeff-zucker/solid-shell).
+Several front-ends for Solid-File-Client have been built.  In a browser you can use GUIs like [Solid-file-manager](https://github.com/Otto-AA/solid-filemanager) or [Solid-IDE](https://github.com/jeff-zucker/solid-ide).  In node or from the command line, you can use [Solid-Shell](https://github.com/jeff-zucker/solid-shell).
 
 ### Overview of writing methods
 
