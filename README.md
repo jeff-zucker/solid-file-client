@@ -13,7 +13,7 @@ Solid-File-Client is a JavaScript library with high-level methods to create, rea
 
 ### Note for users of version 0.x of Solid-File-Client
 
-There are a number of changes which are not backward compatible.  See [TBD : Guide for transitioning to v.1](docs/transition-to-v.1.md) for details and hints for upgrading.
+There are a number of changes which are not backward compatible.  See [Guide for transitioning to v.1](docs/transition-to-v.1.md) for details and hints for upgrading.
 
 ### Installing, invoking, and logging-in
 
