@@ -21,9 +21,9 @@ If you are writing scripts only for the browser, you may wish to use a CDN code 
 
 If you are writing scripts for node or you want a local version, install using 
 npm
-
+```
   npm install solid-file-client@1.0.0 // or latest version
-
+```
 Once installed the executables will be found within the solid-file-client folder :
 ```
     dist/node/solid-file-client.bundle.js      // for node scripts
