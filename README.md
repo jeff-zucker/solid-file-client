@@ -111,7 +111,7 @@ To trap and examine errors, use try/catch:
         console.log( error.message ) // Just the status code and statusText
     }
 ```
-See [TBD : Error Response](docs/error-handling.md for further options and a
+See [TBD : Error Response](docs/error-handling.md) for further options and a
 description of errors for recursive methods like copyFolder().
 
 ## <a name="high-level-methods">High-level Methods</a>
