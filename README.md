@@ -1,9 +1,6 @@
 <!--
-  To-Do
-  * Error Handling
-  * Folder turtle contents
-  * patch
-  * accept headers
+  TBD
+  * Error Response
   * Otto's name
 -->
 
@@ -98,13 +95,24 @@ Here is a short node script illustrating the process.
 See [Using with Node](docs/using-with-node.md) for details of logging
 in with node and command line scripts.  See [Using in a Browser](docs/using-in-browser.md) for a detailed example of importing, invoking, and logging in from a browser script.
 
-
 For more information on auth and session functions see [solid-auth-client](https://github.com/solid/solid-auth-client) for the browser and [solid-auth-cli](https://github.com/jeff-zucker/solid-auth-cli) for node.
 
 ## <a name="error-handling">Error Handling</a>
 
-[TBD : Error Handling](docs/error-handling.md)
-
+All Solid-File-Client methods should throw an error if they do not succeed.
+To trap and examine errors, use try/catch:
+```javascript
+    try {
+        fc.readFile( someUrl )
+    }
+    catch(error) {
+        console.log( error )         // A full error response 
+        console.log( error.status )  // Just the status code of the error
+        console.log( error.message ) // Just the status code and statusText
+    }
+```
+See [TBD : Error Response](docs/error-handling.md for further options and a
+description of errors for recursive methods like copyFolder().
 
 ## <a name="high-level-methods">High-level Methods</a>
 
@@ -155,7 +163,7 @@ On success, the readFolder() method returns a folder object in this format:
     mtime : // stat:mtime
      size : // stat:size
    parent : // parentFolder or undef if none,
-  content : // raw content of the folder's turtle representation,
+<!~-  content : // raw content of the folder's turtle representation, -->
     files : // an array of files in the folder
   folders : // an array of sub-folders in the folder,
 }
@@ -171,10 +179,6 @@ Returns the header for a file.  The file content's are not returned.
 ### itemExists( fileOrFolderURL )
 
 Returns true if the URL exists and false otherwise.
-
-### patch()
-
-[TBD: document patch() as high-level?] 
 
 ### deleteFile( fileURL, options )
 
@@ -233,7 +237,7 @@ If you would rather the program fails if the path you asked for doesn't exist, y
 
   * **createFile(),createFolder(),copyFile(),copyFolder(),moveFile(),moveFolder()**
   
-      * **default** - create intermediary paths if they are missing
+p      * **default** - create intermediary paths if they are missing
       * **createPath=false** - fail if intermediary paths are missing
       
   * **note** for copyFolder() and moveFolder(), the createPath option applies only to the top-level target folder, not to folders within the target which are handled by the merge option      
@@ -272,9 +276,6 @@ option flags shown below.
 
 See also, the **getPossibleLinks()** method which finds the possible locations of linked resources for an item.  See [Low-level Methods](#low-level-methods)
 
-### Working with Accept headers
-
-[TBD : working with accept headers]
 
 ## <a name="low-level-methods">Low-level methods</a>
 
