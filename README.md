@@ -1,7 +1,6 @@
-<!--
+p<!--
   TBD
   * Error Response
-  * Otto's name
 -->
 
 # Solid-File-Client
@@ -84,8 +83,8 @@ Here is a short node script illustrating the process.
         let session = await auth.currentSession()
         if (!session) { session = await auth.login() }
         console.log(`Logged in as ${session.webId}.`)
-        if( fc.itemExists( someUrl ) {
-            let content = fc.readFile( someUrl )
+        if( await fc.itemExists( someUrl ) {
+            let content = await fc.readFile( someUrl )
             // ... other file methods
             // ... and/or other auth methods
         }
@@ -103,7 +102,7 @@ All Solid-File-Client methods should throw an error if they do not succeed.
 To trap and examine errors, use try/catch:
 ```javascript
     try {
-        fc.readFile( someUrl )
+        await fc.readFile( someUrl )
     }
     catch(error) {
         console.log( error )         // A full error response 
@@ -219,8 +218,8 @@ By default, methods which create, copy, or move files or folders will overwrite 
 
 With any of the create/copy/move methods, you can use the [itemExists()](#itemExists) method to prevent overwriting items.
 ```javascript
-    if( !fc.itemExists(x) ) {
-        fc.createFolder(x) // only create if it doesn't already exist
+    if( !(await fc.itemExists(x)) ) {
+        await fc.createFolder(x) // only create if it doesn't already exist
     }
  ```
 With the **copyFolder()** and **moveFolder()** methods, you can elect to merge the source and target with preference for the source or preference for the target:
@@ -291,7 +290,7 @@ Solid servers can store data directly in a physical file system,  or use a datab
 ## <a name="acknowledgements">Acknowledgements</a>
 
 
-This library was originally authored by **Jeff Zucker**. Version 1.0.0 includes many additions and improvements that were the results of a collaboration between Jeff, **Alain Bourgeois**, and **Otto [TBD : name?]**.
+This library was originally authored by **<a href="https://github.com/jeff-zucker">Jeff Zucker</a>**. Version 1.0.0 includes many additions and improvements that were the results of a collaboration between Jeff, **<a href="https://github.com/bourgeoa">Alain Bourgeois</a>**, and **<a href="https://github.com/Otto-AA">Otto AA</a>**.
 
 Many thanks for patches and issues from https://github.com/linonetwo, and https://github.com/scenaristeur.
 
