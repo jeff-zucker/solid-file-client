@@ -74,7 +74,7 @@ content-type but not both.  Now you may use both.
 ### updateFile() 
 
 This method is no longer supported.
-To replace an existing file, use createFile().  To modify an existing file in place, use patch().
+To replace an existing file, use createFile().
 
 ### fetchAndParse() 
 
