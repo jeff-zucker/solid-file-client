@@ -195,7 +195,7 @@ Defaults :
   * If the target URL's parent path does not exist, it will be created.
   * Linked files (.acl and .meta) will be copied if they exist.
 
-See [Advanced Options] to modify these default behaviors.
+See [Advanced Options](#advanced-options) to modify these default behaviors.
 
 ### moveFolder(sourceURL,targetURL,options), copyFolder(sourceURL,targetURL,options)
 
