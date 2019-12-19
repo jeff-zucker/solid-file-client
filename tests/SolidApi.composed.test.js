@@ -278,10 +278,9 @@ describe('composed methods', () => {
 
       describe('moving file', () => {
         test('resolves with 201 moving existing to inexistent file', async () => {
-          const responses = await api.move(childFile.url, filePlaceholder.url)
-          expect(responses).toHaveLength(1)
-          expect(responses[0]).toHaveProperty('status', 201)
-          expect(responses[0]).toHaveProperty('url', filePlaceholder.url)
+          const res = await api.move(childFile.url, filePlaceholder.url)
+          expect(res).toHaveProperty('status', 201)
+          expect(res).toHaveProperty('url', filePlaceholder.url)
         })
         test('resolves moving existing to existing file', () => {
           return expect(api.move(childFile.url, parentFile.url)).resolves.toBeDefined()
@@ -319,7 +318,7 @@ describe('composed methods', () => {
         test('resolves moving folder with depth 1 to folder with depth 1', () => {
           return expect(api.move(childTwo.url, childOne.url)).resolves.toBeDefined()
         })
-        test.only('rejects moving folder to existing folder with similar contents with overwriteFiles=false', async () => {
+        test('rejects moving folder to existing folder with similar contents with overwriteFiles=false', async () => {
           await expect(api.move(childTwo.url, childOne.url, { overwriteFiles: false })).rejects.toThrow(/already existed/)
           await expect(api.itemExists(childTwo.url)).resolves.toBe(true)
         })
@@ -350,10 +349,9 @@ describe('composed methods', () => {
         test('resolves with 201 and creates new file and deletes old', async () => {
           const newName = 'new-name.txt'
           const newUrl = `${apiUtils.getParentUrl(childFile.url)}${newName}`
-          const responses = await api.rename(childFile.url, newName)
-          expect(responses).toHaveLength(1)
-          expect(responses[0]).toHaveProperty('status', 201)
-          expect(responses[0]).toHaveProperty('url', apiUtils.getParentUrl(childFile.url) + newName)
+          const res = await api.rename(childFile.url, newName)
+          expect(res).toHaveProperty('status', 201)
+          expect(res).toHaveProperty('url', apiUtils.getParentUrl(childFile.url) + newName)
 
           await expect(api.itemExists(childFile.url)).resolves.toBe(false)
           await expect(api.itemExists(newUrl)).resolves.toBe(true)

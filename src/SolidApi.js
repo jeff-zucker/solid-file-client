@@ -376,16 +376,15 @@ class SolidAPI {
     if (from.endsWith('.acl') || from.endsWith('.acl')) {
       throw toFetchError(new Error(`ACL files cannot be copied. Found: ${from} and ${to}`))
     }
-    return this._copyFile(from, to, options)
-      .then(_responseToArray)
-      .catch(toFetchError)
+    return this._copyFile(from, to, options).catch(toFetchError)
   }
 
   async _copyFile (from, to, options) {
-    await this._copyFileOnly(from, to, options).catch(toFetchError)
+    const fileRes = await this._copyFileOnly(from, to, options).catch(toFetchError)
     if (options.withAcl) {
       await this._copyFileAcl(from, to, options).catch(toFetchError)
     }
+    return fileRes
   }
 
   async _copyFileOnly (from, to, options) {
@@ -462,10 +461,11 @@ class SolidAPI {
    * @throws {FetchError}
    */
   async _copyFolder (from, to, options) {
-    await this.createFolder(to, options).catch(toFetchError)
+    const folderRes = await this.createFolder(to, options).catch(toFetchError)
     if (options.withAcl) {
       await this._copyFileAcl(from, to, options).catch(toFetchError)
     }
+    return folderRes
   }
 
   /**
