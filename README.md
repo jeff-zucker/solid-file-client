@@ -161,10 +161,9 @@ On success, the readFolder() method returns a folder object in this format:
  modified : // dcterms:modified date
     mtime : // stat:mtime
      size : // stat:size
-   parent : // parentFolder or undef if none,
-<!~-  content : // raw content of the folder's turtle representation, -->
+   parent : // parentFolder or undef if none
     files : // an array of files in the folder
-  folders : // an array of sub-folders in the folder,
+  folders : // an array of sub-folders in the folder
 }
 ```
 Each item in the arrays of files and sub-folders will be a file object which is the same as a folder object except it does not have the last two fields (files,folders). The content-type in this case is not guessed, it is read from the folder's triples, i.e. what the server sends.
