@@ -34,6 +34,17 @@ There are a number of changes which are not backward compatible.  See [Guide for
 Solid-file-client can work with web resources (https://).  It can also work
 with resources stored in a browser's local storage (app://), or a local file system (file://).  See the [Upload Demo](examples/upload/index.html) for an example of copying files from a local filesystem to a pod in the browser and [Node Upload Demo](docs/node-upload.js) for the same thing in node.  See [Solid-Rest](https://github.com/jeff-zucker/solid-rest) for a description of using browser local storage or accessing the local file system from node scripts.
 
+In node, the copyFile() and copyFolder() commands can upload files from a local file system to a remote pod and vice-versa:
+
+To upload
+```
+   await copyFolder( "file:///somepath/foo/", "https://somehost/somepath/foo/" )
+```
+To download
+```
+   await copyFolder( "https://somehost/somepath/foo/", "file:///somepath/foo/", 
+```
+
 ### Using with front-ends
 
 Several front-ends for Solid-File-Client have been built.  In a browser you can use GUIs like [Solid-file-manager](https://github.com/Otto-AA/solid-filemanager) or [Solid-IDE](https://github.com/jeff-zucker/solid-ide).  In node or from the command line, you can use [Solid-Shell](https://github.com/jeff-zucker/solid-shell).
