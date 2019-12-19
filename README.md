@@ -235,7 +235,7 @@ If you would rather the program fails if the path you asked for doesn't exist, y
 
   * **createFile(),createFolder(),copyFile(),copyFolder(),moveFile(),moveFolder()**
   
-p      * **default** - create intermediary paths if they are missing
+      * **default** - create intermediary paths if they are missing
       * **createPath=false** - fail if intermediary paths are missing
       
   * **note** for copyFolder() and moveFolder(), the createPath option applies only to the top-level target folder, not to folders within the target which are handled by the merge option      
