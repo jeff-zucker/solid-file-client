@@ -148,7 +148,7 @@ On success, the readFile() method returns the contents of the specified file.
 The return value will be a string for text files and a blob for binary files
 such as images and music.  
 
-If you want the content as a ReadableStream, use the get() method - see [Low-level Methods](#low-level-methods).
+Advanced users : If you want the content as a ReadableStream, or you need to specify an accept header, use the get() or fetch() methods - see [Low-level Methods](#low-level-methods).
 
 ### readFolder( folderURL, options )
 
