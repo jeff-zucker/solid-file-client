@@ -37,11 +37,11 @@ with resources stored in a browser's local storage (app://), or a local file sys
 In node, the copyFile() and copyFolder() commands can upload files from a local file system to a remote pod and vice-versa:
 
 To upload
-```
+```javascript
    await copyFolder( "file:///somepath/foo/", "https://somehost/somepath/foo/" )
 ```
 To download
-```
+```javascript
    await copyFolder( "https://somehost/somepath/foo/", "file:///somepath/foo/", 
 ```
 
