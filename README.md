@@ -124,7 +124,8 @@ To trap and examine errors, use try/catch:
 Or, in an async method :
 ```javascript
     try {
-        await fc.readFile( someUrl )
+        let content = await fc.readFile( someUrl )
+        console.log(content)
     }
     catch(error) {
         console.log( error )         // A full error response 
