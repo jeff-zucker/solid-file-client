@@ -50,7 +50,7 @@ For many purposes, these defaults will suffice.  However, if you need to, you ma
 
 ### Demo scripts
 
-See the [demo scripts](docs/examples/index.html) for working examples.
+See the [demo scripts](examples/index.html) for working examples.
 
 ## <a name="Installing">Installing</a>
 
