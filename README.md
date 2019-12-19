@@ -48,6 +48,10 @@ By default, all high-level methods that create, copy, or move files or folders h
 
 For many purposes, these defaults will suffice.  However, if you need to, you may change any of them with option flags.  There are several options for merging folder trees as well as for using Solid's POST features. See the sections on [Overwriting](#overwriting), on [Creating Paths](#creating-paths), and on [Linked Files](#linked-files) for more information.
 
+### Demo scripts
+
+See the [demo scripts](docs/examples/index.html) for working examples.
+
 ## <a name="Installing">Installing</a>
 
 If you are writing scripts only for the browser, you may wish to use a CDN code repository rather than using a local version. See [here](docs/using-in-browser.md) for an example of using a CDN.
