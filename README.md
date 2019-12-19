@@ -1,4 +1,4 @@
-p<!--
+<!--
   TBD
   * Error Response
 -->
@@ -147,8 +147,6 @@ See [Overwriting](#overwriting) and [Creating Paths](#creating-paths) to change 
 On success, the readFile() method returns the contents of the specified file.
 The return value will be a string for text files and a blob for binary files
 such as images and music.  
-
-In some cases Solid servers may offer multiple versions of a resource (for example Turtle and JSON-LD representations of the same file).  If you need to specify a given version, see [Working with Accept headers](#accept-headers).
 
 If you want the content as a ReadableStream, use the get() method - see [Low-level Methods](#low-level-methods).
 
