@@ -61,20 +61,17 @@ Here is how to instantiate and use the two objects.
 ```
 ## Changes in Methods
 
+### createFile()
+
+Previously you needed to use either a file extension or a content-type but not both.  Now you may use both. Don't count on the server guessing the content-type from the extension - this will be deprecated eventually.  Previously a file named "foo" with content-type "text/turtle" would be renamed "foo.ttl".  This renaming now longer occurs.
+
 ### upload()
 
 This method is no longer supported. The copyFile() and copyFolder() methods accomplish the same thing.
 
-### createFile()
-
-This method now requires a content-type because that is more compatible with the spec and because
-Node-Solid-Server now requires it.  Previously you needed to use either a file extension or a
-content-type but not both.  Now you may use both.
-
 ### updateFile() 
 
-This method is no longer supported.
-To replace an existing file, use createFile().
+This method is no longer supported.  To replace an existing file, use createFile().
 
 ### fetchAndParse() 
 
