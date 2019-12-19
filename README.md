@@ -226,7 +226,10 @@ With the **copyFolder()** and **moveFolder()** methods, you can elect to merge t
    * **default** - target is replaced by source
    * **merge=source** - target becomes source plus items found only in target 
    * **merge=target** - target becomes target plus items found only in source
-
+For example :
+```javascript
+      await copyFolder( source, target, {merge:"source"} )
+```
 ### <a name="creating-paths">Creating Paths</a>
 
 When you create a file or folder and the path to that item doesn't already exist, Solid-File-Client will create the path for you if it can.  For example, if you ask to create /foo/bar/baz.txt but there is no /foo/ folder and there is no /bar/ folder, Solid-File-Client will create /foo/ and then create /bar/ inside it and then create baz.txt inside that.
@@ -239,6 +242,11 @@ If you would rather the program fails if the path you asked for doesn't exist, y
       * **createPath=false** - fail if intermediary paths are missing
       
   * **note** for copyFolder() and moveFolder(), the createPath option applies only to the top-level target folder, not to folders within the target which are handled by the merge option      
+
+For example:
+```javascript
+      await createFile( url, {createPath:false} )
+```
 
 ### <a name="linked-files">Linked Files</a>
 
@@ -271,6 +279,13 @@ option flags shown below.
       * **default**               - linked items are not listed
       * **links=include**         - linked items are listed, when they exist
       * **links=includePossible** - possible locations of links are listed
+
+
+For example:
+```javascript
+      await copyFile( source, target, {links:"exclude"} )
+      await readFolder( url, {links:"includePossible"} )
+```
 
 See also, the **getPossibleLinks()** method which finds the possible locations of linked resources for an item.  See [Low-level Methods](#low-level-methods)
 
