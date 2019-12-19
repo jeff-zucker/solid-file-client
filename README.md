@@ -116,15 +116,13 @@ For more information on auth and session functions see [solid-auth-client](https
 All Solid-File-Client methods should throw an error if they do not succeed.
 To trap and examine errors, use try/catch:
 ```javascript
-
-
     fc.readFile(url).then((content) => {
         console.log(content'))
-    }
+    })
     .catch(err => console.error(`Error: ${err}`))
-
-    Or, in an async method :
-
+```
+Or, in an async method :
+```javascript
     try {
         await fc.readFile( someUrl )
     }
