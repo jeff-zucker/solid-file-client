@@ -226,6 +226,7 @@ With the **copyFolder()** and **moveFolder()** methods, you can elect to merge t
    * **default** - target is replaced by source
    * **merge=source** - target becomes source plus items found only in target 
    * **merge=target** - target becomes target plus items found only in source
+
 For example :
 ```javascript
       await copyFolder( source, target, {merge:"source"} )
