@@ -145,6 +145,7 @@ async function composedFetch(promises) {
  * Convert some kind of error to a FetchError and rethrow it
  * @param {Error|SingleResponseError|FetchError} err 
  * @throws {FetchError}
+ * @returns {Response} It never returns. This is only for JSDoc
  */
 function toFetchError(err) {
   if (err instanceof FetchError) {

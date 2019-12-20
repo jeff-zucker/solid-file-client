@@ -3,11 +3,12 @@ import apiUtils from './utils/apiUtils'
 import FolderUtils from './utils/folderUtils'
 import RdfQuery from './utils/rdf-query'
 import errorUtils from './utils/errorUtils'
-import LinksUtils from './utils/linksUtils'
+import linksUtils from './utils/linksUtils'
 
 const fetchLog = debug('solid-file-client:fetch')
 const { getRootUrl, getParentUrl, getItemName, areFolders, areFiles, LINK } = apiUtils
 const { FetchError, assertResponseOk, composedFetch, toFetchError } = errorUtils
+const { getLinksFromResponse, parseLinkHeader } = linksUtils
 const MERGE = {
   REPLACE: 'replace',
   KEEP_SOURCE: 'source',
@@ -26,7 +27,7 @@ const MERGE = {
 const defaultWriteOptions = {
   overwriteFiles: true,
   overwriteFolders: false,
-  withAcl: true,
+  withAcl: false, // TODO: Set true
   copyMeta: true,
   createPath: true
 }
@@ -79,9 +80,6 @@ class SolidAPI {
     this._fetch = fetch
     this.processFolder = new FolderUtils().processFolder
     this.rdf = new RdfQuery(this.fetch.bind(this))
-    const link = new LinksUtils()
-    this.getLinks = link.getLinks
-    this.getItemLinks = link.getItemLinks
 
     if (options.enableLogging) {
       if (typeof options.enableLogging === 'string') {
@@ -230,6 +228,36 @@ class SolidAPI {
       })
   }
 
+  async getLinks (url) {
+    // TODO: Consider making private and/or remove completely. Currently used in folderUtils
+    const res = await this.head(url)
+    const links = getLinksFromResponse(res, url)
+    const linksArr = []
+    if (links.acl && await this.itemExists(links.acl)) {
+      linksArr[0] = {
+        url: links.acl,
+        type: 'text/turtle',
+        itemType: 'AccessControl',
+        name: getItemName(links.acl),
+        parent: getParentUrl(links.acl)
+      }
+    }
+    if (links.meta && await this.itemExists(links.meta)) {
+      linksArr[1] =  {
+        url: links.meta,
+        type: 'text/turtle',
+        itemType: 'Metadata',
+        name: getItemName(links.meta),
+        parent: getParentUrl(links.meta)
+      }
+    }
+    return linksArr
+  }
+
+  async getItemLinks (url) {
+    return this.head(url).then(getLinksFromResponse)
+  }
+
   /**
    * Create an item at target url.
    * Per default it will create the parent folder if it doesn't exist.
@@ -376,52 +404,57 @@ class SolidAPI {
       ...defaultWriteOptions,
       ...options
     }
-    if (typeof from !== 'string' || typeof to !== 'string') {
-      throw toFetchError(new Error(`The from and to parameters of copyFile must be strings. Found: ${from} and ${to}`))
+    if (from.endsWith('.acl') || to.endsWith('.acl')) {
+      throw toFetchError(new Error(`Use copyAclFile for copying ACL files. Found: ${from} and ${to}`))
     }
-    if (from.endsWith('.acl') || from.endsWith('.acl')) {
-      throw toFetchError(new Error(`ACL files cannot be copied. Found: ${from} and ${to}`))
-    }
-    return this._copyFile(from, to, options).catch(toFetchError)
-  }
 
-  async _copyFile (from, to, options) {
-    const fileRes = await this._copyFileOnly(from, to, options).catch(toFetchError)
+    // Copy File
+    const getResponse = await this.get(from).catch(toFetchError)
+    const content = await getResponse.blob()
+    const contentType = getResponse.headers.get('content-type')
+    const putResponse = await this.putFile(to, content, contentType, options).catch(toFetchError)
+
+    // Optionally copy ACL File
     if (options.withAcl) {
-      await this._copyFileAcl(from, to, options).catch(toFetchError)
+      await this.copyAclFileForItem(from, to, options, getResponse, putResponse)
     }
-    return fileRes
+
+    return putResponse
   }
 
-  async _copyFileOnly (from, to, options) {
-    const response = await this.get(from)
-    const content = await response.blob()
-    const contentType = response.headers.get('content-type')
+  /**
+   * Copy an ACL file
+   * @param {string} oldTargetFile Url of the file the acl file targets (e.g. file.ttl for file.ttl.acl)
+   * @param {string} newTargetFile Url of the new file targeted (e.g. new-file.ttl for new-file.ttl.acl)
+   * @param {WriteOptions} [options]
+   * @param {Response} [fromResponse] response of a request to the targeted file (not necessary, reduces the amount of requests)
+   * @param {Response} [toResponse] response of a request to the new targeted file (not necessary, reduces the amount of requests)
+   * @todo Exchange absolute paths with relative paths (e.g. accessTo)
+   * @todo Make name more describing
+   */
+  async copyAclFileForItem (oldTargetFile, newTargetFile, options, fromResponse, toResponse) {
+    const { acl: aclFrom } = fromResponse ? getLinksFromResponse(fromResponse) : await this.getItemLinks(oldTargetFile) 
+    const { acl: aclTo   } = toResponse   ? getLinksFromResponse(toResponse)   : await this.getItemLinks(newTargetFile) 
 
-    return this.putFile(to, content, contentType, options)
-  }
+    const aclResponse = await this.get(aclFrom).catch(toFetchError)
+    const contentType = aclResponse.headers.get('Content-Type')
+    let content = await aclResponse.text()
 
-  async _copyFileAcl (from, to, options) {
-    let acl = await this.getLinks(from, options.withAcl)
-    if (acl[0]) {
-      let fromAcl = acl[0]
-      let toAcl = await this.getItemLinks(to, options.withAcl)
-      const response = await this.get(fromAcl.url)
-      let content = await response.text()
-      // turtle acl content :
-      let toName = to.substr(to.lastIndexOf('/') + 1)
-      let fromName = from.substr(from.lastIndexOf('/') + 1)
-      if (content.includes(from)) {
-        // if object values are absolute URI's make them relative to the destination
-        content = content.replace(new RegExp('<' + from + '>', 'g'), '<./' + toName + '>')
-        content = content.replace(new RegExp('<' + getRootUrl(from) + 'profile/card#me>'), '<./profile/card#me>')
-      } else if (toName !== fromName) {
-        // if relative replace file destination
-        content = content.replace(new RegExp(fromName + '>', 'g'), toName + '>')
-      }
-      const contentType = response.headers.get('content-type')
-      await this.putFile(toAcl.acl, content, contentType, options).catch(toFetchError)
+    // TODO: Check if this modification is good enough or replace with something different
+    // Make absolute paths to the same directory relative
+    // Update relative paths to the new location
+    const toName = getItemName(oldTargetFile)
+    const fromName = getItemName(newTargetFile)
+    if (content.includes(oldTargetFile)) {
+      // if object values are absolute URI's make them relative to the destination
+      content = content.replace(new RegExp('<' + oldTargetFile + '>', 'g'), '<./' + toName + '>')
+      content = content.replace(new RegExp('<' + getRootUrl(oldTargetFile) + 'profile/card#me>'), '<./profile/card#me>')
+    } else if (toName !== fromName) {
+      // if relative replace file destination
+      content = content.replace(new RegExp(fromName + '>', 'g'), toName + '>')
     }
+
+    return this.putFile(to, content, contentType, options).catch(toFetchError)
   }
 
   /**
@@ -449,7 +482,7 @@ class SolidAPI {
 
     const creationResults = await composedFetch([
       ...folders.map(({ name }) => this.copyFolder(`${from}${name}/`, `${to}${name}/`, options)),
-      ...files.map(({ name }) => this._copyFile(`${from}${name}`, `${to}${name}`, options))
+      ...files.map(({ name }) => this.copyFile(`${from}${name}`, `${to}${name}`, options))
     ])
 
     return [folderResponse].concat(...creationResults) // Alternative to Array.prototype.flat
@@ -469,7 +502,7 @@ class SolidAPI {
   async _copyFolder (from, to, options) {
     const folderRes = await this.createFolder(to, options).catch(toFetchError)
     if (options.withAcl) {
-      await this._copyFileAcl(from, to, options).catch(toFetchError)
+      await this.copyAclFileForItem(from, to, options, undefined, folderRes).catch(toFetchError)
     }
     return folderRes
   }
