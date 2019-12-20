@@ -8,6 +8,11 @@ import LinksUtils from './utils/linksUtils'
 const fetchLog = debug('solid-file-client:fetch')
 const { getRootUrl, getParentUrl, getItemName, areFolders, areFiles, LINK } = apiUtils
 const { FetchError, assertResponseOk, composedFetch, toFetchError } = errorUtils
+const MERGE = {
+  REPLACE: 'replace',
+  KEEP_SOURCE: 'source',
+  KEEP_TARGET: 'target'
+}
 
 /**
  * @typedef {Object} WriteOptions
@@ -218,7 +223,7 @@ class SolidAPI {
       .then(() => true)
       .catch(err => {
         // Only return false when the server returned 404. Else throw
-        if (!(err instanceof FetchError && err.rejected[0].status === 404)) {
+        if (err.status !== 404) {
           throw err
         }
         return false
@@ -238,19 +243,10 @@ class SolidAPI {
    * @returns {Promise<Response>}
    * @throws {FetchError}
    */
-  async createItem (url, content, contentType, link, options) {
-    options = {
-      ...defaultWriteOptions,
-      ...options
-    }
+  async postItem (url, content, contentType, link, options = {}) {
     const parentUrl = getParentUrl(url)
 
-    if (await this.itemExists(url)) {
-      if ((link === LINK.RESOURCE && !options.overwriteFiles) || (link === LINK.CONTAINER && !options.overwriteFolders)) {
-        toFetchError(new Error('Item already existed: ' + url))
-      }
-      await this.delete(url) // TBD: Should we throw here if a folder has contents?
-    } else if (options.createPath) {
+    if (options.createPath) {
       await this.createFolder(parentUrl)
     }
 
@@ -276,7 +272,7 @@ class SolidAPI {
    */
   async createFolder (url, options) {
     options = {
-      ...defaultWriteOptions,
+      ...({ createPath: true, overwriteFolders: false }),
       ...options
     }
 
@@ -288,12 +284,25 @@ class SolidAPI {
       }
       await this.deleteFolderRecursively(url)
     } catch (e) {
-      if (!(e instanceof FetchError && e.rejected[0].status === 404)) {
+      if (e.status !== 404) {
         throw e
       }
     }
 
-    return this.createItem(url, '', 'text/turtle', LINK.CONTAINER, options)
+    return this.postItem(url, '', 'text/turtle', LINK.CONTAINER, options)
+  }
+
+  /**
+   * Create a new file.
+   * Per default it will overwrite existing files
+   * @param {string} url
+   * @param {Blob|String} content
+   * @param {WriteOptions} [options]
+   * @returns {Promise<Response>}
+   * @throws {FetchError}
+   */
+  postFile (url, content, contentType, options) {
+    return this.postItem(url, content, contentType, LINK.RESOURCE, options)
   }
 
   /**
@@ -306,7 +315,7 @@ class SolidAPI {
    * @throws {FetchError}
    */
   createFile (url, content, contentType, options) {
-    return this.createItem(url, content, contentType, LINK.RESOURCE, options)
+    return this.putFile(url, content, contentType, options)
   }
 
   /**
@@ -323,14 +332,11 @@ class SolidAPI {
       ...defaultWriteOptions,
       ...options
     }
+
     // Options which are not like the default PUT behaviour
     if (!options.overwriteFiles && await this.itemExists(url)) {
       // TODO: Discuss how this should be thrown
       toFetchError(new Error('File already existed: ' + url))
-    }
-    if (!options.createPath && !(await this.itemExists(getParentUrl(url)))) {
-      // Incosistent with createFile (createFile returns 404 response)
-      throw new Error(`Container of ${url} did not exist. Specify createPath=true if it should be created`)
     }
 
     const requestOptions = {

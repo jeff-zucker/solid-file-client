@@ -14,6 +14,9 @@ class SingleResponseError extends Error {
       this.message = `${response.status} ${response.url}` // Default message
 
     this.response = response
+    this.ok = false
+    this.status = response.status
+    this.statusText = response.statusText
   }
 }
 
