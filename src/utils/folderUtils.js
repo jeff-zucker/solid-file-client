@@ -64,7 +64,7 @@ class FolderUtils {
     let files = await this.rdf.query(folderUrl, { thisDoc: '' }, { ldp: 'contains' })
     for (let f in files) {
       let thisFile = files[f].object
-      let thisFileStmts = await this.rdf.query(null, thisFile)
+      let thisFileStmts = await this.rdf.query(folderUrl, thisFile)
       let itemRecord = _processStatements(thisFile.value, thisFileStmts)
       if (itemRecord.itemType.match('Container')) {
         itemRecord.type = 'folder'
