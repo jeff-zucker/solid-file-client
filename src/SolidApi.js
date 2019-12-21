@@ -1,13 +1,26 @@
 import debug from 'debug'
 import apiUtils from './utils/apiUtils'
-import FolderUtils from './utils/folderUtils'
+import folderUtils from './utils/folderUtils'
 import RdfQuery from './utils/rdf-query'
 import errorUtils from './utils/errorUtils'
-import LinksUtils from './utils/linksUtils'
+import linksUtils from './utils/linksUtils'
 
 const fetchLog = debug('solid-file-client:fetch')
 const { getRootUrl, getParentUrl, getItemName, areFolders, areFiles, LINK } = apiUtils
 const { FetchError, assertResponseOk, composedFetch, toFetchError } = errorUtils
+const { getLinksFromResponse, parseLinkHeader } = linksUtils
+const { parseFolderResponse } = folderUtils
+
+const MERGE = {
+  REPLACE: 'replace',
+  KEEP_SOURCE: 'source',
+  KEEP_TARGET: 'target'
+}
+const LINKS = {
+  EXCLUDE: 'exludeLinks',
+  INCLUDE: 'includeLinks',
+  INCLUDE_POSSIBLE: 'includePossibleLinks'
+}
 
 /**
  * @typedef {Object} WriteOptions
@@ -21,7 +34,7 @@ const { FetchError, assertResponseOk, composedFetch, toFetchError } = errorUtils
 const defaultWriteOptions = {
   overwriteFiles: true,
   overwriteFolders: false,
-  withAcl: true,
+  withAcl: false, // TODO: Set true
   copyMeta: true,
   createPath: true
 }
@@ -72,11 +85,7 @@ class SolidAPI {
   constructor (fetch, options) {
     options = { ...defaultSolidApiOptions, ...options }
     this._fetch = fetch
-    this.processFolder = new FolderUtils().processFolder
     this.rdf = new RdfQuery(this.fetch.bind(this))
-    const link = new LinksUtils()
-    this.getLinks = link.getLinks
-    this.getItemLinks = link.getItemLinks
 
     if (options.enableLogging) {
       if (typeof options.enableLogging === 'string') {
@@ -218,11 +227,15 @@ class SolidAPI {
       .then(() => true)
       .catch(err => {
         // Only return false when the server returned 404. Else throw
-        if (!(err instanceof FetchError && err.rejected[0].status === 404)) {
+        if (err.status !== 404) {
           throw err
         }
         return false
       })
+  }
+
+  async getItemLinks (url) {
+    return this.head(url).then(getLinksFromResponse)
   }
 
   /**
@@ -238,19 +251,10 @@ class SolidAPI {
    * @returns {Promise<Response>}
    * @throws {FetchError}
    */
-  async createItem (url, content, contentType, link, options) {
-    options = {
-      ...defaultWriteOptions,
-      ...options
-    }
+  async postItem (url, content, contentType, link, options = {}) {
     const parentUrl = getParentUrl(url)
 
-    if (await this.itemExists(url)) {
-      if ((link === LINK.RESOURCE && !options.overwriteFiles) || (link === LINK.CONTAINER && !options.overwriteFolders)) {
-        toFetchError(new Error('Item already existed: ' + url))
-      }
-      await this.delete(url) // TBD: Should we throw here if a folder has contents?
-    } else if (options.createPath) {
+    if (options.createPath) {
       await this.createFolder(parentUrl)
     }
 
@@ -276,7 +280,7 @@ class SolidAPI {
    */
   async createFolder (url, options) {
     options = {
-      ...defaultWriteOptions,
+      ...({ createPath: true, overwriteFolders: false }),
       ...options
     }
 
@@ -288,12 +292,25 @@ class SolidAPI {
       }
       await this.deleteFolderRecursively(url)
     } catch (e) {
-      if (!(e instanceof FetchError && e.rejected[0].status === 404)) {
+      if (e.status !== 404) {
         throw e
       }
     }
 
-    return this.createItem(url, '', 'text/turtle', LINK.CONTAINER, options)
+    return this.postItem(url, '', 'text/turtle', LINK.CONTAINER, options)
+  }
+
+  /**
+   * Create a new file.
+   * Per default it will overwrite existing files
+   * @param {string} url
+   * @param {Blob|String} content
+   * @param {WriteOptions} [options]
+   * @returns {Promise<Response>}
+   * @throws {FetchError}
+   */
+  postFile (url, content, contentType, options) {
+    return this.postItem(url, content, contentType, LINK.RESOURCE, options)
   }
 
   /**
@@ -306,7 +323,7 @@ class SolidAPI {
    * @throws {FetchError}
    */
   createFile (url, content, contentType, options) {
-    return this.createItem(url, content, contentType, LINK.RESOURCE, options)
+    return this.putFile(url, content, contentType, options)
   }
 
   /**
@@ -323,14 +340,11 @@ class SolidAPI {
       ...defaultWriteOptions,
       ...options
     }
+
     // Options which are not like the default PUT behaviour
     if (!options.overwriteFiles && await this.itemExists(url)) {
       // TODO: Discuss how this should be thrown
       toFetchError(new Error('File already existed: ' + url))
-    }
-    if (!options.createPath && !(await this.itemExists(getParentUrl(url)))) {
-      // Incosistent with createFile (createFile returns 404 response)
-      throw new Error(`Container of ${url} did not exist. Specify createPath=true if it should be created`)
     }
 
     const requestOptions = {
@@ -353,7 +367,61 @@ class SolidAPI {
    */
 
   async readFolder (url, options) {
-    return this.processFolder(url, options)
+    url = url.endsWith('/') ? url : url + '/'
+    options = {
+      links: LINKS.EXCLUDE,
+      ...options
+    }
+
+    const folderRes = await this.get(url, { headers: { Accept: 'text/turtle' } })
+    const parsed = parseFolderResponse(folderRes, url)
+
+    if (options.links === LINKS.INCLUDE_POSSIBLE || options.links === LINKS.INCLUDE) {
+      await this._addPossibleLinks(parsed)
+    }
+
+    if (options.links === LINKS.INCLUDE) {
+      await this._removeInexistingLinks(parsed)
+    }
+
+    return parsed
+  }
+
+  /**
+   * Add all links for files and folders found by getItemLinks
+   * @param {FolderData} folderData
+   * @private
+   */
+  async _addPossibleLinks (folderData) {
+    const addPossibleLinks = async item => item.links = await this.getItemLinks(item.url)
+    await composedFetch([
+      ...folderData.files.map(addPossibleLinks),
+      ...folderData.folders.map(addPossibleLinks)
+    ])
+  }
+
+  /**
+   * Remove all links in files and folders which don't exist
+   * @param {FolderData} folderData
+   * @private
+   */
+  async _removeInexistingLinks (folderData) {
+    const removeInexistingLinks = item => composedFetch(
+      Object.entries(item.links)
+        .map(([type, url]) => {
+          return this.itemExists(url).catch(err => false)
+            .then(exists => {
+              if (!exists) {
+                delete item.links[type]
+              }
+            })
+        })
+    )
+
+    await composedFetch([
+      ...folderData.files.map(removeInexistingLinks),
+      ...folderData.folders.map(removeInexistingLinks)
+    ])
   }
 
   /**
@@ -370,53 +438,57 @@ class SolidAPI {
       ...defaultWriteOptions,
       ...options
     }
-    if (typeof from !== 'string' || typeof to !== 'string') {
-      throw toFetchError(new Error(`The from and to parameters of copyFile must be strings. Found: ${from} and ${to}`))
+    if (from.endsWith('.acl') || to.endsWith('.acl')) {
+      throw toFetchError(new Error(`Use copyAclFile for copying ACL files. Found: ${from} and ${to}`))
     }
-    if (from.endsWith('.acl') || from.endsWith('.acl')) {
-      throw toFetchError(new Error(`ACL files cannot be copied. Found: ${from} and ${to}`))
-    }
-    return this._copyFile(from, to, options)
-      .then(_responseToArray)
-      .catch(toFetchError)
-  }
 
-  async _copyFile (from, to, options) {
-    await this._copyFileOnly(from, to, options).catch(toFetchError)
+    // Copy File
+    const getResponse = await this.get(from).catch(toFetchError)
+    const content = await getResponse.blob()
+    const contentType = getResponse.headers.get('content-type')
+    const putResponse = await this.putFile(to, content, contentType, options).catch(toFetchError)
+
+    // Optionally copy ACL File
     if (options.withAcl) {
-      await this._copyFileAcl(from, to, options).catch(toFetchError)
+      await this.copyAclFileForItem(from, to, options, getResponse, putResponse)
     }
+
+    return putResponse
   }
 
-  async _copyFileOnly (from, to, options) {
-    const response = await this.get(from)
-    const content = await response.blob()
-    const contentType = response.headers.get('content-type')
+  /**
+   * Copy an ACL file
+   * @param {string} oldTargetFile Url of the file the acl file targets (e.g. file.ttl for file.ttl.acl)
+   * @param {string} newTargetFile Url of the new file targeted (e.g. new-file.ttl for new-file.ttl.acl)
+   * @param {WriteOptions} [options]
+   * @param {Response} [fromResponse] response of a request to the targeted file (not necessary, reduces the amount of requests)
+   * @param {Response} [toResponse] response of a request to the new targeted file (not necessary, reduces the amount of requests)
+   * @todo Exchange absolute paths with relative paths (e.g. accessTo)
+   * @todo Make name more describing
+   */
+  async copyAclFileForItem (oldTargetFile, newTargetFile, options, fromResponse, toResponse) {
+    const { acl: aclFrom } = fromResponse ? getLinksFromResponse(fromResponse) : await this.getItemLinks(oldTargetFile)
+    const { acl: aclTo } = toResponse ? getLinksFromResponse(toResponse) : await this.getItemLinks(newTargetFile)
 
-    return this.putFile(to, content, contentType, options)
-  }
+    const aclResponse = await this.get(aclFrom).catch(toFetchError)
+    const contentType = aclResponse.headers.get('Content-Type')
+    let content = await aclResponse.text()
 
-  async _copyFileAcl (from, to, options) {
-    let acl = await this.getLinks(from, options.withAcl)
-    if (acl[0]) {
-      let fromAcl = acl[0]
-      let toAcl = await this.getItemLinks(to, options.withAcl)
-      const response = await this.get(fromAcl.url)
-      let content = await response.text()
-      // turtle acl content :
-      let toName = to.substr(to.lastIndexOf('/') + 1)
-      let fromName = from.substr(from.lastIndexOf('/') + 1)
-      if (content.includes(from)) {
-        // if object values are absolute URI's make them relative to the destination
-        content = content.replace(new RegExp('<' + from + '>', 'g'), '<./' + toName + '>')
-        content = content.replace(new RegExp('<' + getRootUrl(from) + 'profile/card#me>'), '<./profile/card#me>')
-      } else if (toName !== fromName) {
-        // if relative replace file destination
-        content = content.replace(new RegExp(fromName + '>', 'g'), toName + '>')
-      }
-      const contentType = response.headers.get('content-type')
-      await this.putFile(toAcl.acl, content, contentType, options).catch(toFetchError)
+    // TODO: Check if this modification is good enough or replace with something different
+    // Make absolute paths to the same directory relative
+    // Update relative paths to the new location
+    const toName = getItemName(oldTargetFile)
+    const fromName = getItemName(newTargetFile)
+    if (content.includes(oldTargetFile)) {
+      // if object values are absolute URI's make them relative to the destination
+      content = content.replace(new RegExp('<' + oldTargetFile + '>', 'g'), '<./' + toName + '>')
+      content = content.replace(new RegExp('<' + getRootUrl(oldTargetFile) + 'profile/card#me>'), '<./profile/card#me>')
+    } else if (toName !== fromName) {
+      // if relative replace file destination
+      content = content.replace(new RegExp(fromName + '>', 'g'), toName + '>')
     }
+
+    return this.putFile(aclTo, content, contentType, options).catch(toFetchError)
   }
 
   /**
@@ -439,12 +511,12 @@ class SolidAPI {
     if (typeof from !== 'string' || typeof to !== 'string') {
       throw toFetchError(new Error(`The from and to parameters of copyFolder must be strings. Found: ${from} and ${to}`))
     }
-    const { folders, files } = await this.readFolder(from, { withAcl: false }).catch(toFetchError) // toFile.acl build by copyFile and _copyFolder
+    const { folders, files } = await this.readFolder(from).catch(toFetchError)
     const folderResponse = await this._copyFolder(from, to, options).catch(toFetchError)
 
     const creationResults = await composedFetch([
       ...folders.map(({ name }) => this.copyFolder(`${from}${name}/`, `${to}${name}/`, options)),
-      ...files.map(({ name }) => this._copyFile(`${from}${name}`, `${to}${name}`, options))
+      ...files.map(({ name }) => this.copyFile(`${from}${name}`, `${to}${name}`, options))
     ])
 
     return [folderResponse].concat(...creationResults) // Alternative to Array.prototype.flat
@@ -462,10 +534,11 @@ class SolidAPI {
    * @throws {FetchError}
    */
   async _copyFolder (from, to, options) {
-    await this.createFolder(to, options).catch(toFetchError)
+    const folderRes = await this.createFolder(to, options).catch(toFetchError)
     if (options.withAcl) {
-      await this._copyFileAcl(from, to, options).catch(toFetchError)
+      await this.copyAclFileForItem(from, to, options, undefined, folderRes).catch(toFetchError)
     }
+    return folderRes
   }
 
   /**
@@ -499,8 +572,9 @@ class SolidAPI {
    * @throws {FetchError}
    */
   async deleteFolderContents (url, options) {
+    // TODO: Delete links
     options = { ...defaultDeleteOptions, ...options } // should delete .acl by default for deletefolderRecursively
-    const { folders, files } = await this.readFolder(url, options).catch(toFetchError)
+    const { folders, files } = await this.readFolder(url).catch(toFetchError)
     return composedFetch([
       ...folders.map(({ url }) => this.deleteFolderRecursively(url)),
       ...files.map(({ url }) => this.delete(url))
@@ -565,7 +639,7 @@ function _responseToArray (res) {
   if (Array.isArray(res)) {
     return res
   } else {
-    return [ res ]
+    return [res]
   }
 }
 

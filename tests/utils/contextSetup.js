@@ -96,6 +96,9 @@ async function getBaseUrl (prefix) {
 
 function createTestFetch (baseUrl, authFetch) {
   return async (url, options) => {
+    if (typeof url !== 'string') {
+      throw new Error(`Invalid url passed to test fetch: >${url}<`)
+    }
     if (!url.startsWith(baseUrl)) {
       throw new Error(`Prevent request to >${url}< because it doesn't start with the base url >${baseUrl}<`)
     }

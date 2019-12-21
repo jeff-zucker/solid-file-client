@@ -2,18 +2,20 @@
 // Should be wrapped inside a FetchError
 class SingleResponseError extends Error {
   /**
-   * @param {Response} response 
-   * @param  {...any} params 
+   * @param {Response} response
+   * @param  {...any} params
    */
-  constructor(response, ...params) {
+  constructor (response, ...params) {
     // Pass remaining arguments (including vendor specific ones) to parent constructor
     super(...params)
 
     this.name = 'SingleResponseError'
-    if (!params.length)
-      this.message = `${response.status} ${response.url}` // Default message
+    if (!params.length) { this.message = `${response.status} ${response.url}` } // Default message
 
     this.response = response
+    this.ok = false
+    this.status = response.status
+    this.statusText = response.statusText
   }
 }
 
@@ -26,11 +28,11 @@ class SingleResponseError extends Error {
 
 class FetchError extends Error {
   /**
-   * 
-   * @param {FetchErrorData} errorData 
-   * @param  {...any} params 
+   *
+   * @param {FetchErrorData} errorData
+   * @param  {...any} params
    */
-  constructor({ successful = [], rejectedErrors = [], errors = [] }, ...params) {
+  constructor ({ successful = [], rejectedErrors = [], errors = [] }, ...params) {
     // Pass remaining arguments (including vendor specific ones) to parent constructor
     super(...params)
 
@@ -53,7 +55,7 @@ class FetchError extends Error {
       this.status = rejectedErrors[0].status
       this.statusText = rejectedErrors[0].statusText
     } else {
-      // Multiple Fetch and possibly other errors 
+      // Multiple Fetch and possibly other errors
       this.message = `${this.name} ${[...rejectedErrors, ...errors].map(err => err.message).join('\n')}`
       this.status = -2
       this.statusText = this.message
@@ -83,32 +85,32 @@ const defaultErrorDescriptions = {
  */
 function assertResponseOk (res) {
   if (!res.ok) {
-    const fetchErr = (res.status in defaultErrorDescriptions) ?
-      new SingleResponseError(res, `${res.status} ${res.url} - ${defaultErrorDescriptions[res.status]}`)
+    const fetchErr = (res.status in defaultErrorDescriptions)
+      ? new SingleResponseError(res, `${res.status} ${res.url} - ${defaultErrorDescriptions[res.status]}`)
       : new SingleResponseError(res)
 
-    throw new FetchError({ successful: [], rejectedErrors: [ fetchErr ] })
+    throw new FetchError({ successful: [], rejectedErrors: [fetchErr] })
   }
   return res
 }
 
 /**
  * @typedef {object} SettledPromise
- * @property {("fulfilled"|"rejected")} status 
+ * @property {("fulfilled"|"rejected")} status
  * @property {any} [value] Defined if the promise resolved
  * @property {any} [reason] defined if the promise rejected
  */
 
 /**
  * Wait for all promises to settle before resolving with a list of settled promises
- * @param {Promise<any>[]} promises 
+ * @param {Promise<any>[]} promises
  * @returns {Promise<SettledPromise[]>}
  */
-async function promisesSettled(promises) {
+async function promisesSettled (promises) {
   const reflectedPromises = promises.map(promise => {
-      return promise
-          .then(value => { return { status: 'fulfilled', value } })
-          .catch(reason => { return { status: 'rejected', reason } })
+    return promise
+      .then(value => { return { status: 'fulfilled', value } })
+      .catch(reason => { return { status: 'rejected', reason } })
   })
   return Promise.all(reflectedPromises)
 }
@@ -120,7 +122,7 @@ async function promisesSettled(promises) {
  * @returns {Response[]}
  * @throws {FetchError}
  */
-async function composedFetch(promises) {
+async function composedFetch (promises) {
   const res = await promisesSettled(promises)
 
   /** @type {Response[]} */
@@ -140,14 +142,15 @@ async function composedFetch(promises) {
 
 /**
  * Convert some kind of error to a FetchError and rethrow it
- * @param {Error|SingleResponseError|FetchError} err 
+ * @param {Error|SingleResponseError|FetchError} err
  * @throws {FetchError}
+ * @returns {Response} It never returns. This is only for JSDoc
  */
-function toFetchError(err) {
+function toFetchError (err) {
   if (err instanceof FetchError) {
     throw err
   } else if (err instanceof SingleResponseError) {
-    throw new FetchError({ rejectedErrors: [ err ] })
+    throw new FetchError({ rejectedErrors: [err] })
   } else if (err instanceof Error) {
     throw new FetchError({ errors: [err] })
   } else {

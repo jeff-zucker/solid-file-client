@@ -31,21 +31,22 @@ js:
 
 
 describe('readFolder', () => {
+    const parent = 'https://example.org/'
+    const name = 'my-folder'
+    const url = `${parent}${name}/`
     const headerLink = '<file1.acl>; rel="acl"'
     const sampleResponse = {
         text: () => Promise.resolve(sampleFolder),
         headers: {
             get: key => (key === 'link') ? headerLink : null
         },
-        ok: true
+        ok: true,
+        url
     }
     const fetch = jest.fn(() => Promise.resolve(sampleResponse))
     const api = new SolidApi(fetch)
 
     test('can read sampleFolder', async () => {
-        const parent = 'https://example.org/'
-        const name = 'my-folder'
-        const url = `${parent}${name}/`
         const res = await api.readFolder(url)
         expect(res.type).toBe('folder')
         expect(res.name).toBe(name)

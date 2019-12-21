@@ -1,137 +1,3 @@
-import apiUtils from './apiUtils'
-
-const { getParentUrl, getItemName } = apiUtils
-
-class LinksUtils {
-  constructor (fetch) {
-    this.fetch = fetch
-  }
-
-  /**
-   * @private // For now
-   * getLinks (TBD)
-   *
-   * returns an array of records related to an item (resource or container)
-   *   0-2 : the .acl, .meta, and .meta.acl for the item if they exist
-   * each record includes these fields (see _getLinkObject)
-   *   url
-   *   type (contentType)
-   *   itemType ((AccessControl, or Metadata))
-   *   name
-   *   parent
-   */
-  async getLinks (itemUrl, linkAcl) {
-    let itemLinks = []
-    let linksUrl = await this.getItemLinks(itemUrl)
-    let links = {}
-    if (linkAcl) {
-      links.acl = await _lookForLink('AccessControl', linksUrl.acl)
-      if (links.acl) itemLinks = itemLinks.concat(links.acl)
-    }
-    if (itemUrl.endsWith('/')) {
-      links.meta = await _lookForLink('Metadata', linksUrl.meta)
-      if (links.meta) {
-        // get .meta.acl link
-        if (linkAcl) {
-          links.metaAcl = await this.getLinks(links.meta.url, linkAcl)
-          if (links.metaAcl[0]) {
-            links.meta.links = { acl: links.metaAcl[0].url }
-            itemLinks = itemLinks.concat(links.meta)
-            itemLinks = itemLinks.concat(links.metaAcl)
-          } else { itemLinks = itemLinks.concat(links.meta) }
-        } else { itemLinks = itemLinks.concat(links.meta) }
-      }
-    }
-    return itemLinks
-  }
-
-  /**
-   * @private
-   * getItemLinks (TBD)
-   * return allways an object of linkUrls
-   * - object.acl for folder and files
-   * - object.meta for folder
-   *
-   */
-  async getItemLinks (itemUrl) {
-    // don't getLinks for .acl files
-    if (itemUrl.endsWith('.acl')) return []
-    let res = await this.fetch(itemUrl, { method: 'HEAD' })
-    let linkHeader = await res.headers.get('link')
-    // linkHeader is null for index.html ??
-    if (linkHeader === null) return []
-    // get .meta, .acl links
-    let linksUrl = await _findLinksInHeader(itemUrl, linkHeader)
-    return linksUrl
-  }
-}
-
-/**
- * @private
- * findLinksInHeader (TBD)
- *
- */
-async function _findLinksInHeader (originalUri, linkHeader) {
-  let matches = _parseLinkHeader(linkHeader, originalUri)
-  let final = {}
-  for (let i = 0; i < matches.length; i++) {
-    let split = matches[i].split('>')
-    let href = split[0].substring(1)
-    if (matches[i].match(/rel="acl"/)) {
-      final.acl = _urlJoin(href, originalUri)
-    }
-    // .meta only for folders
-    if (originalUri.endsWith('/') && matches[i].match(/rel="describedBy"/)) {
-      final.meta = _urlJoin(href, originalUri)
-    }
-  }
-  return final
-}
-
-/**
- * @private
- * _lookForLink (TBD)
- *
- * - input
- *     - linkType = one of AccessControl or Metatdata
- *     - itemUrl  = address of the item associated with the link
- *     - relative URL from the link's associated item's header (e.g. .acl)
- * - creates an absolute Url for the link
- * - looks for the link and, if found, returns a link object
- * - else returns undefined
- */
-async function _lookForLink (linkType, linkUrl) {
-  try {
-    let res = await this.fetch(linkUrl, { method: 'HEAD' })
-    if (typeof res !== 'undefined' && res.ok) {
-      let contentType = res.headers.get('content-type')
-      return _getLinkObject(linkUrl, linkType, contentType)
-    }
-  } catch (e) {} // ignore if not found
-}
-
-/**
- * @private
- * _getLinkObject (TBD)
- *
- * creates a link object for a container or any item it holds
- * type is one of AccessControl, Metatdata
- * content-type is from the link's header
- * @param {string} linkUrl
- * @param {string} contentType
- * @param {"AccessControl"|"Metadata"} linkType
- * @returns {LinkObject}
- */
-function _getLinkObject (linkUrl, linkType, contentType) {
-  return {
-    url: linkUrl,
-    type: contentType,
-    itemType: linkType,
-    name: getItemName(linkUrl),
-    parent: getParentUrl(linkUrl)
-  }
-}
-
 /**
  *  input  : linkHeader from a res.headers.get("link") and the item url
  *           sent by SolidApi.findLinkFiles()
@@ -143,7 +9,7 @@ function _getLinkObject (linkUrl, linkType, contentType) {
  * note: please leave the formating as-is so it can be easily compared
  *       with the original
  */
-function _parseLinkHeader (linkHeader, originalUri) {
+function _parseLinkHeaderToArray (linkHeader) {
   if (!linkHeader) { return }
   // const linkexp = /<[^>]*>\s*(\s*;\s*[^()<>@,;:"/[\]?={} \t]+=(([^()<>@,;:"/[]?={} \t]+)|("[^"]*")))*(,|$)/g
   // const paramexp = /[^()<>@,;:"/[]?={} \t]+=(([^()<>@,;:"/[]?={} \t]+)|("[^"]*"))/g
@@ -159,6 +25,35 @@ function _parseLinkHeader (linkHeader, originalUri) {
 }
 
 /**
+ * Parse all links from a link header into an object
+ * @param {string} linkHeader
+ * @param {string} itemUrl
+ * @returns {object} rel as keys, urls as values
+ */
+function parseLinkHeader (linkHeader, itemUrl) {
+  const results = {}
+  const links = _parseLinkHeaderToArray(linkHeader)
+  links.forEach(link => {
+    // link is similar to: <file.txt.acl>; rel="acl",
+    const url = link.substring(link.indexOf('<') + 1, link.indexOf('>'))
+    const rel = link.substring(link.indexOf('rel="') + 'rel="'.length, link.lastIndexOf('"'))
+    results[rel] = _urlJoin(url, itemUrl)
+  })
+  return results
+}
+
+/**
+ * Get all links urls specified in the header
+ * @param {Response} response
+ * @param {string} [url]
+ * @returns {Object.<string, string>}
+ */
+function getLinksFromResponse (response, url = response.url) {
+  const linkHeader = response.headers.get('link')
+  return linkHeader === null ? {} : parseLinkHeader(linkHeader, url)
+}
+
+/**
  * joins a path to a base path
  *
  *  .urlJoin(".acl", "https://x.com/" )         -> https://x.com/.acl
@@ -170,9 +65,9 @@ function _parseLinkHeader (linkHeader, originalUri) {
  *       with the original
  */
 function _urlJoin (given, base) {
-  var baseColon, baseScheme, baseSingle
-  var colon, lastSlash, path
-  var baseHash = base.indexOf('#')
+  let baseColon, baseScheme, baseSingle
+  let colon, lastSlash, path
+  const baseHash = base.indexOf('#')
   if (baseHash > 0) {
     base = base.slice(0, baseHash)
   }
@@ -191,7 +86,7 @@ function _urlJoin (given, base) {
     return given
   }
   if (baseColon < 0) {
-  // alert('Invalid base: ' + base + ' in join with given: ' + given)
+    // alert('Invalid base: ' + base + ' in join with given: ' + given)
     return given
   }
   baseScheme = base.slice(0, +baseColon + 1 || 9e9)
@@ -237,4 +132,7 @@ function _urlJoin (given, base) {
   return base.slice(0, baseSingle) + path
 } // end of urlJoin
 
-export default LinksUtils
+export default {
+  parseLinkHeader,
+  getLinksFromResponse
+}
