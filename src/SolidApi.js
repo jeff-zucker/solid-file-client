@@ -1,6 +1,6 @@
 import debug from 'debug'
 import apiUtils from './utils/apiUtils'
-import { parseFolderResponse } from './utils/folderUtils'
+import folderUtils from './utils/folderUtils'
 import RdfQuery from './utils/rdf-query'
 import errorUtils from './utils/errorUtils'
 import linksUtils from './utils/linksUtils'
@@ -9,6 +9,8 @@ const fetchLog = debug('solid-file-client:fetch')
 const { getRootUrl, getParentUrl, getItemName, areFolders, areFiles, LINK } = apiUtils
 const { FetchError, assertResponseOk, composedFetch, toFetchError } = errorUtils
 const { getLinksFromResponse, parseLinkHeader } = linksUtils
+const { parseFolderResponse } = folderUtils
+
 const MERGE = {
   REPLACE: 'replace',
   KEEP_SOURCE: 'source',

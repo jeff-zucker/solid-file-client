@@ -11,7 +11,7 @@ const { getLinksFromResponse } = linksUtils
  * @param {string} [folderUrl] url of the folder
  * @returns {FolderData}
  */
-export const parseFolderResponse = async (folderResponse, folderUrl = folderResponse.url) => {
+const parseFolderResponse = async (folderResponse, folderUrl = folderResponse.url) => {
   const turtle = await folderResponse.text()
 
   const rdf = new RdfQuery()
@@ -100,4 +100,8 @@ function _packageFolder (folderUrl, folderLinks, folderItems, fileItems) {
   returnVal.files = fileItems
 
   return returnVal
+}
+
+export default {
+  parseFolderResponse
 }
