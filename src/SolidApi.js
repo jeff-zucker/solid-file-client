@@ -232,32 +232,6 @@ class SolidAPI {
       })
   }
 
-  async getLinks (url) {
-    // TODO: Consider making private and/or remove completely. Currently used in folderUtils
-    const res = await this.head(url)
-    const links = getLinksFromResponse(res, url)
-    const linksArr = []
-    if (links.acl && await this.itemExists(links.acl)) {
-      linksArr[0] = {
-        url: links.acl,
-        type: 'text/turtle',
-        itemType: 'AccessControl',
-        name: getItemName(links.acl),
-        parent: getParentUrl(links.acl)
-      }
-    }
-    if (links.meta && await this.itemExists(links.meta)) {
-      linksArr[1] = {
-        url: links.meta,
-        type: 'text/turtle',
-        itemType: 'Metadata',
-        name: getItemName(links.meta),
-        parent: getParentUrl(links.meta)
-      }
-    }
-    return linksArr
-  }
-
   async getItemLinks (url) {
     return this.head(url).then(getLinksFromResponse)
   }
