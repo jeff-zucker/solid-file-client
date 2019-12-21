@@ -1,6 +1,6 @@
 import debug from 'debug'
 import apiUtils from './utils/apiUtils'
-import FolderUtils from './utils/folderUtils'
+import { parseFolderResponse } from './utils/folderUtils'
 import RdfQuery from './utils/rdf-query'
 import errorUtils from './utils/errorUtils'
 import linksUtils from './utils/linksUtils'
@@ -13,6 +13,11 @@ const MERGE = {
   REPLACE: 'replace',
   KEEP_SOURCE: 'source',
   KEEP_TARGET: 'target'
+}
+const LINKS = {
+  EXCLUDE: 'exludeLinks',
+  INCLUDE: 'includeLinks',
+  INCLUDE_POSSIBLE: 'includePossibleLinks'
 }
 
 /**
@@ -78,7 +83,6 @@ class SolidAPI {
   constructor (fetch, options) {
     options = { ...defaultSolidApiOptions, ...options }
     this._fetch = fetch
-    this.processFolder = new FolderUtils().processFolder
     this.rdf = new RdfQuery(this.fetch.bind(this))
 
     if (options.enableLogging) {
@@ -387,7 +391,61 @@ class SolidAPI {
    */
 
   async readFolder (url, options) {
-    return this.processFolder(url, options)
+    url = url.endsWith('/') ? url : url + '/'
+    options = {
+      links: LINKS.EXCLUDE,
+      ...options
+    }
+
+    const folderRes = await this.get(url, { headers: { Accept: 'text/turtle' }})
+    const parsed = parseFolderResponse(folderRes, url)
+
+    if (options.links === LINKS.INCLUDE_POSSIBLE || options.links === LINKS.INCLUDE) {
+      await this._addPossibleLinks(parsed)
+    }
+
+    if (options.links === LINKS.INCLUDE) {
+      await this._removeInexistingLinks(parsed)
+    }
+
+    return parsed
+  }
+
+  /**
+   * Add all links for files and folders found by getItemLinks
+   * @param {FolderData} folderData
+   * @private
+   */
+  async _addPossibleLinks (folderData) {
+    const addPossibleLinks = async item => item.links = await this.getItemLinks(item.url)
+    await composedFetch([
+      ...folderData.files.map(addPossibleLinks),
+      ...folderData.folders.map(addPossibleLinks)      
+    ])
+  }
+
+  /**
+   * Remove all links in files and folders which don't exist
+   * @param {FolderData} folderData
+   * @private
+   */
+  async _removeInexistingLinks (folderData) {
+    const removeInexistingLinks = item => composedFetch(
+      Object.entries(item.links)
+        .map(([type, url]) => {
+          return this.itemExists(url).catch(err => false)
+            .then(exists => {
+              if (!exists) {
+                delete item.links[type]
+              }
+            })
+        })
+    )
+
+    await composedFetch([
+      ...folderData.files.map(removeInexistingLinks),
+      ...folderData.folders.map(removeInexistingLinks)
+    ])
   }
 
   /**
@@ -477,7 +535,7 @@ class SolidAPI {
     if (typeof from !== 'string' || typeof to !== 'string') {
       throw toFetchError(new Error(`The from and to parameters of copyFolder must be strings. Found: ${from} and ${to}`))
     }
-    const { folders, files } = await this.readFolder(from, { withAcl: false }).catch(toFetchError) // toFile.acl build by copyFile and _copyFolder
+    const { folders, files } = await this.readFolder(from).catch(toFetchError)
     const folderResponse = await this._copyFolder(from, to, options).catch(toFetchError)
 
     const creationResults = await composedFetch([
@@ -538,8 +596,9 @@ class SolidAPI {
    * @throws {FetchError}
    */
   async deleteFolderContents (url, options) {
+    // TODO: Delete links
     options = { ...defaultDeleteOptions, ...options } // should delete .acl by default for deletefolderRecursively
-    const { folders, files } = await this.readFolder(url, options).catch(toFetchError)
+    const { folders, files } = await this.readFolder(url).catch(toFetchError)
     return composedFetch([
       ...folders.map(({ url }) => this.deleteFolderRecursively(url)),
       ...files.map(({ url }) => this.delete(url))
