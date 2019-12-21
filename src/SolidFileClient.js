@@ -52,13 +52,12 @@ class SolidFileClient extends SolidApi {
   async deleteFile (url) {
   // const urlAcl = await this.getLinks(url, true)
   // if (typeof urlAcl[0] === 'object') { let del = await this.delete(urlAcl[0].url) }  // TBD throw complex error
-    let links = await this.getItemLinks(url)
+    const links = await this.getItemLinks(url)
     if (links.acl) this.delete(links.acl)
     return this.delete(url)
   }
 
   async deleteFolder (url, options) { return super.deleteFolderRecursively(url) }
-
 }
 
 export default SolidFileClient

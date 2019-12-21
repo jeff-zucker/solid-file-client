@@ -19,15 +19,14 @@ const getRootUrl = url => {
   const base = url.split('/')
   let rootUrl = base[0]
   let j = 0
-  for ( let i=1; i< base.length-1; i++) {
+  for (let i = 1; i < base.length - 1; i++) {
     j = i
-    if (base[i] === "") { rootUrl +=  '/' }
+    if (base[i] === '') { rootUrl += '/' }
     break
   }
-  rootUrl = rootUrl + '/' + base[j+1] + ('/')
+  rootUrl = rootUrl + '/' + base[j + 1] + ('/')
   return rootUrl
 }
-	
 
 /**
  * Return the url of the parent (including '/' at the end)

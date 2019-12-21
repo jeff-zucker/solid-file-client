@@ -247,7 +247,7 @@ class SolidAPI {
       }
     }
     if (links.meta && await this.itemExists(links.meta)) {
-      linksArr[1] =  {
+      linksArr[1] = {
         url: links.meta,
         type: 'text/turtle',
         itemType: 'Metadata',
@@ -397,7 +397,7 @@ class SolidAPI {
       ...options
     }
 
-    const folderRes = await this.get(url, { headers: { Accept: 'text/turtle' }})
+    const folderRes = await this.get(url, { headers: { Accept: 'text/turtle' } })
     const parsed = parseFolderResponse(folderRes, url)
 
     if (options.links === LINKS.INCLUDE_POSSIBLE || options.links === LINKS.INCLUDE) {
@@ -420,7 +420,7 @@ class SolidAPI {
     const addPossibleLinks = async item => item.links = await this.getItemLinks(item.url)
     await composedFetch([
       ...folderData.files.map(addPossibleLinks),
-      ...folderData.folders.map(addPossibleLinks)      
+      ...folderData.folders.map(addPossibleLinks)
     ])
   }
 
@@ -491,8 +491,8 @@ class SolidAPI {
    * @todo Make name more describing
    */
   async copyAclFileForItem (oldTargetFile, newTargetFile, options, fromResponse, toResponse) {
-    const { acl: aclFrom } = fromResponse ? getLinksFromResponse(fromResponse) : await this.getItemLinks(oldTargetFile) 
-    const { acl: aclTo   } = toResponse   ? getLinksFromResponse(toResponse)   : await this.getItemLinks(newTargetFile) 
+    const { acl: aclFrom } = fromResponse ? getLinksFromResponse(fromResponse) : await this.getItemLinks(oldTargetFile)
+    const { acl: aclTo } = toResponse ? getLinksFromResponse(toResponse) : await this.getItemLinks(newTargetFile)
 
     const aclResponse = await this.get(aclFrom).catch(toFetchError)
     const contentType = aclResponse.headers.get('Content-Type')
@@ -512,7 +512,7 @@ class SolidAPI {
       content = content.replace(new RegExp(fromName + '>', 'g'), toName + '>')
     }
 
-    return this.putFile(to, content, contentType, options).catch(toFetchError)
+    return this.putFile(aclTo, content, contentType, options).catch(toFetchError)
   }
 
   /**
@@ -663,7 +663,7 @@ function _responseToArray (res) {
   if (Array.isArray(res)) {
     return res
   } else {
-    return [ res ]
+    return [res]
   }
 }
 

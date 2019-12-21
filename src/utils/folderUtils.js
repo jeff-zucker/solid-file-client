@@ -5,7 +5,6 @@ import RdfQuery from './rdf-query'
 const { getParentUrl, getItemName } = apiUtils
 const { getLinksFromResponse } = linksUtils
 
-
 /**
  * Parse the response for a folder into an object containing data about files and folders
  * @param {Response} folderResponse response of a request to a folder url (use Accept: text/turtle)
@@ -52,22 +51,22 @@ export const parseFolderResponse = async (folderResponse, folderUrl = folderResp
  * @param {N3.Quad[]} stmts
  * @returns {Item}
  */
-function _processStatements(url, stmts) {
+function _processStatements (url, stmts) {
   const ianaMediaType = 'http://www.w3.org/ns/iana/media-types/'
   const processed = { url: url }
   stmts.forEach(stm => {
     const predicate = stm.predicate.value.replace(/.*\//, '').replace(/.*#/, '')
     let object = stm.object.value.match(ianaMediaType) ? stm.object.value.replace(ianaMediaType, '') : stm.object.value.replace(/.*\//, '')
     if (!predicate.match('type')) object = object.replace(/.*#/, '')
-    else if (object !== "ldp#Resource" && object !== "ldp#Container") {
-      processed[predicate] = [...(processed[predicate] || []), object.replace('#Resource', '')]   // keep only contentType and ldp#BasicContainer
+    else if (object !== 'ldp#Resource' && object !== 'ldp#Container') {
+      processed[predicate] = [...(processed[predicate] || []), object.replace('#Resource', '')] // keep only contentType and ldp#BasicContainer
     }
   })
   for (const key in processed) {
     if (processed[key].length === 1) processed[key] = processed[key][0]
   }
-  if (processed.type === undefined) processed['type'] = 'application/octet-stream'
-  processed['itemType'] = processed.type.includes('ldp#BasicContainer')
+  if (processed.type === undefined) processed.type = 'application/octet-stream'
+  processed.itemType = processed.type.includes('ldp#BasicContainer')
     ? 'Container'
     : 'Resource'
   processed.name = getItemName(url)
@@ -90,7 +89,7 @@ function _processStatements(url, stmts) {
  * @param {Item[]} fileItems
  * @returns {FolderData}
  */
-function _packageFolder(folderUrl, folderLinks, folderItems, fileItems) {
+function _packageFolder (folderUrl, folderLinks, folderItems, fileItems) {
   const returnVal = {}
   returnVal.type = 'folder' // for backwards compatability :-(
   returnVal.name = getItemName(folderUrl)
@@ -102,4 +101,3 @@ function _packageFolder(folderUrl, folderLinks, folderItems, fileItems) {
 
   return returnVal
 }
-

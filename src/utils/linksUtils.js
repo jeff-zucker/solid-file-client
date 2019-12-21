@@ -9,7 +9,7 @@
  * note: please leave the formating as-is so it can be easily compared
  *       with the original
  */
-function _parseLinkHeaderToArray(linkHeader) {
+function _parseLinkHeaderToArray (linkHeader) {
   if (!linkHeader) { return }
   // const linkexp = /<[^>]*>\s*(\s*;\s*[^()<>@,;:"/[\]?={} \t]+=(([^()<>@,;:"/[]?={} \t]+)|("[^"]*")))*(,|$)/g
   // const paramexp = /[^()<>@,;:"/[]?={} \t]+=(([^()<>@,;:"/[]?={} \t]+)|("[^"]*"))/g
@@ -26,8 +26,8 @@ function _parseLinkHeaderToArray(linkHeader) {
 
 /**
  * Parse all links from a link header into an object
- * @param {string} linkHeader 
- * @param {string} itemUrl 
+ * @param {string} linkHeader
+ * @param {string} itemUrl
  * @returns {object} rel as keys, urls as values
  */
 function parseLinkHeader (linkHeader, itemUrl) {
@@ -44,7 +44,7 @@ function parseLinkHeader (linkHeader, itemUrl) {
 
 /**
  * Get all links urls specified in the header
- * @param {Response} response 
+ * @param {Response} response
  * @param {string} [url]
  * @returns {Object.<string, string>}
  */
@@ -64,10 +64,10 @@ function getLinksFromResponse (response, url = response.url) {
  * note: please leave the formating as-is so it can be easily compared
  *       with the original
  */
-function _urlJoin(given, base) {
+function _urlJoin (given, base) {
   let baseColon, baseScheme, baseSingle
   let colon, lastSlash, path
-  let baseHash = base.indexOf('#')
+  const baseHash = base.indexOf('#')
   if (baseHash > 0) {
     base = base.slice(0, baseHash)
   }
@@ -131,7 +131,6 @@ function _urlJoin(given, base) {
   path = path.replace(/\/\.$/, '/')
   return base.slice(0, baseSingle) + path
 } // end of urlJoin
-
 
 export default {
   parseLinkHeader,
