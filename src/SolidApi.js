@@ -24,17 +24,15 @@ export const LINKS = {
 
 /**
  * @typedef {Object} WriteOptions
- * @property {boolean} [overwriteFiles=true] replace existing files
- * @property {boolean} [overwriteFolders=false] delete existing folders and their contents
  * @property {boolean} [createPath=true] create parent containers if they don't exist
  * @property {boolean} [copyAcl=true] Unused yet
  * @property {boolean} [copyMeta=true] Unused yet
+ * @todo Update this
  */
 
 const defaultWriteOptions = {
-  overwriteFiles: true,
-  overwriteFolders: false,
-  withAcl: false, // TODO: Set true
+  withAcl: true,
+  merge: MERGE.REPLACE,
   copyMeta: true,
   createPath: true
 }
@@ -234,10 +232,7 @@ class SolidAPI {
     return this.head(url)
       .then(() => true)
       .catch(err => {
-        // Only return false when the server returned 404. Else throw
-        if (err.status !== 404) {
-          throw err
-        }
+        assertResponseStatus(404)(err)
         return false
       })
   }
@@ -284,21 +279,19 @@ class SolidAPI {
    */
   async createFolder (url, options) {
     options = {
-      ...({ createPath: true, overwriteFolders: false }),
+      ...({ createPath: true, merge: MERGE.KEEP_TARGET }),
       ...options
     }
 
     try {
       // Test if item exists
       const res = await this.head(url)
-      if (!options.overwriteFolders) {
+      if (options.merge !== MERGE.REPLACE) {
         return res
       }
       await this.deleteFolderRecursively(url)
     } catch (e) {
-      if (e.status !== 404) {
-        throw e
-      }
+      assertResponseStatus(404)(e)
     }
 
     return this.postItem(url, '', 'text/turtle', LINK.CONTAINER, options)
@@ -346,7 +339,7 @@ class SolidAPI {
     }
 
     // Options which are not like the default PUT behaviour
-    if (!options.overwriteFiles && await this.itemExists(url)) {
+    if (options.merge === MERGE.KEEP_TARGET && await this.itemExists(url)) {
       // TODO: Discuss how this should be thrown
       toFetchError(new Error('File already existed: ' + url))
     }
@@ -377,18 +370,18 @@ class SolidAPI {
     }
 
     const folderRes = await this.get(url, { headers: { Accept: 'text/turtle' } })
-    const parsed = await parseFolderResponse(folderRes, url)
+    const parsedFolder = await parseFolderResponse(folderRes, url)
 
     if (options.links === LINKS.INCLUDE_POSSIBLE || options.links === LINKS.INCLUDE) {
       const addItemLinks = async item => item.links = await this.getItemLinks(item.url, options)
       await composedFetch([
-        ...(options.links === LINKS.INCLUDE ? [this._removeInexistingLinks(parsed.links)] : []),
-        ...parsed.files.map(addItemLinks),
-        ...parsed.folders.map(addItemLinks)
+        addItemLinks(parsedFolder),
+        ...parsedFolder.files.map(addItemLinks),
+        ...parsedFolder.folders.map(addItemLinks)
       ])
     }
 
-    return parsed
+    return parsedFolder
   }
 
   /**
@@ -397,7 +390,7 @@ class SolidAPI {
    * @param {object} [options] specify if links should be checked for existence or not
    * @returns {Promise<Links>}
    */
-  async getItemLinks (url, options = { links: INCLUDE_POSSIBLE }) {
+  async getItemLinks (url, options = { links: LINKS.INCLUDE_POSSIBLE }) {
     if (options.links === LINKS.EXCLUDE) {
       toFetchError(new Error('Invalid option LINKS.EXCLUDE for getItemLinks'))
     }
@@ -421,7 +414,7 @@ class SolidAPI {
     await composedFetch(
       Object.entries(links)
         .map(([type, url]) => this.itemExists(url)
-          .catch(err => false)
+          .catch(assertResponseStatus(404))
           .then(exists => {
             if (!exists) {
               delete links[type]
@@ -450,14 +443,16 @@ class SolidAPI {
     }
 
     // Copy File
-    const getResponse = await this.get(from).catch(toFetchError)
+    const getResponse = await this.get(from)
     const content = await getResponse.blob()
     const contentType = getResponse.headers.get('content-type')
-    const putResponse = await this.putFile(to, content, contentType, options).catch(toFetchError)
+    const putResponse = await this.putFile(to, content, contentType, options)
 
     // Optionally copy ACL File
     if (options.withAcl) {
+      // TODO: Copy meta. Potentially double writing due to it being listed in files and being a link
       await this.copyAclFileForItem(from, to, options, getResponse, putResponse)
+        .catch(assertResponseStatus(404))
     }
 
     return putResponse
@@ -470,14 +465,13 @@ class SolidAPI {
    * @param {WriteOptions} [options]
    * @param {Response} [fromResponse] response of a request to the targeted file (not necessary, reduces the amount of requests)
    * @param {Response} [toResponse] response of a request to the new targeted file (not necessary, reduces the amount of requests)
-   * @todo Exchange absolute paths with relative paths (e.g. accessTo)
-   * @todo Make name more describing
+   * @returns {Promise<Response>}
    */
   async copyAclFileForItem (oldTargetFile, newTargetFile, options, fromResponse, toResponse) {
     const { acl: aclFrom } = fromResponse ? getLinksFromResponse(fromResponse) : await this.getItemLinks(oldTargetFile)
     const { acl: aclTo } = toResponse ? getLinksFromResponse(toResponse) : await this.getItemLinks(newTargetFile)
 
-    const aclResponse = await this.get(aclFrom).catch(toFetchError)
+    const aclResponse = await this.get(aclFrom)
     const contentType = aclResponse.headers.get('Content-Type')
     let content = await aclResponse.text()
 
@@ -495,7 +489,7 @@ class SolidAPI {
       content = content.replace(new RegExp(fromName + '>', 'g'), toName + '>')
     }
 
-    return this.putFile(aclTo, content, contentType, options).catch(toFetchError)
+    return this.putFile(aclTo, content, contentType, options)
   }
 
   /**
@@ -518,34 +512,21 @@ class SolidAPI {
     if (typeof from !== 'string' || typeof to !== 'string') {
       throw toFetchError(new Error(`The from and to parameters of copyFolder must be strings. Found: ${from} and ${to}`))
     }
-    const { folders, files } = await this.readFolder(from).catch(toFetchError)
-    const folderResponse = await this._copyFolder(from, to, options).catch(toFetchError)
+
+    const { folders, files } = await this.readFolder(from)
+    const folderResponse = await this.createFolder(to, options)
+    if (options.withAcl) {
+      await this.copyAclFileForItem(from, to, options, undefined, folderResponse)
+        .catch(assertResponseStatus(404))
+    }
 
     const creationResults = await composedFetch([
       ...folders.map(({ name }) => this.copyFolder(`${from}${name}/`, `${to}${name}/`, options)),
-      ...files.map(({ name }) => this.copyFile(`${from}${name}`, `${to}${name}`, options))
+      ...files.map(({ name }) => this.copyFile(`${from}${name}`, `${to}${name}`, options)
+        .catch(catchError(err => err.message.includes('already existed')))) // Don't throw when merge=KEEP_TARGET and it tried to overwrite a file
     ])
 
-    return [folderResponse].concat(...creationResults) // Alternative to Array.prototype.flat
-  }
-
-  /**
-   * non recursive copy of a folder with .acl
-   * Overwrites files per default.
-   * Merges folders if already existing
-   * @param {string} from
-   * @param {string} to
-   * @param {WriteOptions} [options]
-   * @returns {Promise<Response[]>} Resolves with an array of creation responses.
-   * The first one will be the folder specified by "to".
-   * @throws {FetchError}
-   */
-  async _copyFolder (from, to, options) {
-    const folderRes = await this.createFolder(to, options).catch(toFetchError)
-    if (options.withAcl) {
-      await this.copyAclFileForItem(from, to, options, undefined, folderRes).catch(toFetchError)
-    }
-    return folderRes
+    return [folderResponse].concat(...creationResults.filter(item => !(item instanceof FetchError))) // Alternative to Array.prototype.flat
   }
 
   /**
@@ -573,18 +554,35 @@ class SolidAPI {
   }
 
   /**
+   * Delete a file and its links
+   * @param {string} itemUrl 
+   * @returns {Promise<Response>} response of the file deletion
+   * @private
+   */
+  async _deleteItemWithLinks (itemUrl) {
+    const links = await this.getItemLinks(itemUrl, { links: LINKS.INCLUDE })
+    const res = await this.delete(itemUrl)
+    if (links.meta) {
+      await this.delete(links.meta)
+    }
+    if (links.acl) {
+      await this.delete(links.acl)
+    }
+
+    return res
+  }
+
+  /**
    * Delete all folders and files inside a folder
    * @param {string} url
    * @returns {Promise<Response[]>} Resolves with a response for each deletion request
    * @throws {FetchError}
    */
-  async deleteFolderContents (url, options) {
-    // TODO: Delete links
-    options = { ...defaultDeleteOptions, ...options } // should delete .acl by default for deletefolderRecursively
-    const { folders, files } = await this.readFolder(url).catch(toFetchError)
+  async deleteFolderContents (url) {
+    const { folders, files } = await this.readFolder(url)
     return composedFetch([
       ...folders.map(({ url }) => this.deleteFolderRecursively(url)),
-      ...files.map(({ url }) => this.delete(url))
+      ...files.map(({ url }) => this._deleteItemWithLinks(url))
     ])
   }
 
@@ -598,7 +596,7 @@ class SolidAPI {
    */
   async deleteFolderRecursively (url) {
     const resolvedResponses = await this.deleteFolderContents(url)
-    resolvedResponses.unshift(await this.delete(url).catch(toFetchError))
+    resolvedResponses.unshift(await this._deleteItemWithLinks(url))
 
     return resolvedResponses
   }
@@ -617,7 +615,7 @@ class SolidAPI {
     if (areFolders(from)) {
       await this.deleteFolderRecursively(from)
     } else {
-      await this.delete(from)
+      await this._deleteItemWithLinks(from)
         .then(_responseToArray)
     }
     return copyResponse
@@ -647,6 +645,36 @@ function _responseToArray (res) {
     return res
   } else {
     return [res]
+  }
+}
+
+/**
+ * @callback fetchErrorChecker
+ * @param {FetchError} response
+ * @returns {Response}
+ */
+
+/**
+ * create a function that throws if the response has a different status
+ * @param {number} status
+ * @returns {fetchErrorChecker}
+ * @throws {FetchError}
+ */
+function assertResponseStatus (status) {
+  return catchError(res => res.status === status)
+}
+
+/**
+ * create a function that catches a FetchError throws if the callback returns false
+ * @param {function} callback
+ * @returns {fetchErrorChecker}
+ * @throws {FetchError}
+ */
+function catchError (callback) {
+  return err => {
+    if (!callback(err))
+     throw toFetchError(err)
+    return err
   }
 }
 

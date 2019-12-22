@@ -16,7 +16,6 @@ const parseFolderResponse = async (folderResponse, folderUrl = folderResponse.ur
 
   const rdf = new RdfQuery()
   const files = await rdf.queryTurtle(folderUrl, turtle, { thisDoc: '' }, { ldp: 'contains' })
-  const folderLinks = getLinksFromResponse(folderResponse)
 
   const folderItems = []
   const fileItems = []
@@ -32,7 +31,7 @@ const parseFolderResponse = async (folderResponse, folderUrl = folderResponse.ur
     }
   }))
 
-  return _packageFolder(folderUrl, folderLinks, folderItems, fileItems)
+  return _packageFolder(folderUrl, folderItems, fileItems)
 }
 
 /**
@@ -84,19 +83,17 @@ function _processStatements (url, stmts) {
 /**
  * @private
  * @param {string} folderUrl
- * @param {Object.<string, string>} folderLinks
  * @param {Item[]} folderItems
  * @param {Item[]} fileItems
  * @returns {FolderData}
  */
-function _packageFolder (folderUrl, folderLinks, folderItems, fileItems) {
+function _packageFolder (folderUrl, folderItems, fileItems) {
   const returnVal = {}
   returnVal.type = 'folder' // for backwards compatability :-(
   returnVal.itemType = 'Container'
   returnVal.name = getItemName(folderUrl)
   returnVal.parent = getParentUrl(folderUrl)
   returnVal.url = folderUrl
-  returnVal.links = folderLinks
   returnVal.folders = folderItems
   returnVal.files = fileItems
 

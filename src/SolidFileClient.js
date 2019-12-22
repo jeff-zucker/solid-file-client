@@ -46,11 +46,7 @@ class SolidFileClient extends SolidApi {
 
   readHead (url, options) { return super.head(url, options) }
 
-  async deleteFile (url) {
-    const links = await this.getItemLinks(url)
-    if (links.acl) this.delete(links.acl)
-    return this.delete(url)
-  }
+  async deleteFile (url) { return super._deleteItemWithLinks(url) }
 
   async deleteFolder (url, options) { return super.deleteFolderRecursively(url) }
 }

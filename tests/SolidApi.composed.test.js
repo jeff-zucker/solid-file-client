@@ -1,5 +1,5 @@
 
-import SolidApi from '../src/SolidApi'
+import SolidApi, { MERGE } from '../src/SolidApi'
 import apiUtils from '../src/utils/apiUtils'
 import TestFolderGenerator from './utils/TestFolderGenerator'
 import contextSetupModule from './utils/contextSetup'
@@ -71,15 +71,15 @@ describe('composed methods', () => {
         await resolvesWithStatus(api.createFolder(usedFolder.url), 200)
         await expect(api.itemExists(fileInUsedFolder.url)).resolves.toBe(true)
       })
-      test.skip('resolves with 201 on existing folder with options.overwriteFolders and is empty afterwards', async () => {
-        await resolvesWithStatus(api.createFolder(usedFolder.url, { overwriteFolders: true }), 201)
+      test('resolves with 201 on existing folder with merge=REPLACE and is empty afterwards', async () => {
+        await resolvesWithStatus(api.createFolder(usedFolder.url, { merge: MERGE.REPLACE }), 201)
         await expect(api.itemExists(fileInUsedFolder.url)).resolves.toBe(false)
       })
       test('resolves with 201 on inexistent folder with parent', () => {
         return resolvesWithStatus(api.createFolder(folderPlaceholder.url), 201)
       })
       test('resolves with 201 on inexistent folder with parent and options.createPath=false', () => {
-        return resolvesWithStatus(api.createFolder(folderPlaceholder.url), 201)
+        return resolvesWithStatus(api.createFolder(folderPlaceholder.url, { createPath: false }), 201)
       })
       test('resolves with 201 on inexistent folder without parent', () => {
         return resolvesWithStatus(api.createFolder(nestedFolderPlaceholder.url), 201)
@@ -99,17 +99,14 @@ describe('composed methods', () => {
         expect(await res.text()).toBe(content)
         expect(await res.headers.get('content-type')).toMatch(contentType)
       })
-      test('rejects on existing file if options.overwriteFiles=false', () => {
-        return expect(api.createFile(usedFile.url, content, contentType, { overwriteFiles: false })).rejects.toBeDefined()
+      test('rejects on existing file if merge=KEEP_TARGET', () => {
+        return expect(api.createFile(usedFile.url, content, contentType, { merge: MERGE.KEEP_TARGET })).rejects.toBeDefined()
       })
       test('resolves with 201 on inexistent file', () => {
         return resolvesWithStatus(api.createFile(filePlaceholder.url, content, contentType), 201)
       })
       test('resolves with 201 on inexistent nested file', () => {
         return resolvesWithStatus(api.createFile(nestedFilePlaceholder.url, content, contentType), 201)
-      })
-      test.skip('rejects with 404 on inexistent nested file with options.createPath=false', () => {
-        return rejectsWithStatus(api.createFile(nestedFilePlaceholder.url, content, contentType, { createPath: false }), 404)
       })
       test.todo('Add tests for binary files (images, audio, ...)')
     })
@@ -124,17 +121,14 @@ describe('composed methods', () => {
         expect(await res.text()).toBe(content)
         expect(await res.headers.get('content-type')).toMatch(contentType)
       })
-      test('rejects on existing file if options.overwriteFiles=false', () => {
-        return expect(api.putFile(usedFile.url, content, contentType, { overwriteFiles: false })).rejects.toBeDefined()
+      test('rejects on existing file if merge=KEEP_TARGET', () => {
+        return expect(api.putFile(usedFile.url, content, contentType, { merge: MERGE.KEEP_TARGET })).rejects.toBeDefined()
       })
       test('resolves with 201 on inexistent file', () => {
         return resolvesWithStatus(api.putFile(filePlaceholder.url, content, contentType), 201)
       })
       test('resolves with 201 on inexistent nested file', () => {
         return resolvesWithStatus(api.putFile(nestedFilePlaceholder.url, content, contentType), 201)
-      })
-      test.skip('rejects on inexistent nested file with options.createPath=false', () => {
-        return expect(api.putFile(nestedFilePlaceholder.url, content, contentType, { createPath: false })).rejects.toBeDefined()
       })
       test.todo('Add tests for binary files (images, audio, ...)')
     })
@@ -161,11 +155,11 @@ describe('composed methods', () => {
       filePlaceholder,
       folderPlaceholder
     ])
-    const deleteFolder = new BaseFolder(container, 'delete', [
+    const nestedFolder = new BaseFolder(container, 'delete', [
       parentFolder
     ])
 
-    beforeEach(() => deleteFolder.reset())
+    beforeEach(() => nestedFolder.reset())
 
     describe('delete', () => {
       describe('deleteFolderContents', () => {
@@ -217,8 +211,8 @@ describe('composed methods', () => {
           expect(fromResponse.headers.get('Content-Type')).toBe(toResponse.headers.get('Content-Type'))
           expect(await fromResponse.text()).toBe(await toResponse.text())
         })
-        test('rejects when copying to existent file with overwriteFiles=false', () => {
-          return expect(api.copyFile(childFile.url, childFileTwo.url, { overwriteFiles: false })).rejects.toThrowError('already existed')
+        test('rejects when copying to existent file with merge=KEEP_TARGET', () => {
+          return expect(api.copyFile(childFile.url, childFileTwo.url, { merge: MERGE.KEEP_TARGET })).rejects.toThrowError('already existed')
         })
         test.todo('throws some kind of error when called on folder')
       })
@@ -252,19 +246,20 @@ describe('composed methods', () => {
           await expect(api.itemExists(folderPlaceholder.url)).resolves.toBe(true)
           // Note: Could test for others to exist too
         })
-        test('merges folders when copying to an already existing folder', async () => {
-          await expect(api.copyFolder(childOne.url, parentFolder.url)).resolves.toBeDefined()
-          await expect(api.itemExists(`${parentFolder.url}${emptyFolder.name}/`)).resolves.toBe(true)
-          await expect(api.itemExists(`${parentFolder.url}${childFile.name}`)).resolves.toBe(true)
+        test('replaces existing folders per default', async () => {
+          await expect(api.copyFolder(childTwo.url, childOne.url)).resolves.toBeDefined()
+          await expect(api.itemExists(emptyFolder.url)).resolves.toBe(false) // empty folder was only in childOne
+          await expect(api.itemExists(childFile.url)).resolves.toBe(true) // childFile is in both
         })
-        test('rejects when merging folders and files exist with option overwriteFiles=false', () => {
-          return expect(api.copyFolder(childOne.url, childTwo.url, { overwriteFiles: false })).rejects.toThrow(/already existed/)
+        test('overwrites files from target folder with merge=KEEP_SOURCE', async () => {
+          await expect(api.copyFolder(childTwo.url, childOne.url, { merge: MERGE.KEEP_SOURCE })).resolves.toBeDefined()
+          await expect(api.itemExists(emptyFolder.url)).resolves.toBe(true)
+          await expect(api.get(childFile.url).then(res => res.text())).resolves.toBe(childFileTwo.content)
         })
-        test('deletes old contents when copying to an existing folder with overwriteFolders=true', async () => {
-          await expect(api.copyFolder(childTwo.url, childOne.url, { overwriteFolders: true })).resolves.toBeDefined()
-          await expect(api.itemExists(childOne.url)).resolves.toBe(true)
-          await expect(api.itemExists(childFile.url)).resolves.toBe(true) // Was in childTwo and childOne
-          await expect(api.itemExists(emptyFolder.url)).resolves.toBe(false) // Was only in  childOne
+        test('keeps files from target folder with merge=KEEP_TARGET', async () => {
+          await expect(api.copyFolder(childTwo.url, childOne.url, { merge: MERGE.KEEP_TARGET })).resolves.toBeDefined()
+          await expect(api.itemExists(emptyFolder.url)).resolves.toBe(true)
+          await expect(api.get(childFile.url).then(res => res.text())).resolves.toBe(childFile.content)
         })
         test.todo('throws some kind of error when called on file')
         test.todo('throws flattened errors when it fails in multiple levels')
@@ -285,8 +280,8 @@ describe('composed methods', () => {
         test('resolves moving existing to existing file', () => {
           return expect(api.move(childFile.url, parentFile.url)).resolves.toBeDefined()
         })
-        test('rejects moving existing to existing file with overwriteFiles=false', async () => {
-          await expect(api.move(childFile.url, parentFile.url, { overwriteFiles: false })).rejects.toThrowError('already existed')
+        test('rejects moving existing to existing file with merge=KEEP_TARGET', async () => {
+          await expect(api.move(childFile.url, parentFile.url, { merge: MERGE.KEEP_TARGET })).rejects.toThrowError('already existed')
           await expect(api.itemExists(childFile.url)).resolves.toBe(true)
         })
         test('overwrites new location and deletes old one', async () => {
@@ -318,9 +313,9 @@ describe('composed methods', () => {
         test('resolves moving folder with depth 1 to folder with depth 1', () => {
           return expect(api.move(childTwo.url, childOne.url)).resolves.toBeDefined()
         })
-        test('rejects moving folder to existing folder with similar contents with overwriteFiles=false', async () => {
-          await expect(api.move(childTwo.url, childOne.url, { overwriteFiles: false })).rejects.toThrow(/already existed/)
-          await expect(api.itemExists(childTwo.url)).resolves.toBe(true)
+        test('resolves moving folder to existing folder with similar contents with merge=KEEP_TARGET', async () => {
+          await expect(api.move(childTwo.url, childOne.url, { merge: MERGE.KEEP_TARGET })).resolves.toBeDefined()
+          await expect(api.itemExists(childTwo.url)).resolves.toBe(false)
         })
         test('overwrites new folder contents and deletes old one', async () => {
           await expect(api.move(childOne.url, childTwo.url)).resolves.toBeDefined()
