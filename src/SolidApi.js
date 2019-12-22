@@ -11,12 +11,12 @@ const { FetchError, assertResponseOk, composedFetch, toFetchError } = errorUtils
 const { getLinksFromResponse, parseLinkHeader } = linksUtils
 const { parseFolderResponse } = folderUtils
 
-const MERGE = {
+export const MERGE = {
   REPLACE: 'replace',
   KEEP_SOURCE: 'source',
   KEEP_TARGET: 'target'
 }
-const LINKS = {
+export const LINKS = {
   EXCLUDE: 'exludeLinks',
   INCLUDE: 'includeLinks',
   INCLUDE_POSSIBLE: 'includePossibleLinks'
@@ -51,11 +51,18 @@ const defaultSolidApiOptions = {
 }
 
 /**
- * @typedef Item
+ * @typedef {object} Links
+ * @property {string} [acl]
+ * @property {string} [meta]
+ */
+
+/**
+ * @typedef {object} Item
  * @property {string} url
  * @property {string} name
  * @property {string} parent
  * @property {"Container" | "Resource"} itemType
+ * @property {Links} [links]
  */
 
 /**
@@ -63,6 +70,7 @@ const defaultSolidApiOptions = {
  * @property {string} url
  * @property {string} name
  * @property {string} parent
+ * @property {Links} links
  * @property {"folder"} type
  * @property {Item[]} folders
  * @property {Item[]} files
@@ -234,10 +242,6 @@ class SolidAPI {
       })
   }
 
-  async getItemLinks (url) {
-    return this.head(url).then(getLinksFromResponse)
-  }
-
   /**
    * Create an item at target url.
    * Per default it will create the parent folder if it doesn't exist.
@@ -365,7 +369,6 @@ class SolidAPI {
    * @returns {Promise<FolderData>}
    * @throws {FetchError}
    */
-
   async readFolder (url, options) {
     url = url.endsWith('/') ? url : url + '/'
     options = {
@@ -374,54 +377,58 @@ class SolidAPI {
     }
 
     const folderRes = await this.get(url, { headers: { Accept: 'text/turtle' } })
-    const parsed = parseFolderResponse(folderRes, url)
+    const parsed = await parseFolderResponse(folderRes, url)
 
     if (options.links === LINKS.INCLUDE_POSSIBLE || options.links === LINKS.INCLUDE) {
-      await this._addPossibleLinks(parsed)
-    }
-
-    if (options.links === LINKS.INCLUDE) {
-      await this._removeInexistingLinks(parsed)
+      const addItemLinks = async item => item.links = await this.getItemLinks(item.url, options)
+      await composedFetch([
+        ...(options.links === LINKS.INCLUDE ? [this._removeInexistingLinks(parsed.links)] : []),
+        ...parsed.files.map(addItemLinks),
+        ...parsed.folders.map(addItemLinks)
+      ])
     }
 
     return parsed
   }
 
   /**
-   * Add all links for files and folders found by getItemLinks
-   * @param {FolderData} folderData
-   * @private
+   * Get acl and meta links of an item
+   * @param {string} url
+   * @param {object} [options] specify if links should be checked for existence or not
+   * @returns {Promise<Links>}
    */
-  async _addPossibleLinks (folderData) {
-    const addPossibleLinks = async item => item.links = await this.getItemLinks(item.url)
-    await composedFetch([
-      ...folderData.files.map(addPossibleLinks),
-      ...folderData.folders.map(addPossibleLinks)
-    ])
+  async getItemLinks (url, options = { links: INCLUDE_POSSIBLE }) {
+    if (options.links === LINKS.EXCLUDE) {
+      toFetchError(new Error('Invalid option LINKS.EXCLUDE for getItemLinks'))
+    }
+
+    const links = await this.head(url).then(getLinksFromResponse)
+
+    if (options.links === LINKS.INCLUDE) {
+      await this._removeInexistingLinks(links)
+    }
+
+    return links
   }
 
   /**
-   * Remove all links in files and folders which don't exist
-   * @param {FolderData} folderData
+   * Remove all links which are not existing of a links object
+   * @param {Links} links
+   * @returns {Promise<void>}
    * @private
    */
-  async _removeInexistingLinks (folderData) {
-    const removeInexistingLinks = item => composedFetch(
-      Object.entries(item.links)
-        .map(([type, url]) => {
-          return this.itemExists(url).catch(err => false)
-            .then(exists => {
-              if (!exists) {
-                delete item.links[type]
-              }
-            })
-        })
+  async _removeInexistingLinks (links) {
+    await composedFetch(
+      Object.entries(links)
+        .map(([type, url]) => this.itemExists(url)
+          .catch(err => false)
+          .then(exists => {
+            if (!exists) {
+              delete links[type]
+            }
+          })
+        )
     )
-
-    await composedFetch([
-      ...folderData.files.map(removeInexistingLinks),
-      ...folderData.folders.map(removeInexistingLinks)
-    ])
   }
 
   /**

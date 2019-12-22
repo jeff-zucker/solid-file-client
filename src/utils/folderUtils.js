@@ -92,6 +92,7 @@ function _processStatements (url, stmts) {
 function _packageFolder (folderUrl, folderLinks, folderItems, fileItems) {
   const returnVal = {}
   returnVal.type = 'folder' // for backwards compatability :-(
+  returnVal.itemType = 'Container'
   returnVal.name = getItemName(folderUrl)
   returnVal.parent = getParentUrl(folderUrl)
   returnVal.url = folderUrl
