@@ -81,7 +81,7 @@ const defaultErrorDescriptions = {
  * Throw response if response.ok is set to false
  * @param {Response} res
  * @returns {Response} same response
- * @throws {Response}
+ * @throws {FetchError}
  */
 function assertResponseOk (res) {
   if (!res.ok) {
