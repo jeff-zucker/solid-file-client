@@ -11,12 +11,12 @@ const { FetchError, assertResponseOk, composedFetch, toFetchError } = errorUtils
 const { getLinksFromResponse, parseLinkHeader } = linksUtils
 const { parseFolderResponse } = folderUtils
 
-const MERGE = {
+export const MERGE = {
   REPLACE: 'replace',
   KEEP_SOURCE: 'source',
   KEEP_TARGET: 'target'
 }
-const LINKS = {
+export const LINKS = {
   EXCLUDE: 'exludeLinks',
   INCLUDE: 'includeLinks',
   INCLUDE_POSSIBLE: 'includePossibleLinks'
