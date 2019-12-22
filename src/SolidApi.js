@@ -405,7 +405,7 @@ class SolidAPI {
     const links = await this.head(url).then(getLinksFromResponse)
 
     if (options.links === LINKS.INCLUDE) {
-      this._removeInexistingLinks(links)
+      await this._removeInexistingLinks(links)
     }
 
     return links
