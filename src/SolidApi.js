@@ -24,16 +24,13 @@ export const LINKS = {
 
 /**
  * @typedef {Object} WriteOptions
- * @property {boolean} [overwriteFiles=true] replace existing files
- * @property {boolean} [overwriteFolders=false] delete existing folders and their contents
  * @property {boolean} [createPath=true] create parent containers if they don't exist
  * @property {boolean} [copyAcl=true] Unused yet
  * @property {boolean} [copyMeta=true] Unused yet
+ * @todo Update this
  */
 
 const defaultWriteOptions = {
-  overwriteFiles: true,
-  overwriteFolders: false,
   withAcl: true,
   merge: MERGE.REPLACE,
   copyMeta: true,
@@ -282,14 +279,14 @@ class SolidAPI {
    */
   async createFolder (url, options) {
     options = {
-      ...({ createPath: true, overwriteFolders: false }),
+      ...({ createPath: true, merge: MERGE.KEEP_TARGET }),
       ...options
     }
 
     try {
       // Test if item exists
       const res = await this.head(url)
-      if (!options.overwriteFolders) {
+      if (options.merge !== MERGE.REPLACE) {
         return res
       }
       await this.deleteFolderRecursively(url)
@@ -342,7 +339,7 @@ class SolidAPI {
     }
 
     // Options which are not like the default PUT behaviour
-    if (!options.overwriteFiles && await this.itemExists(url)) {
+    if (options.merge === MERGE.KEEP_TARGET && await this.itemExists(url)) {
       // TODO: Discuss how this should be thrown
       toFetchError(new Error('File already existed: ' + url))
     }
@@ -373,18 +370,18 @@ class SolidAPI {
     }
 
     const folderRes = await this.get(url, { headers: { Accept: 'text/turtle' } })
-    const parsed = await parseFolderResponse(folderRes, url)
+    const parsedFolder = await parseFolderResponse(folderRes, url)
 
     if (options.links === LINKS.INCLUDE_POSSIBLE || options.links === LINKS.INCLUDE) {
       const addItemLinks = async item => item.links = await this.getItemLinks(item.url, options)
       await composedFetch([
-        ...(options.links === LINKS.INCLUDE ? [this._removeInexistingLinks(parsed.links)] : []),
-        ...parsed.files.map(addItemLinks),
-        ...parsed.folders.map(addItemLinks)
+        addItemLinks(parsedFolder),
+        ...parsedFolder.files.map(addItemLinks),
+        ...parsedFolder.folders.map(addItemLinks)
       ])
     }
 
-    return parsed
+    return parsedFolder
   }
 
   /**
@@ -516,11 +513,8 @@ class SolidAPI {
       throw toFetchError(new Error(`The from and to parameters of copyFolder must be strings. Found: ${from} and ${to}`))
     }
 
-    const overwriteFiles = options.merge !== MERGE.KEEP_TARGET
-    const overwriteFolders = options.merge === MERGE.REPLACE
-
     const { folders, files } = await this.readFolder(from)
-    const folderResponse = await this.createFolder(to, { overwriteFolders })
+    const folderResponse = await this.createFolder(to, options)
     if (options.withAcl) {
       await this.copyAclFileForItem(from, to, options, undefined, folderResponse)
         .catch(assertResponseStatus(404))
@@ -528,11 +522,11 @@ class SolidAPI {
 
     const creationResults = await composedFetch([
       ...folders.map(({ name }) => this.copyFolder(`${from}${name}/`, `${to}${name}/`, options)),
-      ...files.map(({ name }) => this.copyFile(`${from}${name}`, `${to}${name}`, { ...options, overwriteFiles })
-        .catch(catchError(err => err.message.includes('already existed')))) // Don't throw when overwriteFiles=true and it tried to overwrite a file
+      ...files.map(({ name }) => this.copyFile(`${from}${name}`, `${to}${name}`, options)
+        .catch(catchError(err => err.message.includes('already existed')))) // Don't throw when merge=KEEP_TARGET and it tried to overwrite a file
     ])
 
-    return [folderResponse].concat(...creationResults) // Alternative to Array.prototype.flat
+    return [folderResponse].concat(...creationResults.filter(item => !(item instanceof FetchError))) // Alternative to Array.prototype.flat
   }
 
   /**
@@ -655,15 +649,15 @@ function _responseToArray (res) {
 }
 
 /**
- * @callback responseChecker
- * @param {Response} response
+ * @callback fetchErrorChecker
+ * @param {FetchError} response
  * @returns {Response}
  */
 
 /**
  * create a function that throws if the response has a different status
  * @param {number} status
- * @returns {responseChecker}
+ * @returns {fetchErrorChecker}
  * @throws {FetchError}
  */
 function assertResponseStatus (status) {
@@ -671,16 +665,16 @@ function assertResponseStatus (status) {
 }
 
 /**
- * create a function that throws if the callback returns false
+ * create a function that catches a FetchError throws if the callback returns false
  * @param {function} callback
- * @returns {responseChecker}
+ * @returns {fetchErrorChecker}
  * @throws {FetchError}
  */
 function catchError (callback) {
-  return response => {
-    if (!callback(response))
-     throw toFetchError(response)
-    return response
+  return err => {
+    if (!callback(err))
+     throw toFetchError(err)
+    return err
   }
 }
 

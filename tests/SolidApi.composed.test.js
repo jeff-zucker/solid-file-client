@@ -71,15 +71,15 @@ describe('composed methods', () => {
         await resolvesWithStatus(api.createFolder(usedFolder.url), 200)
         await expect(api.itemExists(fileInUsedFolder.url)).resolves.toBe(true)
       })
-      test.skip('resolves with 201 on existing folder with options.overwriteFolders and is empty afterwards', async () => {
-        await resolvesWithStatus(api.createFolder(usedFolder.url, { overwriteFolders: true }), 201)
+      test('resolves with 201 on existing folder with merge=REPLACE and is empty afterwards', async () => {
+        await resolvesWithStatus(api.createFolder(usedFolder.url, { merge: MERGE.REPLACE }), 201)
         await expect(api.itemExists(fileInUsedFolder.url)).resolves.toBe(false)
       })
       test('resolves with 201 on inexistent folder with parent', () => {
         return resolvesWithStatus(api.createFolder(folderPlaceholder.url), 201)
       })
       test('resolves with 201 on inexistent folder with parent and options.createPath=false', () => {
-        return resolvesWithStatus(api.createFolder(folderPlaceholder.url), 201)
+        return resolvesWithStatus(api.createFolder(folderPlaceholder.url, { createPath: false }), 201)
       })
       test('resolves with 201 on inexistent folder without parent', () => {
         return resolvesWithStatus(api.createFolder(nestedFolderPlaceholder.url), 201)
@@ -99,17 +99,14 @@ describe('composed methods', () => {
         expect(await res.text()).toBe(content)
         expect(await res.headers.get('content-type')).toMatch(contentType)
       })
-      test('rejects on existing file if options.overwriteFiles=false', () => {
-        return expect(api.createFile(usedFile.url, content, contentType, { overwriteFiles: false })).rejects.toBeDefined()
+      test('rejects on existing file if merge=KEEP_TARGET', () => {
+        return expect(api.createFile(usedFile.url, content, contentType, { merge: MERGE.KEEP_TARGET })).rejects.toBeDefined()
       })
       test('resolves with 201 on inexistent file', () => {
         return resolvesWithStatus(api.createFile(filePlaceholder.url, content, contentType), 201)
       })
       test('resolves with 201 on inexistent nested file', () => {
         return resolvesWithStatus(api.createFile(nestedFilePlaceholder.url, content, contentType), 201)
-      })
-      test.skip('rejects with 404 on inexistent nested file with options.createPath=false', () => {
-        return rejectsWithStatus(api.createFile(nestedFilePlaceholder.url, content, contentType, { createPath: false }), 404)
       })
       test.todo('Add tests for binary files (images, audio, ...)')
     })
@@ -124,17 +121,14 @@ describe('composed methods', () => {
         expect(await res.text()).toBe(content)
         expect(await res.headers.get('content-type')).toMatch(contentType)
       })
-      test('rejects on existing file if options.overwriteFiles=false', () => {
-        return expect(api.putFile(usedFile.url, content, contentType, { overwriteFiles: false })).rejects.toBeDefined()
+      test('rejects on existing file if merge=KEEP_TARGET', () => {
+        return expect(api.putFile(usedFile.url, content, contentType, { merge: MERGE.KEEP_TARGET })).rejects.toBeDefined()
       })
       test('resolves with 201 on inexistent file', () => {
         return resolvesWithStatus(api.putFile(filePlaceholder.url, content, contentType), 201)
       })
       test('resolves with 201 on inexistent nested file', () => {
         return resolvesWithStatus(api.putFile(nestedFilePlaceholder.url, content, contentType), 201)
-      })
-      test.skip('rejects on inexistent nested file with options.createPath=false', () => {
-        return expect(api.putFile(nestedFilePlaceholder.url, content, contentType, { createPath: false })).rejects.toBeDefined()
       })
       test.todo('Add tests for binary files (images, audio, ...)')
     })
@@ -217,8 +211,8 @@ describe('composed methods', () => {
           expect(fromResponse.headers.get('Content-Type')).toBe(toResponse.headers.get('Content-Type'))
           expect(await fromResponse.text()).toBe(await toResponse.text())
         })
-        test('rejects when copying to existent file with overwriteFiles=false', () => {
-          return expect(api.copyFile(childFile.url, childFileTwo.url, { overwriteFiles: false })).rejects.toThrowError('already existed')
+        test('rejects when copying to existent file with merge=KEEP_TARGET', () => {
+          return expect(api.copyFile(childFile.url, childFileTwo.url, { merge: MERGE.KEEP_TARGET })).rejects.toThrowError('already existed')
         })
         test.todo('throws some kind of error when called on folder')
       })
@@ -286,8 +280,8 @@ describe('composed methods', () => {
         test('resolves moving existing to existing file', () => {
           return expect(api.move(childFile.url, parentFile.url)).resolves.toBeDefined()
         })
-        test('rejects moving existing to existing file with overwriteFiles=false', async () => {
-          await expect(api.move(childFile.url, parentFile.url, { overwriteFiles: false })).rejects.toThrowError('already existed')
+        test('rejects moving existing to existing file with merge=KEEP_TARGET', async () => {
+          await expect(api.move(childFile.url, parentFile.url, { merge: MERGE.KEEP_TARGET })).rejects.toThrowError('already existed')
           await expect(api.itemExists(childFile.url)).resolves.toBe(true)
         })
         test('overwrites new location and deletes old one', async () => {

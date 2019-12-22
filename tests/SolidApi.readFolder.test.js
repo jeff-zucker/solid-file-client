@@ -39,10 +39,6 @@ const sampleFolderWithoutLinks = {
     name: folderName,
     parent: parentUrl,
     url: folderUrl,
-    links: {
-        acl: `${folderUrl}.acl`,
-        meta: `${folderUrl}.meta`
-    },
     folders: [
         {
             type: 'folder',
@@ -65,6 +61,10 @@ const sampleFolderWithoutLinks = {
 
 const sampleFolderObj = {
     ...sampleFolderWithoutLinks,
+    links: {
+        acl: `${folderUrl}.acl`,
+        meta: `${folderUrl}.meta`
+    },
     folders: [
         {
             ...sampleFolderWithoutLinks.folders[0],
@@ -141,7 +141,7 @@ const api = new SolidApi(sampleFetch)
 
 describe('readFolder', () => {
     describe('EXCLUDE links', () => {
-        test('can read sampleFolder', async () => {
+        test('can read sample folder', async () => {
             const res = await api.readFolder(sampleFolderObj.url)
             expect(res).toEqual(sampleFolderWithoutLinks)
             expect(sampleFetch).toHaveBeenCalledTimes(1)
@@ -149,18 +149,18 @@ describe('readFolder', () => {
     })
 
     describe('INCLUDE links', () => {
-        test('does not throw', async () => {
+        test('can read sample folder with existing links', async () => {
             const res = await api.readFolder(sampleFolderObj.url, { links: 'includeLinks' })
             expect(res).toEqual(sampleFolderObj)
-            expect(sampleFetch).toHaveBeenCalledTimes(1 + 2 + 6)
+            expect(sampleFetch).toHaveBeenCalledTimes(1 + 3 + 6)
         })
     })
 
     describe('INCLUDE_POSSIBLE links', () => {
-        test('does not throw', async () => {
+        test('can read sample folder with possible links', async () => {
             const res = await api.readFolder(sampleFolderObj.url, { links: 'includePossibleLinks' })
             expect(res).toEqual(sampleFolderObjWithPossibleLinks)
-            expect(sampleFetch).toHaveBeenCalledTimes(1 + 2)
+            expect(sampleFetch).toHaveBeenCalledTimes(1 + 3)
         })
     })
 
