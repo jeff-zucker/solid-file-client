@@ -29,31 +29,139 @@ js:
     st:mtime 1573905994.593;
     st:size 4096.`
 
+const parentUrl = 'https://example.org/parent/'
+const folderName = 'sample-folder'
+const folderUrl = `${parentUrl}${folderName}/`
+
+const sampleFolderWithoutLinks = {
+    type: 'folder',
+    itemType: 'Container',
+    name: folderName,
+    parent: parentUrl,
+    url: folderUrl,
+    links: {
+        acl: `${folderUrl}.acl`,
+        meta: `${folderUrl}.meta`
+    },
+    folders: [
+        {
+            type: 'folder',
+            itemType: 'Container',
+            name: 'js',
+            parent: folderUrl,
+            url: `${folderUrl}js/`
+        }
+    ],
+    files: [
+        {
+            type: 'text/turtle',
+            itemType: 'Resource',
+            name: 'notes.ttl',
+            parent: folderUrl,
+            url: `${folderUrl}notes.ttl`
+        }
+    ]
+}
+
+const sampleFolderObj = {
+    ...sampleFolderWithoutLinks,
+    folders: [
+        {
+            ...sampleFolderWithoutLinks.folders[0],
+            links: {}
+        }
+    ],
+    files: [
+        {
+            ...sampleFolderWithoutLinks.files[0],
+            links: {
+                acl: `${sampleFolderWithoutLinks.files[0].url}.acl`,
+                meta: `${sampleFolderWithoutLinks.files[0].url}.meta`
+            }
+        }
+    ]
+}
+
+const getPossibleLinks = url => {
+    return {
+        acl: `${url}.acl`,
+        meta: `${url}.meta`
+    }
+}
+const sampleFolderObjWithPossibleLinks = {
+    ...sampleFolderObj,
+    links: getPossibleLinks(sampleFolderObj.url),
+    folders: [
+        {
+            ...sampleFolderObj.folders[0],
+            links: getPossibleLinks(sampleFolderObj.folders[0].url)
+        }
+    ],
+    files: [
+        {
+            ...sampleFolderObj.files[0],
+            links: getPossibleLinks(sampleFolderObj.files[0].url)
+        }
+    ]
+}
+
+// Maps urls of existing items to their description
+const itemsMap = {
+    [sampleFolderObj.url]: sampleFolderObj
+}
+sampleFolderObj.files.forEach(item => itemsMap[item.url] = item)
+sampleFolderObj.folders.forEach(item => itemsMap[item.url] = item)
+Object.entries(sampleFolderObj.links).forEach(([rel, url]) => itemsMap[url] = sampleFolderObj.links[rel])
+sampleFolderObj.files.forEach(item => Object.entries(item.links).forEach(([rel, url]) => itemsMap[url] = item.links[rel]))
+sampleFolderObj.folders.forEach(item => Object.entries(item.links).forEach(([rel, url]) => itemsMap[url] = item.links[rel]))
+
+const sampleFetch = jest.fn(async (url, request) => {
+    const createLink = url => `<${url}.acl>; rel="acl", <${url}.meta>; rel="describedBy"`
+    const createResponse = (options = {}) => {
+        return {
+            url,
+            text: () => Promise.resolve(options.body),
+            headers: {
+                get: key => (key === 'link') ? createLink(url) : null
+            },
+            ok: 'ok' in options ? options.ok : true,
+            status: 'status' in options ? options.status : 200
+        }
+    }
+
+    if (url === sampleFolderObj.url)
+        return createResponse({ body: sampleFolder })
+    if (url in itemsMap)
+        return createResponse()
+    return createResponse({ status: 404, ok: false })
+})
+beforeEach(() => sampleFetch.mockClear())
+
+const api = new SolidApi(sampleFetch)
 
 describe('readFolder', () => {
-    const parent = 'https://example.org/'
-    const name = 'my-folder'
-    const url = `${parent}${name}/`
-    const headerLink = '<file1.acl>; rel="acl"'
-    const sampleResponse = {
-        text: () => Promise.resolve(sampleFolder),
-        headers: {
-            get: key => (key === 'link') ? headerLink : null
-        },
-        ok: true,
-        url
-    }
-    const fetch = jest.fn(() => Promise.resolve(sampleResponse))
-    const api = new SolidApi(fetch)
+    describe('EXCLUDE links', () => {
+        test('can read sampleFolder', async () => {
+            const res = await api.readFolder(sampleFolderObj.url)
+            expect(res).toEqual(sampleFolderWithoutLinks)
+            expect(sampleFetch).toHaveBeenCalledTimes(1)
+        })
+    })
 
-    test('can read sampleFolder', async () => {
-        const res = await api.readFolder(url)
-        expect(res.type).toBe('folder')
-        expect(res.name).toBe(name)
-        expect(res.parent).toBe(parent)
-        expect(res.url).toBe(url)
-        expect(res.folders).toHaveLength(1)
-        expect(res.files).toHaveLength(1)
+    describe('INCLUDE links', () => {
+        test('does not throw', async () => {
+            const res = await api.readFolder(sampleFolderObj.url, { links: 'includeLinks' })
+            expect(res).toEqual(sampleFolderObj)
+            expect(sampleFetch).toHaveBeenCalledTimes(1 + 2 + 6)
+        })
+    })
+
+    describe('INCLUDE_POSSIBLE links', () => {
+        test('does not throw', async () => {
+            const res = await api.readFolder(sampleFolderObj.url, { links: 'includePossibleLinks' })
+            expect(res).toEqual(sampleFolderObjWithPossibleLinks)
+            expect(sampleFetch).toHaveBeenCalledTimes(1 + 2)
+        })
     })
 
     test.todo('Add more tests')

@@ -25,20 +25,24 @@ function _parseLinkHeaderToArray (linkHeader) {
 }
 
 /**
- * Parse all links from a link header into an object
+ * Parse acl and meta links from a link header into an object
  * @param {string} linkHeader
  * @param {string} itemUrl
- * @returns {object} rel as keys, urls as values
+ * @returns {object} rel as keys, urls as values. If not found, the key is not set
  */
 function parseLinkHeader (linkHeader, itemUrl) {
   const results = {}
-  const links = _parseLinkHeaderToArray(linkHeader)
-  links.forEach(link => {
-    // link is similar to: <file.txt.acl>; rel="acl",
-    const url = link.substring(link.indexOf('<') + 1, link.indexOf('>'))
-    const rel = link.substring(link.indexOf('rel="') + 'rel="'.length, link.lastIndexOf('"'))
-    results[rel] = _urlJoin(url, itemUrl)
-  })
+  _parseLinkHeaderToArray(linkHeader)
+    .map(link => {
+      // link is similar to: <file.txt.acl>; rel="acl",
+      const url = link.substring(link.indexOf('<') + 1, link.indexOf('>'))
+      const originalRel = link.substring(link.indexOf('rel="') + 'rel="'.length, link.lastIndexOf('"'))
+      const rel = originalRel.toLowerCase() === 'describedby' ? 'meta' : originalRel // Map describedBy to meta
+      return [rel, url]
+    })
+    .filter(([rel]) => ['meta', 'acl'].includes(rel))
+    .forEach(([rel, url]) => results[rel] = _urlJoin(url, itemUrl))
+
   return results
 }
 
