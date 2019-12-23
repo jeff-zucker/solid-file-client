@@ -450,6 +450,8 @@ class SolidAPI {
     const putResponse = await this.putFile(to, content, contentType, options)
 
     // Optionally copy ACL and Meta Files
+    // TODO: What do we want to do when the source has no acl, but the target has one?
+    //       Currently it keeps the old acl.
     await this.copyLinksForItem(from, to, options, getResponse, putResponse)
 
     return putResponse
@@ -464,11 +466,14 @@ class SolidAPI {
    * @param {Response} [toResponse]
    * @returns {Promise<Response>}
    */
-  async copyMetaFileForItem (oldTargetFile, newTargetFile, options, fromResponse, toResponse) {
+  async copyMetaFileForItem (oldTargetFile, newTargetFile, options = {}, fromResponse, toResponse) {
+    // TODO: Default options?
     const { meta: metaFrom } = fromResponse ? getLinksFromResponse(fromResponse) : await this.getItemLinks(oldTargetFile)
     const { meta: metaTo } = toResponse ? getLinksFromResponse(toResponse) : await this.getItemLinks(newTargetFile)
 
-    // TODO: Handle not finding of meta links
+    // TODO: Handle not finding of meta links (ie metaFrom/metaTo is undefined)
+    //       Possible to try this.getItemLinks again
+    //       Else throw (?)
 
     return this.copyFile(metaFrom, metaTo, { withAcl: options.withAcl, withMeta: false })
   }
@@ -483,25 +488,27 @@ class SolidAPI {
    * @returns {Promise<Response>}
    */
   async copyAclFileForItem (oldTargetFile, newTargetFile, options, fromResponse, toResponse) {
+    // TODO: Default options?
     const { acl: aclFrom } = fromResponse ? getLinksFromResponse(fromResponse) : await this.getItemLinks(oldTargetFile)
     const { acl: aclTo } = toResponse ? getLinksFromResponse(toResponse) : await this.getItemLinks(newTargetFile)
 
-    // TODO: Handle not finding of acl links
+    // TODO: Handle not finding of acl links (same as in copy meta)
 
     const aclResponse = await this.get(aclFrom)
     const contentType = aclResponse.headers.get('Content-Type')
     let content = await aclResponse.text()
 
-    // TODO: Check if this modification is good enough or replace with something different
+    // TODO: Use nodejs url module, make URL and use its host/base/origin/... instead of getRootUrl
     // Make absolute paths to the same directory relative
     // Update relative paths to the new location
     const fromName = getItemName(oldTargetFile)
-    const toName = getItemName(newTargetFile)
+    const toName = areFolders(newTargetFile) ? '' : getItemName(newTargetFile)
     if (content.includes(oldTargetFile)) {
       // if object values are absolute URI's make them relative to the destination
       content = content.replace(new RegExp('<' + oldTargetFile + '>', 'g'), '<./' + toName + '>')
-      content = content.replace(new RegExp('<' + getRootUrl(oldTargetFile) + 'profile/card#me>'), '<./profile/card#me>')
-    } else if (toName !== fromName) {
+      content = content.replace(new RegExp('<' + getRootUrl(oldTargetFile) + 'profile/card#me>'), '</profile/card#me>')
+    }
+    if (toName !== fromName) {
       // if relative replace file destination
       content = content.replace(new RegExp(fromName + '>', 'g'), toName + '>')
     }
@@ -520,6 +527,7 @@ class SolidAPI {
    * @returns {Promise<Response>}
    */
   async copyLinksForItem (oldTargetFile, newTargetFile, options, fromResponse, toResponse) {
+    // TODO: Default options?
     if (options.withMeta) {
       await this.copyMetaFileForItem(oldTargetFile, newTargetFile, options, fromResponse, toResponse)
         .catch(assertResponseStatus(404))
@@ -597,13 +605,16 @@ class SolidAPI {
    */
   async _deleteItemWithLinks (itemUrl) {
     const links = await this.getItemLinks(itemUrl, { links: LINKS.INCLUDE })
-    const res = await this.delete(itemUrl)
     if (links.meta) {
-      await this.delete(links.meta)
+      await this._deleteItemWithLinks(links.meta)
     }
     if (links.acl) {
       await this.delete(links.acl)
     }
+
+    // Note: Deleting item after deleting links to make it work for folders
+    //       Change this if a new spec allows it (to avoid deleting the permissions before the folder)
+    const res = await this.delete(itemUrl)
 
     return res
   }

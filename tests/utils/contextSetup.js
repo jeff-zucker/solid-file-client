@@ -115,15 +115,18 @@ function createTestFetch (baseUrl, authFetch) {
     }
 
     // TODO: Remove this when solid-rest properly adds links
-    const fetchWithLinks = async (url, ...args) => {
-      const res = await authFetch(url, ...args)
+    const fetchWithLinks = async (url, options = {}) => {
+      const res = await authFetch(url, options)
       const originalGet = res.headers.get.bind(res.headers)
       let newLinks = res.headers.get('links') || ''
+      const baseUrl = (options.method === 'POST' && options.headers.slug)
+        ? url + options.headers.slug + (options.headers.link.includes('ontainer') ? '/' : '')
+        : url
       if (!newLinks.includes('rel="acl"')) {
-        newLinks += `, <${url}.acl>; rel="acl"`
+        newLinks += `, <${baseUrl}.acl>; rel="acl"`
       }
       if (!newLinks.includes('rel="describedBy"')) {
-        newLinks += `, <${url}.meta>; rel="describedBy"`
+        newLinks += `, <${baseUrl}.meta>; rel="describedBy"`
       }
       if (newLinks.startsWith(',')) {
         newLinks = newLinks.substr(1)
