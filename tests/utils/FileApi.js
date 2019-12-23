@@ -16,7 +16,7 @@ class FileApi {
     deleteFolderRecursively(url) {
         return fs.promises.rmdir(this._mapUrl(url), { recursive: true })
     }
-    deleteFile(url) {
+    delete(url) {
         return fs.promises.unlink(this._mapUrl(url))
     }
     itemExists(url) {

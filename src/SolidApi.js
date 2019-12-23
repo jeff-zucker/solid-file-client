@@ -25,13 +25,14 @@ export const LINKS = {
 /**
  * @typedef {Object} WriteOptions
  * @property {boolean} [createPath=true] create parent containers if they don't exist
- * @property {boolean} [copyAcl=true] Unused yet
- * @property {boolean} [copyMeta=true] Unused yet
+ * @property {boolean} [withAcl=true] Unused yet
+ * @property {boolean} [withMeta=true] Unused yet
  * @todo Update this
  */
 
 const defaultWriteOptions = {
   withAcl: true,
+  withMeta: true,
   merge: MERGE.REPLACE,
   copyMeta: true,
   createPath: true
@@ -448,14 +449,33 @@ class SolidAPI {
     const contentType = getResponse.headers.get('content-type')
     const putResponse = await this.putFile(to, content, contentType, options)
 
-    // Optionally copy ACL File
-    if (options.withAcl) {
-      // TODO: Copy meta. Potentially double writing due to it being listed in files and being a link
-      await this.copyAclFileForItem(from, to, options, getResponse, putResponse)
-        .catch(assertResponseStatus(404))
-    }
+    // Optionally copy ACL and Meta Files
+    // TODO: What do we want to do when the source has no acl, but the target has one?
+    //       Currently it keeps the old acl.
+    await this.copyLinksForItem(from, to, options, getResponse, putResponse)
 
     return putResponse
+  }
+
+  /**
+   * Copy a meta file
+   * @param {string} oldTargetFile
+   * @param {string} newTargetFile
+   * @param {WriteOptions} [options]
+   * @param {Response} [fromResponse]
+   * @param {Response} [toResponse]
+   * @returns {Promise<Response>}
+   */
+  async copyMetaFileForItem (oldTargetFile, newTargetFile, options = {}, fromResponse, toResponse) {
+    // TODO: Default options?
+    const { meta: metaFrom } = fromResponse ? getLinksFromResponse(fromResponse) : await this.getItemLinks(oldTargetFile)
+    const { meta: metaTo } = toResponse ? getLinksFromResponse(toResponse) : await this.getItemLinks(newTargetFile)
+
+    // TODO: Handle not finding of meta links (ie metaFrom/metaTo is undefined)
+    //       Possible to try this.getItemLinks again
+    //       Else throw (?)
+
+    return this.copyFile(metaFrom, metaTo, { withAcl: options.withAcl, withMeta: false })
   }
 
   /**
@@ -468,28 +488,54 @@ class SolidAPI {
    * @returns {Promise<Response>}
    */
   async copyAclFileForItem (oldTargetFile, newTargetFile, options, fromResponse, toResponse) {
+    // TODO: Default options?
     const { acl: aclFrom } = fromResponse ? getLinksFromResponse(fromResponse) : await this.getItemLinks(oldTargetFile)
     const { acl: aclTo } = toResponse ? getLinksFromResponse(toResponse) : await this.getItemLinks(newTargetFile)
+
+    // TODO: Handle not finding of acl links (same as in copy meta)
 
     const aclResponse = await this.get(aclFrom)
     const contentType = aclResponse.headers.get('Content-Type')
     let content = await aclResponse.text()
 
-    // TODO: Check if this modification is good enough or replace with something different
+    // TODO: Use nodejs url module, make URL and use its host/base/origin/... instead of getRootUrl
     // Make absolute paths to the same directory relative
     // Update relative paths to the new location
-    const toName = getItemName(oldTargetFile)
-    const fromName = getItemName(newTargetFile)
+    const fromName = getItemName(oldTargetFile)
+    const toName = areFolders(newTargetFile) ? '' : getItemName(newTargetFile)
     if (content.includes(oldTargetFile)) {
       // if object values are absolute URI's make them relative to the destination
       content = content.replace(new RegExp('<' + oldTargetFile + '>', 'g'), '<./' + toName + '>')
-      content = content.replace(new RegExp('<' + getRootUrl(oldTargetFile) + 'profile/card#me>'), '<./profile/card#me>')
-    } else if (toName !== fromName) {
+      content = content.replace(new RegExp('<' + getRootUrl(oldTargetFile) + 'profile/card#me>'), '</profile/card#me>')
+    }
+    if (toName !== fromName) {
       // if relative replace file destination
       content = content.replace(new RegExp(fromName + '>', 'g'), toName + '>')
     }
 
     return this.putFile(aclTo, content, contentType, options)
+  }
+
+  /**
+   * Copy links for an item. Use withAcl and withMeta options to specify which links to copy
+   * Does not throw if the links don't exist.
+   * @param {string} oldTargetFile Url of the file the acl file targets (e.g. file.ttl for file.ttl.acl)
+   * @param {string} newTargetFile Url of the new file targeted (e.g. new-file.ttl for new-file.ttl.acl)
+   * @param {WriteOptions} [options]
+   * @param {Response} [fromResponse] response of a request to the targeted file (not necessary, reduces the amount of requests)
+   * @param {Response} [toResponse] response of a request to the new targeted file (not necessary, reduces the amount of requests)
+   * @returns {Promise<Response>}
+   */
+  async copyLinksForItem (oldTargetFile, newTargetFile, options, fromResponse, toResponse) {
+    // TODO: Default options?
+    if (options.withMeta) {
+      await this.copyMetaFileForItem(oldTargetFile, newTargetFile, options, fromResponse, toResponse)
+        .catch(assertResponseStatus(404))
+    }
+    if (options.withAcl) {
+      await this.copyAclFileForItem(oldTargetFile, newTargetFile, options, fromResponse, toResponse)
+        .catch(assertResponseStatus(404))
+    }
   }
 
   /**
@@ -515,10 +561,8 @@ class SolidAPI {
 
     const { folders, files } = await this.readFolder(from)
     const folderResponse = await this.createFolder(to, options)
-    if (options.withAcl) {
-      await this.copyAclFileForItem(from, to, options, undefined, folderResponse)
-        .catch(assertResponseStatus(404))
-    }
+
+    await this.copyLinksForItem(from, to, options, undefined, folderResponse)
 
     const creationResults = await composedFetch([
       ...folders.map(({ name }) => this.copyFolder(`${from}${name}/`, `${to}${name}/`, options)),
@@ -561,13 +605,16 @@ class SolidAPI {
    */
   async _deleteItemWithLinks (itemUrl) {
     const links = await this.getItemLinks(itemUrl, { links: LINKS.INCLUDE })
-    const res = await this.delete(itemUrl)
     if (links.meta) {
-      await this.delete(links.meta)
+      await this._deleteItemWithLinks(links.meta)
     }
     if (links.acl) {
       await this.delete(links.acl)
     }
+
+    // Note: Deleting item after deleting links to make it work for folders
+    //       Change this if a new spec allows it (to avoid deleting the permissions before the folder)
+    const res = await this.delete(itemUrl)
 
     return res
   }

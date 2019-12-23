@@ -29,6 +29,13 @@ const getApi = () => {
 }
 
 /**
+ * @typedef {object} Links
+ * @property {boolean|string|File} acl
+ * @property {boolean|string|File} meta
+ * @property {Links} placeholder
+ */
+
+/**
  * Class for creating test folder and file structures
  * Don't create it directly. Use Folder/File/... instead
  */
@@ -39,12 +46,16 @@ class TestFolderGenerator {
    * @param {string} content
    * @param {string} contentType
    * @param {TestFolderGenerator[]} children
+   * @param {Links} [links]
    */
-  constructor (name, content, contentType, children) {
+  constructor (name, content, contentType, children, links = {}) {
     this.name = name
     this.content = content
     this.contentType = contentType
     this.children = children
+    this._cloneLinks = { ...links }
+    this._links = _makeLinkFiles(name, links, this instanceof Folder)
+    this.children.unshift(...Object.values(this._links))
     this.basePath = ''
   }
 
@@ -68,6 +79,8 @@ class TestFolderGenerator {
     }
     try {
       if (await this._exists()) {
+        // TODO: Update remove behavior including link files
+        await Promise.all(this.children.map(child => child.remove({ dryRun })))
         await (this instanceof Folder ? this._removeFolder() : this._removeFile())
       }
     } catch (e) {
@@ -83,12 +96,18 @@ class TestFolderGenerator {
     }
   }
 
-  _removeFolder () {
-    return getApi().deleteFolderRecursively(this.url)
+  async _removeFolder () {
+    return getApi().deleteFolderRecursively(this.url).catch(err => {
+      if (err.status !== 404)
+        throw err
+    })
   }
 
   _removeFile () {
-    return getApi().delete(this.url)
+    return getApi().delete(this.url).catch(err => {
+      if (err.status !== 404)
+        throw err
+    })
   }
 
   _exists () {
@@ -101,6 +120,9 @@ class TestFolderGenerator {
    * @param {object} options
    */
   async generate (options = { dryRun: false }) {
+    if (this.isPlaceholder()) {
+      return this.remove(options)
+    }
     if (options.dryRun) {
       console.log(`would generate ${this.url}`)
       return Promise.all(this.children.map(child => child.generate(options)))
@@ -134,8 +156,8 @@ class TestFolderGenerator {
    * Loop through all contents of this item (excluding placeholders)
    * @param {function} callback
    */
-  traverseContents (callback) {
-    if (this instanceof FilePlaceholder || this instanceof FolderPlaceholder) {
+  traverseContents (callback, excludePlacholders = true) {
+    if (excludePlacholders && this.isPlaceholder()) {
       return
     }
     this.children.forEach(child => child.traverse(callback))
@@ -145,8 +167,8 @@ class TestFolderGenerator {
    * Loop through all contents of this item and also trigger the callback for this item (excluding placeholders)
    * @param {function} itemCallback
    */
-  traverse (itemCallback) {
-    if (this instanceof FilePlaceholder || this instanceof FolderPlaceholder) {
+  traverse (itemCallback, excludePlacholders = true) {
+    if (excludePlacholders && this.isPlaceholder()) {
       return
     }
     this.traverseContents(itemCallback)
@@ -182,7 +204,16 @@ class TestFolderGenerator {
     return contextSetup.getBaseUrl() + this.basePath + this.name
   }
 
+  get acl () {
+    return this._links.acl
+  }
+
+  get meta () {
+    return this._links.meta
+  }
+
   /**
+   * Contents without placholders
    * @returns {TestFolderGenerator[]}
    */
   get contents () {
@@ -191,25 +222,38 @@ class TestFolderGenerator {
     return contents
   }
 
+  /**
+   * Contents including placeholders
+   * @returns {TestFolderGenerator[]}
+   */
+  get contentsAndPlaceholders () {
+    const contents = []
+    this.traverseContents(item => contents.push(item), false)
+    return contents
+  }
+
+  /**
+   * @returns {TestFolderGenerator}
+   */
   clone () {
     if (this instanceof Folder) {
-      return new Folder(this.name, this.children.map(child => child.clone()))
+      return new Folder(this.name, this.children.map(child => child.clone()), this._cloneLinks)
     }
     if (this instanceof FolderPlaceholder) {
-      return new FolderPlaceholder(this.name, this.children.map(child => child.clone()))
+      return new FolderPlaceholder(this.name, this.children.map(child => child.clone()), this._cloneLinks)
     }
     if (this instanceof File) {
-      return new File(this.name, this.content, this.contentType)
+      return new File(this.name, this.content, this.contentType, this._cloneLinks)
     }
     if (this instanceof FilePlaceholder) {
-      return new FilePlaceholder(this.name, this.content, this.contentType)
+      return new FilePlaceholder(this.name, this.content, this.contentType, this._cloneLinks)
     }
     throw new Error("Couldn't create clone")
   }
 
   toString () {
     let str = this.name
-    if (this instanceof FolderPlaceholder || this instanceof FilePlaceholder) {
+    if (this.isPlaceholder()) {
       str = '[' + str + ']'
     }
     if (this.children.length) {
@@ -219,6 +263,11 @@ class TestFolderGenerator {
     }
     return str
   }
+
+  // Override in placholders
+  isPlaceholder () {
+    return false
+  }
 }
 
 class Folder extends TestFolderGenerator {
@@ -226,12 +275,13 @@ class Folder extends TestFolderGenerator {
    * Create a new Test Folder
    * @param {string} name
    * @param {TestFolderGenerator[]} [children]
+   * @param {Links} [links]
    */
-  constructor (name, children = []) {
+  constructor (name, children = [], links) {
     if (!name.endsWith('/')) {
       name = name + '/'
     }
-    super(name, '', 'text/turtle', children)
+    super(name, '', 'text/turtle', children, links)
   }
 }
 
@@ -243,9 +293,10 @@ class BaseFolder extends Folder {
    *
    * @param {string|TestFolderGenerator} base base path for all children
    * @param {TestFolderGenerator[]} [children]
+   * @param {Links} [links]
    */
-  constructor (base, name, children = []) {
-    super(name, children)
+  constructor (base, name, children = [], links) {
+    super(name, children, links)
     this.setBasePath(base)
   }
 }
@@ -256,9 +307,10 @@ class File extends TestFolderGenerator {
    * @param {string} name
    * @param {string} [content]
    * @param {string} [contentType]
+   * @param {Links} [links]
    */
-  constructor (name, content = '<> a <#test>.', contentType = 'text/turtle') {
-    super(name, content, contentType, [])
+  constructor (name, content = '<> a <#test>.', contentType = 'text/turtle', links) {
+    super(name, content, contentType, [], links)
   }
 }
 
@@ -268,8 +320,8 @@ class File extends TestFolderGenerator {
  * Also useful for getting the url of a placeholder nested inside other folders
  */
 class FolderPlaceholder extends Folder {
-  generate (...args) {
-    return this.remove(...args)
+  isPlaceholder () {
+    return true
   }
 }
 
@@ -279,9 +331,58 @@ class FolderPlaceholder extends Folder {
  * Also useful for getting the url of a placeholder nested inside other folders
  */
 class FilePlaceholder extends File {
-  generate (...args) {
-    return this.remove(...args)
+  isPlaceholder () {
+    return true
   }
+}
+
+const getSampleAcl = itemName => `
+@prefix : <#>.
+@prefix n0: <http://www.w3.org/ns/auth/acl#>.
+@prefix item: <./${itemName}>.
+@prefix c: </profile/card#>.
+
+:ControlReadWrite
+    a n0:Authorization;
+    n0:accessTo item:;
+    n0:agent c:me;
+    n0:default item:;
+    n0:mode n0:Control, n0:Read, n0:Write.
+`
+const getSampleMeta = itemName => `<#${itemName}> a <#ho>.`
+
+/**
+ * @param {string} name
+ * @param {Links} links
+ * @param {boolean} isFolder
+ * @returns {Object.<string, File>}
+ */
+function _makeLinkFiles (name, links, isFolder) {
+  name = isFolder ? '' : name
+  const files = {}
+  links.placeholder = links.placeholder || {}
+
+  const linkGenerators = {
+    acl: getSampleAcl,
+    meta: getSampleMeta
+  }
+
+  Object.entries(linkGenerators).forEach(([ key, defaultSample ]) => {
+    if (links[key] instanceof TestFolderGenerator)
+      files[key] = links[key].clone()
+    else if (links.placeholder[key] instanceof TestFolderGenerator)
+      files[key] = links.placeholder[key].clone()
+    else {
+      const content = typeof links[key] === 'string' ? links[key] : defaultSample(name)
+      const linkName = `${name}.${key}`
+      if (key in links)
+        files[key] = new File(`${name}.${key}`, content)
+      else if (key in links.placeholder)
+        files[key] = new FilePlaceholder(linkName, content)
+    }
+  })
+
+  return files
 }
 
 export default {

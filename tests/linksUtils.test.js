@@ -21,6 +21,14 @@ const sampleLinks = [
             acl: 'https://example.org/foo/file.txt.acl',
             meta: 'https://example.org/foo/file.txt.meta'
         }
+    }, {
+        title: 'Meta (as describedBy) and Acl for file',
+        url: 'https://example.org/foo/file.txt',
+        header: '<file.txt.acl>; rel="acl", <file.txt.meta>; rel="describedBy",',
+        links: {
+            acl: 'https://example.org/foo/file.txt.acl',
+            meta: 'https://example.org/foo/file.txt.meta'
+        }
     }
 ]
 
