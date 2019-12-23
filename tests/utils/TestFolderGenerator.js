@@ -30,8 +30,9 @@ const getApi = () => {
 
 /**
  * @typedef {object} Links
- * @property {boolean|string} acl
- * @property {boolean|string} meta
+ * @property {boolean|string|File} acl
+ * @property {boolean|string|File} meta
+ * @property {Links} placeholder
  */
 
 /**
@@ -53,7 +54,7 @@ class TestFolderGenerator {
     this.contentType = contentType
     this.children = children
     this._links = _makeLinkFiles(name, links, this instanceof Folder)
-    this.children.unshift(...Object.values(this._links))
+    this.children.unshift(...Object.values(this._links).filter(item => item instanceof File))
     this.basePath = ''
   }
 
@@ -110,6 +111,9 @@ class TestFolderGenerator {
    * @param {object} options
    */
   async generate (options = { dryRun: false }) {
+    if (this.isPlaceholder()) {
+      return this.remove(options)
+    }
     if (options.dryRun) {
       console.log(`would generate ${this.url}`)
       return Promise.all(this.children.map(child => child.generate(options)))
@@ -210,23 +214,23 @@ class TestFolderGenerator {
 
   clone () {
     if (this instanceof Folder) {
-      return new Folder(this.name, this.children.map(child => child.clone()))
+      return new Folder(this.name, this.children.map(child => child.clone()), this._links)
     }
     if (this instanceof FolderPlaceholder) {
-      return new FolderPlaceholder(this.name, this.children.map(child => child.clone()))
+      return new FolderPlaceholder(this.name, this.children.map(child => child.clone()), this._links)
     }
     if (this instanceof File) {
-      return new File(this.name, this.content, this.contentType)
+      return new File(this.name, this.content, this.contentType, this._links)
     }
     if (this instanceof FilePlaceholder) {
-      return new FilePlaceholder(this.name, this.content, this.contentType)
+      return new FilePlaceholder(this.name, this.content, this.contentType, this._links)
     }
     throw new Error("Couldn't create clone")
   }
 
   toString () {
     let str = this.name
-    if (this instanceof FolderPlaceholder || this instanceof FilePlaceholder) {
+    if (this.isPlaceholder()) {
       str = '[' + str + ']'
     }
     if (this.children.length) {
@@ -235,6 +239,11 @@ class TestFolderGenerator {
       str += '\n' + contents
     }
     return str
+  }
+
+  // Override in placholders
+  isPlaceholder () {
+    return false
   }
 }
 
@@ -288,8 +297,8 @@ class File extends TestFolderGenerator {
  * Also useful for getting the url of a placeholder nested inside other folders
  */
 class FolderPlaceholder extends Folder {
-  generate (...args) {
-    return this.remove(...args)
+  isPlaceholder () {
+    return true
   }
 }
 
@@ -299,8 +308,8 @@ class FolderPlaceholder extends Folder {
  * Also useful for getting the url of a placeholder nested inside other folders
  */
 class FilePlaceholder extends File {
-  generate (...args) {
-    return this.remove(...args)
+  isPlaceholder () {
+    return true
   }
 }
 
@@ -329,14 +338,23 @@ function _makeLinkFiles (name, links, isFolder) {
   name = isFolder ? '' : name
   const files = {}
 
-  if (links.acl) {
-    const content = typeof links.acl === 'string' ? links.acl : getSampleAcl(name)
-    files.acl = new File(`${name}.acl`, content, 'text/turtle')
+  const linkGenerators = {
+    acl: getSampleAcl,
+    meta: getSampleMeta
   }
-  if (links.meta) {
-    const content = typeof links.meta === 'string' ? links.meta : getSampleMeta(name)
-    files.meta = new File(`${name}.meta`, content, 'text/turtle')
-  }
+
+  Object.entries(linkGenerators).forEach(([ key, defaultSample ]) => {
+    if (links[key] instanceof TestFolderGenerator)
+      files[key] = links[key].clone()
+    else {
+      const content = typeof links[key] === 'string' ? links[key] : defaultSample(name)
+      const linkName = `${name}.${key}`
+      if (key in links)
+        files[key] = new File(`${name}.${key}`, content)
+      else if (links.placeholder && key in links.placeholder)
+        files[key] = new FilePlaceholder(linkName, content)
+    }
+  })
 
   return files
 }
