@@ -29,6 +29,12 @@ const getApi = () => {
 }
 
 /**
+ * @typedef {object} Links
+ * @property {boolean|string} acl
+ * @property {boolean|string} meta
+ */
+
+/**
  * Class for creating test folder and file structures
  * Don't create it directly. Use Folder/File/... instead
  */
@@ -39,12 +45,15 @@ class TestFolderGenerator {
    * @param {string} content
    * @param {string} contentType
    * @param {TestFolderGenerator[]} children
+   * @param {Links} [links]
    */
-  constructor (name, content, contentType, children) {
+  constructor (name, content, contentType, children, links = {}) {
     this.name = name
     this.content = content
     this.contentType = contentType
     this.children = children
+    this._links = _makeLinkFiles(name, links, this instanceof Folder)
+    this.children.unshift(...Object.values(this._links))
     this.basePath = ''
   }
 
@@ -182,6 +191,14 @@ class TestFolderGenerator {
     return contextSetup.getBaseUrl() + this.basePath + this.name
   }
 
+  get acl () {
+    return this._links.acl
+  }
+
+  get meta () {
+    return this._links.meta
+  }
+
   /**
    * @returns {TestFolderGenerator[]}
    */
@@ -226,12 +243,13 @@ class Folder extends TestFolderGenerator {
    * Create a new Test Folder
    * @param {string} name
    * @param {TestFolderGenerator[]} [children]
+   * @param {Links} [links]
    */
-  constructor (name, children = []) {
+  constructor (name, children = [], links) {
     if (!name.endsWith('/')) {
       name = name + '/'
     }
-    super(name, '', 'text/turtle', children)
+    super(name, '', 'text/turtle', children, links)
   }
 }
 
@@ -243,9 +261,10 @@ class BaseFolder extends Folder {
    *
    * @param {string|TestFolderGenerator} base base path for all children
    * @param {TestFolderGenerator[]} [children]
+   * @param {Links} [links]
    */
-  constructor (base, name, children = []) {
-    super(name, children)
+  constructor (base, name, children = [], links) {
+    super(name, children, links)
     this.setBasePath(base)
   }
 }
@@ -256,9 +275,10 @@ class File extends TestFolderGenerator {
    * @param {string} name
    * @param {string} [content]
    * @param {string} [contentType]
+   * @param {Links} [links]
    */
-  constructor (name, content = '<> a <#test>.', contentType = 'text/turtle') {
-    super(name, content, contentType, [])
+  constructor (name, content = '<> a <#test>.', contentType = 'text/turtle', links) {
+    super(name, content, contentType, [], links)
   }
 }
 
@@ -282,6 +302,43 @@ class FilePlaceholder extends File {
   generate (...args) {
     return this.remove(...args)
   }
+}
+
+const getSampleAcl = itemName => `
+@prefix : <#>.
+@prefix n0: <http://www.w3.org/ns/auth/acl#>.
+@prefix item: <./${itemName}>.
+@prefix c: </profile/card#>.
+
+:ControlReadWrite
+    a n0:Authorization;
+    n0:accessTo item:;
+    n0:agent c:me;
+    n0:default item:;
+    n0:mode n0:Control, n0:Read, n0:Write.
+`
+const getSampleMeta = itemName => `<#${itemName}> a <#ho>.`
+
+/**
+ * @param {string} name
+ * @param {Links} links
+ * @param {boolean} isFolder
+ * @returns {Object.<string, File>}
+ */
+function _makeLinkFiles (name, links, isFolder) {
+  name = isFolder ? '' : name
+  const files = {}
+
+  if (links.acl) {
+    const content = typeof links.acl === 'string' ? links.acl : getSampleAcl(name)
+    files.acl = new File(`${name}.acl`, content, 'text/turtle')
+  }
+  if (links.meta) {
+    const content = typeof links.meta === 'string' ? links.meta : getSampleMeta(name)
+    files.meta = new File(`${name}.meta`, content, 'text/turtle')
+  }
+
+  return files
 }
 
 export default {
