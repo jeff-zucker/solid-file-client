@@ -10,15 +10,18 @@ const fc = new FileClient(auth)
 
 const remoteBase = "https://jeffz.solid.community/public/"
 const localBase  = "file://" + process.cwd() + "/"  // current working folder
-const local1  = localBase + "square.png"
+const local   = localBase + "square.png"
+const remote  = remoteBase + "square.png"
 const local2  = localBase + "square2.png"
-const remote1 = remoteBase + "square.png"
+const remote2 = remoteBase + "square2.png"
 
 async function run(){
     try {
         await auth.login()
-        await fc.copyFile( local1, remote1 )  // upload
-        await fc.copyFile( remote1, local2 )  // download
+        await fc.copyFile( local,  remote )   // upload
+        await fc.copyFile( remote, local  )   // download
+        await fc.copyFile( remote, remote2 )  // copy btwn remote locations
+        await fc.copyFile( local,  local2  )  // copy btwn local locations
     }
     catch(err) {
         console.log(err)
