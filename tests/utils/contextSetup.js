@@ -13,6 +13,12 @@ let baseUrl, testContainer, testFetch
 let hasBeenSetup = false
 
 /**
+ * @callback fetch
+ * @param {string} url
+ * @param {RequestInit} options
+ * @returns {Promise<Response>}
+ */
+/**
  * @typedef {object} HttpRequest
  * @property {string} url
  * @property {object} options
@@ -94,6 +100,11 @@ async function getBaseUrl (prefix) {
   return baseUrl
 }
 
+/**
+ * 
+ * @param {string} baseUrl 
+ * @param {fetch} authFetch 
+ */
 function createTestFetch (baseUrl, authFetch) {
   return async (url, options) => {
     if (typeof url !== 'string') {
@@ -103,15 +114,39 @@ function createTestFetch (baseUrl, authFetch) {
       throw new Error(`Prevent request to >${url}< because it doesn't start with the base url >${baseUrl}<`)
     }
 
+    // TODO: Remove this when solid-rest properly adds links
+    const fetchWithLinks = async (url, ...args) => {
+      const res = await authFetch(url, ...args)
+      const originalGet = res.headers.get.bind(res.headers)
+      let newLinks = res.headers.get('links') || ''
+      if (!newLinks.includes('rel="acl"')) {
+        newLinks += `, <${url}.acl>; rel="acl"`
+      }
+      if (!newLinks.includes('rel="describedBy"')) {
+        newLinks += `, <${url}.meta>; rel="describedBy"`
+      }
+      if (newLinks.startsWith(',')) {
+        newLinks = newLinks.substr(1)
+      }
+      res.headers.get = name => {
+        const result = name === 'link'
+          ? newLinks
+          : originalGet(name)
+        return result
+      }
+
+      return res
+    }
+
     // Limit requests per second for the http environment
     if (prefix !== prefixes.https) {
-      return authFetch(url, options)
+      return fetchWithLinks(url, options)
     }
 
     if (!httpRequestInterval) {
       httpRequestInterval = setInterval(async () => {
         const { url, options, resolve, reject } = httpRequestQueue.shift()
-        authFetch(url, options)
+        fetchWithLinks(url, options)
           .then(resolve)
           .catch(reject)
 
