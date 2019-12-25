@@ -1,4 +1,5 @@
 import SolidApi from '../src/SolidApi'
+import { LINKS } from '../src/SolidApi'
 
 // NOTE: js contains a j:Resource type. This shouldn't be common, but is currently a bug in NSS
 const sampleFolder = `
@@ -150,7 +151,7 @@ describe('readFolder', () => {
 
     describe('INCLUDE links', () => {
         test('can read sample folder with existing links', async () => {
-            const res = await api.readFolder(sampleFolderObj.url, { links: api.LINKS.INCLUDE })
+            const res = await api.readFolder(sampleFolderObj.url, { links: LINKS.INCLUDE })
             expect(res).toEqual(sampleFolderObj)
             expect(sampleFetch).toHaveBeenCalledTimes(1 + 3 + 6)
         })
@@ -158,7 +159,7 @@ describe('readFolder', () => {
 
     describe('INCLUDE_POSSIBLE links', () => {
         test('can read sample folder with possible links', async () => {
-            const res = await api.readFolder(sampleFolderObj.url, { links: api.LINKS.INCLUDE_POSSIBLE })
+            const res = await api.readFolder(sampleFolderObj.url, { links: LINKS.INCLUDE_POSSIBLE })
             expect(res).toEqual(sampleFolderObjWithPossibleLinks)
             expect(sampleFetch).toHaveBeenCalledTimes(1 + 3)
         })
