@@ -37,9 +37,9 @@ async function run(scheme) {
       for(f of cfg.files) {
         let file = cfg.folder + f;
         await fc.createFile( file, getContent(f),"text/turtle" )
-        let head = await fc.readHead( file )
-        if( !head.headers.get('content-type').match("text/turtle") ){
-          console.log( head.headers.get('content-type') )
+        let response = await fc.readHead( file )
+        if( !response.headers.get('content-type').match("text/turtle") ){
+          console.log( response.headers.get('content-type') )
           throw new Error("Content/type does not match")
         }
       }

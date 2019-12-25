@@ -195,7 +195,12 @@ By default, readFolder() does not list linked resources (.acl and .meta files). 
 
 ### readHead( folderOrFileURL )
 
-Returns the header for a file.  The file content's are not returned.  
+Returns the header for a file.  The file content is not returned.
+You may inspect specific headers with the headers.get() method :
+```javascript
+    let response = await fc.readHead( url )
+    let contentType = response.headers.get('content-type')
+``` 
 
 ### itemExists( fileOrFolderURL )
 
