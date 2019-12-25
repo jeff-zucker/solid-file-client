@@ -17,9 +17,9 @@ export const MERGE = {
   KEEP_TARGET: 'target'
 }
 export const LINKS = {
-  EXCLUDE: 'exludeLinks',
-  INCLUDE: 'includeLinks',
-  INCLUDE_POSSIBLE: 'includePossibleLinks'
+  EXCLUDE: 'exlude',
+  INCLUDE: 'include',
+  INCLUDE_POSSIBLE: 'includePossible'
 }
 
 /**
@@ -369,7 +369,6 @@ class SolidAPI {
       links: LINKS.EXCLUDE,
       ...options
     }
-
     const folderRes = await this.get(url, { headers: { Accept: 'text/turtle' } })
     const parsedFolder = await parseFolderResponse(folderRes, url)
 
@@ -397,7 +396,6 @@ class SolidAPI {
     }
 
     const links = await this.head(url).then(getLinksFromResponse)
-
     if (options.links === LINKS.INCLUDE) {
       await this._removeInexistingLinks(links)
     }
@@ -467,9 +465,16 @@ class SolidAPI {
    * @returns {Promise<Response>}
    */
   async copyMetaFileForItem (oldTargetFile, newTargetFile, options = {}, fromResponse, toResponse) {
+
     // TODO: Default options?
     const { meta: metaFrom } = fromResponse ? getLinksFromResponse(fromResponse) : await this.getItemLinks(oldTargetFile)
-    const { meta: metaTo } = toResponse ? getLinksFromResponse(toResponse) : await this.getItemLinks(newTargetFile)
+    let { meta: metaTo } = toResponse ? getLinksFromResponse(toResponse) : await this.getItemLinks(newTargetFile)
+
+    // JZ : needed to properly move a folder's .meta
+    //
+    if(newTargetFile.endsWith("/")) {
+       metaTo = newTargetFile + ".meta"
+    }
 
     // TODO: Handle not finding of meta links (ie metaFrom/metaTo is undefined)
     //       Possible to try this.getItemLinks again
@@ -490,7 +495,7 @@ class SolidAPI {
   async copyAclFileForItem (oldTargetFile, newTargetFile, options, fromResponse, toResponse) {
     // TODO: Default options?
     const { acl: aclFrom } = fromResponse ? getLinksFromResponse(fromResponse) : await this.getItemLinks(oldTargetFile)
-    const { acl: aclTo } = toResponse ? getLinksFromResponse(toResponse) : await this.getItemLinks(newTargetFile)
+    let { acl: aclTo } = toResponse ? getLinksFromResponse(toResponse) : await this.getItemLinks(newTargetFile)
 
     // TODO: Handle not finding of acl links (same as in copy meta)
 
@@ -513,6 +518,11 @@ class SolidAPI {
       content = content.replace(new RegExp(fromName + '>', 'g'), toName + '>')
     }
 
+    // JZ : needed to properly move a folder's .meta
+    //
+    if(newTargetFile.endsWith("/")) {
+       aclTo = newTargetFile + ".acl"
+    }
     return this.putFile(aclTo, content, contentType, options)
   }
 
