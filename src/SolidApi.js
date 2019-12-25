@@ -468,13 +468,9 @@ class SolidAPI {
 
     // TODO: Default options?
     const { meta: metaFrom } = fromResponse ? getLinksFromResponse(fromResponse) : await this.getItemLinks(oldTargetFile)
-    let { meta: metaTo } = toResponse ? getLinksFromResponse(toResponse) : await this.getItemLinks(newTargetFile)
 
-    // JZ : needed to properly move a folder's .meta
-    //
-    if(newTargetFile.endsWith("/")) {
-       metaTo = newTargetFile + ".meta"
-    }
+    let { meta: metaTo } = await this.getItemLinks(newTargetFile)
+    // JZ removed  let { meta: metaTo } = toResponse ? getLinksFromResponse(toResponse) : await this.getItemLinks(newTargetFile)
 
     // TODO: Handle not finding of meta links (ie metaFrom/metaTo is undefined)
     //       Possible to try this.getItemLinks again
@@ -495,7 +491,10 @@ class SolidAPI {
   async copyAclFileForItem (oldTargetFile, newTargetFile, options, fromResponse, toResponse) {
     // TODO: Default options?
     const { acl: aclFrom } = fromResponse ? getLinksFromResponse(fromResponse) : await this.getItemLinks(oldTargetFile)
-    let { acl: aclTo } = toResponse ? getLinksFromResponse(toResponse) : await this.getItemLinks(newTargetFile)
+
+
+    let { acl: aclTo } = await this.getItemLinks(newTargetFile)
+    // JZ removed  let { acl: aclTo } = toResponse ? getLinksFromResponse(toResponse) : await this.getItemLinks(newTargetFile)
 
     // TODO: Handle not finding of acl links (same as in copy meta)
 
@@ -516,12 +515,6 @@ class SolidAPI {
     if (toName !== fromName) {
       // if relative replace file destination
       content = content.replace(new RegExp(fromName + '>', 'g'), toName + '>')
-    }
-
-    // JZ : needed to properly move a folder's .meta
-    //
-    if(newTargetFile.endsWith("/")) {
-       aclTo = newTargetFile + ".acl"
     }
     return this.putFile(aclTo, content, contentType, options)
   }
