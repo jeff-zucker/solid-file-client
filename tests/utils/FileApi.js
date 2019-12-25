@@ -1,4 +1,4 @@
-import fs from 'fs'
+import fs from 'fs-extra'
 
 // Note: Errors here should be thrown in a way that they work for TestFolderGenerator
 //       For instance, TestFolderGenerator._removeFile checks if the response status is 404, so delete has to return 404 if it didn't exist
@@ -16,7 +16,8 @@ class FileApi {
     }
 
     deleteFolderRecursively(url) {
-        return fs.promises.rmdir(this._mapUrl(url), { recursive: true })
+        // return fs.promises.rmdir(this._mapUrl(url), { recursive: true })
+        return fs.remove(this._mapUrl(url))
     }
     delete(url) {
         return fs.promises.unlink(this._mapUrl(url))
