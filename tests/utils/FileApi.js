@@ -1,5 +1,7 @@
 import fs from 'fs'
 
+// Note: Errors here should be thrown in a way that they work for TestFolderGenerator
+//       For instance, TestFolderGenerator._removeFile checks if the response status is 404, so delete has to return 404 if it didn't exist
 class FileApi {
     constructor(prefix) {
         this._prefix = prefix
@@ -18,6 +20,7 @@ class FileApi {
     }
     delete(url) {
         return fs.promises.unlink(this._mapUrl(url))
+            .catch(err => err.errno === -2 ? { status: 404 } : err)
     }
     itemExists(url) {
         return fs.promises.access(this._mapUrl(url))
