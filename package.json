@@ -44,6 +44,7 @@
   },
   "peerDependencies": {
     "solid-auth-cli": "1.0.10",
+    "solid-rest": "^1.1.2",
     "solid-auth-client": "^2.3.0"
   },
   "devDependencies": {
@@ -61,7 +62,7 @@
     "regenerator-runtime": "^0.13.3",
     "solid-auth-cli": "^1.0.10",
     "solid-namespace": "^0.2.0",
-    "solid-rest": "^1.1.1",
+    "solid-rest": "^1.1.2",
     "standard": "^14.3.1",
     "webpack": "^4.41.2",
     "webpack-cli": "^3.3.10"

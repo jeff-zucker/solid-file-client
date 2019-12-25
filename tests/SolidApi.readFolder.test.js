@@ -150,7 +150,7 @@ describe('readFolder', () => {
 
     describe('INCLUDE links', () => {
         test('can read sample folder with existing links', async () => {
-            const res = await api.readFolder(sampleFolderObj.url, { links: 'includeLinks' })
+            const res = await api.readFolder(sampleFolderObj.url, { links: api.LINKS.INCLUDE })
             expect(res).toEqual(sampleFolderObj)
             expect(sampleFetch).toHaveBeenCalledTimes(1 + 3 + 6)
         })
@@ -158,7 +158,7 @@ describe('readFolder', () => {
 
     describe('INCLUDE_POSSIBLE links', () => {
         test('can read sample folder with possible links', async () => {
-            const res = await api.readFolder(sampleFolderObj.url, { links: 'includePossibleLinks' })
+            const res = await api.readFolder(sampleFolderObj.url, { links: api.LINKS.INCLUDE_POSSIBLE })
             expect(res).toEqual(sampleFolderObjWithPossibleLinks)
             expect(sampleFetch).toHaveBeenCalledTimes(1 + 3)
         })
