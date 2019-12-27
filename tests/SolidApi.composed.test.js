@@ -1,4 +1,3 @@
-
 import SolidApi, { MERGE } from '../src/SolidApi'
 import apiUtils from '../src/utils/apiUtils'
 import TestFolderGenerator from './utils/TestFolderGenerator'
@@ -21,7 +20,7 @@ const container = new BaseFolder(getTestContainer(), 'SolidApi-composed', [
   turtleFile
 ])
 
-jest.setTimeout(20 * 1000)
+jest.setTimeout(30 * 1000)
 
 beforeAll(async () => {
   await contextSetup()

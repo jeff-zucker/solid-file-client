@@ -341,11 +341,13 @@ const getSampleAcl = itemName => `
 @prefix n0: <http://www.w3.org/ns/auth/acl#>.
 @prefix item: <./${itemName}>.
 @prefix c: </profile/card#>.
+@prefix n1: <http://xmlns.com/foaf/0.1/>.
 
 :ControlReadWrite
     a n0:Authorization;
     n0:accessTo item:;
     n0:agent c:me;
+    n0:agentClass n1:Agent;
     n0:default item:;
     n0:mode n0:Control, n0:Read, n0:Write.
 `
