@@ -16,11 +16,11 @@
     "test:https": "TEST_PREFIX=https:// jest",
     "test:watch": "npm run test:ls -- --watch",
     "test:all": "npm run test:ls && npm run test:file && npm run test:https",
-    "prepublishOnly": "npm run build && npm run test:all",
+    "prepublishOnly": "npm run build && npm run test:ls && npm run test:file",
     "build": "webpack",
     "build:dev": "webpack --mode development --watch",
-    "build:docs": "jsdoc2md src/*.js > docs/api.md",
-    "lint": "standard src/* tests/*",
+    "build:docs": "jsdoc2md src/*.js > docs/JSdoc/api.md",
+    "lint": "standard \"src/**/*.js\" \"test/**/*.js\"",
     "lint:fix": "npm run lint -- --fix"
   },
   "main": "dist/node/solid-file-client.bundle.js",
@@ -48,12 +48,12 @@
     "solid-auth-client": "^2.3.0"
   },
   "devDependencies": {
-    "@babel/cli": "^7.7.4",
-    "@babel/core": "^7.7.4",
+    "@babel/cli": "^7.7.7",
+    "@babel/core": "^7.7.7",
     "@babel/plugin-transform-flow-strip-types": "^7.7.4",
-    "@babel/plugin-transform-runtime": "^7.7.4",
-    "@babel/preset-env": "^7.7.4",
-    "@babel/runtime": "^7.7.4",
+    "@babel/plugin-transform-runtime": "^7.7.6",
+    "@babel/preset-env": "^7.7.7",
+    "@babel/runtime": "^7.7.7",
     "babel-core": "^7.0.0-bridge.0",
     "babel-jest": "^24.9.0",
     "babel-loader": "^8.0.0-beta.6",
@@ -64,11 +64,11 @@
     "solid-namespace": "^0.2.0",
     "solid-rest": "^1.1.2",
     "standard": "^14.3.1",
-    "webpack": "^4.41.2",
+    "webpack": "^4.41.5",
     "webpack-cli": "^3.3.10"
   },
   "dependencies": {
-    "core-js": "^3.6.0",
+    "core-js": "^3.6.1",
     "debug": "^4.1.1",
     "n3": "^1.3.5"
   }

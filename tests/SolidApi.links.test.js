@@ -198,7 +198,7 @@ describe('copying links', () => {
             await expect(api.itemExists(fileWithAcl.meta.url)).resolves.toBe(true)
         })
         test('does not fail with 404 if no link exists', () => {
-            return expect(api.copyLinksForItem(folder.url, folderWithAcl.url, optionsAll)).resolves.toBe()
+            return expect(api.copyLinksForItem(folder.url, folderWithAcl.url, optionsAll)).resolves.toEqual([])
         })
         test('does not copy if options={}', async () => {
             await api.copyLinksForItem(fileWithAcl.url, targetWithAcl.url, {})

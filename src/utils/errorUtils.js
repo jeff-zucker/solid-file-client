@@ -97,7 +97,7 @@ function assertResponseOk (res) {
 /**
  * @typedef {object} SettledPromise
  * @property {("fulfilled"|"rejected")} status
- * @property {any} [value] Defined if the promise resolved
+ * @property {any} [value] defined if the promise resolved
  * @property {any} [reason] defined if the promise rejected
  */
 

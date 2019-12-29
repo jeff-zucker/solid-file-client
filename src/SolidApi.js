@@ -8,14 +8,22 @@ import linksUtils from './utils/linksUtils'
 const fetchLog = debug('solid-file-client:fetch')
 const { getRootUrl, getParentUrl, getItemName, areFolders, areFiles, LINK } = apiUtils
 const { FetchError, assertResponseOk, composedFetch, toFetchError } = errorUtils
-const { getLinksFromResponse, parseLinkHeader } = linksUtils
+const { getLinksFromResponse } = linksUtils
 const { parseFolderResponse } = folderUtils
 
+/**
+ * @typedef {"replace"|"source"|"target"} MERGE
+ * @private
+ */
 export const MERGE = {
   REPLACE: 'replace',
   KEEP_SOURCE: 'source',
   KEEP_TARGET: 'target'
 }
+/**
+ * @typedef {"exclude"|"include"|"includePossible"} LINKS
+ * @private
+ */
 export const LINKS = {
   EXCLUDE: 'exlude',
   INCLUDE: 'include',
@@ -23,22 +31,24 @@ export const LINKS = {
 }
 
 /**
- * @typedef {Object} WriteOptions
+ * @typedef {object} WriteOptions
  * @property {boolean} [createPath=true] create parent containers if they don't exist
- * @property {boolean} [withAcl=true] Unused yet
- * @property {boolean} [withMeta=true] Unused yet
- * @todo Update this
+ * @property {boolean} [withAcl=true] also copy acl files
+ * @property {boolean} [withMeta=true] also copy meta files
+ * @property {MERGE} [merge="replace"] specify how to handle existing files/folders
  */
 
 const defaultWriteOptions = {
   withAcl: true,
   withMeta: true,
   merge: MERGE.REPLACE,
-  copyMeta: true,
   createPath: true
 }
 
-const defaultDeleteOptions = { withAcl: true }
+/**
+ * @typedef {object} ReadFolderOptions
+ * @property {LINKS} [links="exclude"]
+ */
 
 /**
  * @typedef {object} SolidApiOptions
@@ -108,7 +118,6 @@ class SolidAPI {
    * @param {string} url
    * @param {RequestInit} [options]
    * @returns {Promise<Response>} resolves if response.ok is true, else rejects the response
-   * @throws {FetchError}
    */
   fetch (url, options) {
     return this._fetch(url, options)
@@ -124,7 +133,6 @@ class SolidAPI {
    * @param {string} url
    * @param {RequestInit} [options]
    * @returns {Promise<Response>}
-   * @throws {FetchError}
    */
   get (url, options) {
     return this.fetch(url, {
@@ -138,7 +146,6 @@ class SolidAPI {
    * @param {string} url
    * @param {RequestInit} [options]
    * @returns {Promise<Response>}
-   * @throws {FetchError}
    */
   delete (url, options) {
     return this.fetch(url, {
@@ -152,7 +159,6 @@ class SolidAPI {
    * @param {string} url
    * @param {RequestInit} [options]
    * @returns {Promise<Response>}
-   * @throws {FetchError}
    */
   post (url, options) {
     return this.fetch(url, {
@@ -166,7 +172,6 @@ class SolidAPI {
    * @param {string} url
    * @param {RequestInit} [options]
    * @returns {Promise<Response>}
-   * @throws {FetchError}
    */
   put (url, options) {
     return this.fetch(url, {
@@ -180,7 +185,6 @@ class SolidAPI {
    * @param {string} url
    * @param {RequestInit} [options]
    * @returns {Promise<Response>}
-   * @throws {FetchError}
    */
   patch (url, options) {
     return this.fetch(url, {
@@ -194,7 +198,6 @@ class SolidAPI {
    * @param {string} url
    * @param {RequestInit} [options]
    * @returns {Promise<Response>}
-   * @throws {FetchError}
    */
   head (url, options) {
     return this.fetch(url, {
@@ -208,7 +211,6 @@ class SolidAPI {
    * @param {string} url
    * @param {RequestInit} [options]
    * @returns {Promise<Response>}
-   * @throws {FetchError}
    */
   options (url, options) {
     return this.fetch(url, {
@@ -222,12 +224,6 @@ class SolidAPI {
    * Return false if status is 404. If status is 403 (or any other "bad" status) reject.
    * @param {string} url
    * @returns {Promise<boolean>}
-   * @example
-   * if (await api.itemExists(url)) {
-   *   // Do something
-   * } else {
-   *   // Do something else
-   * }
    */
   async itemExists (url) {
     return this.head(url)
@@ -241,17 +237,18 @@ class SolidAPI {
   /**
    * Create an item at target url.
    * Per default it will create the parent folder if it doesn't exist.
-   * Per default existing items will be replaced.
-   * You can modify this default behaviour with the options
    * @param {string} url
    * @param {Blob|string} content
    * @param {string} contentType
    * @param {string} link - header for Container/Resource, see LINK in apiUtils
-   * @param {WriteOptions} [options]
+   * @param {WriteOptions} [options] - only uses createPath option
    * @returns {Promise<Response>}
-   * @throws {FetchError}
    */
-  async postItem (url, content, contentType, link, options = {}) {
+  async postItem (url, content, contentType, link, options) {
+    options = {
+      ...({ createPath: true }),
+      ...options
+    }
     const parentUrl = getParentUrl(url)
 
     if (options.createPath) {
@@ -276,7 +273,6 @@ class SolidAPI {
    * @param {string} url
    * @param {WriteOptions} [options]
    * @returns {Promise<Response>} Response of HEAD request if it already existed, else of creation request
-   * @throws {FetchError}
    */
   async createFolder (url, options) {
     options = {
@@ -291,8 +287,8 @@ class SolidAPI {
         return res
       }
       await this.deleteFolderRecursively(url)
-    } catch (e) {
-      assertResponseStatus(404)(e)
+    } catch (err) {
+      assertResponseStatus(404)(err)
     }
 
     return this.postItem(url, '', 'text/turtle', LINK.CONTAINER, options)
@@ -300,12 +296,10 @@ class SolidAPI {
 
   /**
    * Create a new file.
-   * Per default it will overwrite existing files
    * @param {string} url
    * @param {Blob|String} content
    * @param {WriteOptions} [options]
    * @returns {Promise<Response>}
-   * @throws {FetchError}
    */
   postFile (url, content, contentType, options) {
     return this.postItem(url, content, contentType, LINK.RESOURCE, options)
@@ -318,7 +312,6 @@ class SolidAPI {
    * @param {Blob|String} content
    * @param {WriteOptions} [options]
    * @returns {Promise<Response>}
-   * @throws {FetchError}
    */
   createFile (url, content, contentType, options) {
     return this.putFile(url, content, contentType, options)
@@ -331,7 +324,6 @@ class SolidAPI {
    * @param {Blob|String} content
    * @param {WriteOptions} [options]
    * @returns {Promise<Response>}
-   * @throws {FetchError}
    */
   async putFile (url, content, contentType, options) {
     options = {
@@ -360,8 +352,8 @@ class SolidAPI {
   /**
    * Fetch and parse a folder
    * @param {string} url
+   * @param {ReadFolderOptions} [options]
    * @returns {Promise<FolderData>}
-   * @throws {FetchError}
    */
   async readFolder (url, options) {
     url = url.endsWith('/') ? url : url + '/'
@@ -373,7 +365,7 @@ class SolidAPI {
     const parsedFolder = await parseFolderResponse(folderRes, url)
 
     if (options.links === LINKS.INCLUDE_POSSIBLE || options.links === LINKS.INCLUDE) {
-      const addItemLinks = async item => item.links = await this.getItemLinks(item.url, options)
+      const addItemLinks = async item => { item.links = await this.getItemLinks(item.url, options) }
       await composedFetch([
         addItemLinks(parsedFolder),
         ...parsedFolder.files.map(addItemLinks),
@@ -425,12 +417,11 @@ class SolidAPI {
 
   /**
    * Copy a file.
-   * Overwrites per default
+   * Per default overwrite existing files and copy links too.
    * @param {string} from - Url where the file currently is
    * @param {string} to - Url where it should be copied to
    * @param {WriteOptions} [options]
    * @returns {Promise<Response>} - Response from the new file created
-   * @throws {FetchError}
    */
   async copyFile (from, to, options) {
     options = {
@@ -460,17 +451,12 @@ class SolidAPI {
    * @param {string} oldTargetFile
    * @param {string} newTargetFile
    * @param {WriteOptions} [options]
-   * @param {Response} [fromResponse]
-   * @param {Response} [toResponse]
-   * @returns {Promise<Response>}
+   * @returns {Promise<Response>} creation response
    */
-  async copyMetaFileForItem (oldTargetFile, newTargetFile, options = {}, fromResponse, toResponse) {
-
+  async copyMetaFileForItem (oldTargetFile, newTargetFile, options = {}) {
     // TODO: Default options?
-    const { meta: metaFrom } = fromResponse ? getLinksFromResponse(fromResponse) : await this.getItemLinks(oldTargetFile)
-
-    let { meta: metaTo } = await this.getItemLinks(newTargetFile)
-    // JZ removed  let { meta: metaTo } = toResponse ? getLinksFromResponse(toResponse) : await this.getItemLinks(newTargetFile)
+    const { meta: metaFrom } = await this.getItemLinks(oldTargetFile)
+    const { meta: metaTo } = await this.getItemLinks(newTargetFile)
 
     // TODO: Handle not finding of meta links (ie metaFrom/metaTo is undefined)
     //       Possible to try this.getItemLinks again
@@ -484,17 +470,12 @@ class SolidAPI {
    * @param {string} oldTargetFile Url of the file the acl file targets (e.g. file.ttl for file.ttl.acl)
    * @param {string} newTargetFile Url of the new file targeted (e.g. new-file.ttl for new-file.ttl.acl)
    * @param {WriteOptions} [options]
-   * @param {Response} [fromResponse] response of a request to the targeted file (not necessary, reduces the amount of requests)
-   * @param {Response} [toResponse] response of a request to the new targeted file (not necessary, reduces the amount of requests)
-   * @returns {Promise<Response>}
+   * @returns {Promise<Response>} creation response
    */
-  async copyAclFileForItem (oldTargetFile, newTargetFile, options, fromResponse, toResponse) {
+  async copyAclFileForItem (oldTargetFile, newTargetFile, options) {
     // TODO: Default options?
-    const { acl: aclFrom } = fromResponse ? getLinksFromResponse(fromResponse) : await this.getItemLinks(oldTargetFile)
-
-
-    let { acl: aclTo } = await this.getItemLinks(newTargetFile)
-    // JZ removed  let { acl: aclTo } = toResponse ? getLinksFromResponse(toResponse) : await this.getItemLinks(newTargetFile)
+    const { acl: aclFrom } = await this.getItemLinks(oldTargetFile)
+    const { acl: aclTo } = await this.getItemLinks(newTargetFile)
 
     // TODO: Handle not finding of acl links (same as in copy meta)
 
@@ -525,33 +506,31 @@ class SolidAPI {
    * @param {string} oldTargetFile Url of the file the acl file targets (e.g. file.ttl for file.ttl.acl)
    * @param {string} newTargetFile Url of the new file targeted (e.g. new-file.ttl for new-file.ttl.acl)
    * @param {WriteOptions} [options]
-   * @param {Response} [fromResponse] response of a request to the targeted file (not necessary, reduces the amount of requests)
-   * @param {Response} [toResponse] response of a request to the new targeted file (not necessary, reduces the amount of requests)
-   * @returns {Promise<Response>}
+   * @returns {Promise<Response[]>} creation responses
    */
-  async copyLinksForItem (oldTargetFile, newTargetFile, options, fromResponse, toResponse) {
+  async copyLinksForItem (oldTargetFile, newTargetFile, options) {
     // TODO: Default options?
+    const responses = []
     if (options.withMeta) {
-      await this.copyMetaFileForItem(oldTargetFile, newTargetFile, options, fromResponse, toResponse)
-        .catch(assertResponseStatus(404))
+      responses.push(await this.copyMetaFileForItem(oldTargetFile, newTargetFile, options)
+        .catch(assertResponseStatus(404)))
     }
     if (options.withAcl) {
-      await this.copyAclFileForItem(oldTargetFile, newTargetFile, options, fromResponse, toResponse)
-        .catch(assertResponseStatus(404))
+      responses.push(await this.copyAclFileForItem(oldTargetFile, newTargetFile, options)
+        .catch(assertResponseStatus(404)))
     }
+    return responses.filter(res => !(res instanceof Error))
   }
 
   /**
    * Copy a folder and all contents.
-   * Overwrites files per default.
-   * Merges folders if already existing
+   * Per default existing folders will be deleted before copying and links will be copied.
    * @param {string} from
    * @param {string} to
    * @param {WriteOptions} [options]
    * @returns {Promise<Response[]>} Resolves with an array of creation responses.
    * The first one will be the folder specified by "to".
    * The others will be creation responses from the contents in arbitrary order.
-   * @throws {FetchError}
    */
   async copyFolder (from, to, options) {
     options = {
@@ -571,22 +550,20 @@ class SolidAPI {
       ...folders.map(({ name }) => this.copyFolder(`${from}${name}/`, `${to}${name}/`, options)),
       ...files.map(({ name }) => this.copyFile(`${from}${name}`, `${to}${name}`, options)
         .catch(catchError(err => err.message.includes('already existed')))) // Don't throw when merge=KEEP_TARGET and it tried to overwrite a file
-    ])
+    ]).then(responses => responses.filter(item => !(item instanceof FetchError)))
 
-    return [folderResponse].concat(...creationResults.filter(item => !(item instanceof FetchError))) // Alternative to Array.prototype.flat
+    return [folderResponse].concat(...creationResults) // Alternative to Array.prototype.flat
   }
 
   /**
    * Copy a file (url ending with file name) or folder (url ending with "/").
-   * Overwrites files per default.
-   * Merges folders if already existing
+   * Per default existing folders will be deleted before copying and links will be copied.
    * @param {string} from
    * @param {string} to
    * @param {WriteOptions} [options]
    * @returns {Promise<Response[]>} Resolves with an array of creation responses.
    * The first one will be the folder specified by "to".
    * If it is a folder, the others will be creation responses from the contents in arbitrary order.
-   * @throws {FetchError}
    */
   copy (from, to, options) {
     // TBD: Rewrite to detect folders not by url (ie remove areFolders)
@@ -602,7 +579,7 @@ class SolidAPI {
 
   /**
    * Delete a file and its links
-   * @param {string} itemUrl 
+   * @param {string} itemUrl
    * @returns {Promise<Response>} response of the file deletion
    * @private
    */
@@ -616,17 +593,14 @@ class SolidAPI {
     }
 
     // Note: Deleting item after deleting links to make it work for folders
-    //       Change this if a new spec allows it (to avoid deleting the permissions before the folder)
-    const res = await this.delete(itemUrl)
-
-    return res
+    //       Change this if a new spec allows to delete them together (to avoid deleting the permissions before the folder)
+    return this.delete(itemUrl)
   }
 
   /**
    * Delete all folders and files inside a folder
    * @param {string} url
    * @returns {Promise<Response[]>} Resolves with a response for each deletion request
-   * @throws {FetchError}
    */
   async deleteFolderContents (url) {
     const { folders, files } = await this.readFolder(url)
@@ -637,12 +611,11 @@ class SolidAPI {
   }
 
   /**
-   * Delete a folder and its contents recursively
+   * Delete a folder, its contents and links recursively
    * @param {string} url
    * @returns {Promise<Response[]>} Resolves with an array of deletion responses.
    * The first one will be the folder specified by "url".
    * The others will be the deletion responses from the contents in arbitrary order
-   * @throws {FetchError}
    */
   async deleteFolderRecursively (url) {
     const resolvedResponses = await this.deleteFolderContents(url)
@@ -656,17 +629,15 @@ class SolidAPI {
    * Shortcut for copying and deleting items
    * @param {string} from
    * @param {string} to
-   * @param {RequestOptions} [options]
-   * @returns {Promise<Response[]>} Responses of the newly created items
-   * @throws {FetchError}
+   * @param {WriteOptions} [copyOptions]
+   * @returns {Promise<Response[]>} Responses of the copying
    */
-  async move (from, to, options) {
-    const copyResponse = await this.copy(from, to, options)
+  async move (from, to, copyOptions) {
+    const copyResponse = await this.copy(from, to, copyOptions)
     if (areFolders(from)) {
       await this.deleteFolderRecursively(from)
     } else {
       await this._deleteItemWithLinks(from)
-        .then(_responseToArray)
     }
     return copyResponse
   }
@@ -676,25 +647,12 @@ class SolidAPI {
    * Shortcut for moving items within the same directory
    * @param {string} url
    * @param {string} newName
-   * @param {RequestOptions} [options]
+   * @param {RequestOptions} [moveOptions]
    * @returns {Promise<Response[]>} Response of the newly created items
-   * @throws {FetchError}
    */
-  rename (url, newName, options) {
+  rename (url, newName, moveOptions) {
     const to = getParentUrl(url) + newName + (areFolders(url) ? '/' : '')
-    return this.move(url, to, options)
-  }
-}
-
-/**
- * return the response as array
- * @param {Response} res
- */
-function _responseToArray (res) {
-  if (Array.isArray(res)) {
-    return res
-  } else {
-    return [res]
+    return this.move(url, to, moveOptions)
   }
 }
 
@@ -702,6 +660,7 @@ function _responseToArray (res) {
  * @callback fetchErrorChecker
  * @param {FetchError} response
  * @returns {Response}
+ * @private
  */
 
 /**
@@ -709,6 +668,7 @@ function _responseToArray (res) {
  * @param {number} status
  * @returns {fetchErrorChecker}
  * @throws {FetchError}
+ * @private
  */
 function assertResponseStatus (status) {
   return catchError(res => res.status === status)
@@ -719,11 +679,11 @@ function assertResponseStatus (status) {
  * @param {function} callback
  * @returns {fetchErrorChecker}
  * @throws {FetchError}
+ * @private
  */
 function catchError (callback) {
   return err => {
-    if (!callback(err))
-     throw toFetchError(err)
+    if (!callback(err)) { throw toFetchError(err) }
     return err
   }
 }

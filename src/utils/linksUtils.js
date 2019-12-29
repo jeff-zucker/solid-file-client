@@ -41,7 +41,7 @@ function parseLinkHeader (linkHeader, itemUrl) {
       return [rel, url]
     })
     .filter(([rel]) => ['meta', 'acl'].includes(rel))
-    .forEach(([rel, url]) => results[rel] = _urlJoin(url, itemUrl))
+    .forEach(([rel, url]) => { results[rel] = _urlJoin(url, itemUrl) })
 
   return results
 }
