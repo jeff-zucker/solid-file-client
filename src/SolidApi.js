@@ -8,7 +8,7 @@ import linksUtils from './utils/linksUtils'
 const fetchLog = debug('solid-file-client:fetch')
 const { getRootUrl, getParentUrl, getItemName, areFolders, areFiles, LINK } = apiUtils
 const { FetchError, assertResponseOk, composedFetch, toFetchError } = errorUtils
-const { getLinksFromResponse, parseLinkHeader } = linksUtils
+const { getLinksFromResponse } = linksUtils
 const { parseFolderResponse } = folderUtils
 
 /**
@@ -365,7 +365,7 @@ class SolidAPI {
     const parsedFolder = await parseFolderResponse(folderRes, url)
 
     if (options.links === LINKS.INCLUDE_POSSIBLE || options.links === LINKS.INCLUDE) {
-      const addItemLinks = async item => item.links = await this.getItemLinks(item.url, options)
+      const addItemLinks = async item => { item.links = await this.getItemLinks(item.url, options) }
       await composedFetch([
         addItemLinks(parsedFolder),
         ...parsedFolder.files.map(addItemLinks),
@@ -454,7 +454,6 @@ class SolidAPI {
    * @returns {Promise<Response>} creation response
    */
   async copyMetaFileForItem (oldTargetFile, newTargetFile, options = {}) {
-
     // TODO: Default options?
     const { meta: metaFrom } = await this.getItemLinks(oldTargetFile)
     const { meta: metaTo } = await this.getItemLinks(newTargetFile)
@@ -580,7 +579,7 @@ class SolidAPI {
 
   /**
    * Delete a file and its links
-   * @param {string} itemUrl 
+   * @param {string} itemUrl
    * @returns {Promise<Response>} response of the file deletion
    * @private
    */
@@ -684,8 +683,7 @@ function assertResponseStatus (status) {
  */
 function catchError (callback) {
   return err => {
-    if (!callback(err))
-     throw toFetchError(err)
+    if (!callback(err)) { throw toFetchError(err) }
     return err
   }
 }

@@ -20,7 +20,7 @@
     "build": "webpack",
     "build:dev": "webpack --mode development --watch",
     "build:docs": "jsdoc2md src/*.js > docs/JSdoc/api.md",
-    "lint": "standard src/* tests/*",
+    "lint": "standard \"src/**/*.js\" \"test/**/*.js\"",
     "lint:fix": "npm run lint -- --fix"
   },
   "main": "dist/node/solid-file-client.bundle.js",

@@ -52,7 +52,7 @@ class RdfQuery {
    * @returns {N3.Quad[]}
    */
   async query (source, s, p, o, g, { useCache } = { useCache: true }) {
-    if (useCache && this.cache.hasOwnProperty(source)) { return this._queryCached(source, s, p, o, g) }
+    if (useCache && source in this.cache) { return this._queryCached(source, s, p, o, g) }
 
     const res = await this._fetch(source, {
       headers: { Accept: 'text/turtle' }
@@ -95,7 +95,7 @@ class RdfQuery {
             if (term.id) return term // already a namedNode
             const prefix = Object.keys(term) // a hash to munge into a namedNode
             const value = term[prefix]
-            if (prefix == 'thisDoc') {
+            if (prefix === 'thisDoc') {
               if (value) return namedNode(url + '#' + value)
               else return namedNode(url)
             }

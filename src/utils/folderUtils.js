@@ -1,9 +1,7 @@
 import apiUtils from './apiUtils'
-import linksUtils from './linksUtils'
 import RdfQuery from './rdf-query'
 
 const { getParentUrl, getItemName } = apiUtils
-const { getLinksFromResponse } = linksUtils
 
 /**
  * Parse the response for a folder into an object containing data about files and folders
