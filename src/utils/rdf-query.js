@@ -95,7 +95,7 @@ class RdfQuery {
             if (term.id) return term // already a namedNode
             const prefix = Object.keys(term) // a hash to munge into a namedNode
             const value = term[prefix]
-            if (prefix === 'thisDoc') {
+            if (prefix.length === 1 && prefix[0] === 'thisDoc') {
               if (value) return namedNode(url + '#' + value)
               else return namedNode(url)
             }
