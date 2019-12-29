@@ -1,8 +1,3 @@
-<!--
-  TBD
-  * Error Response
--->
-
 # Solid-File-Client
 
 A library for managing Solid files and folders.
@@ -315,9 +310,13 @@ For example:
       await copyFile( source, target, {links:"exclude"} )
       await readFolder( url, {links:"includePossible"} )
 ```
-
-See also, the **getPossibleLinks()** method which finds the possible locations of linked resources for an item.  See [Low-level Methods](#low-level-methods)
-
+With readFolder()'s links:include and links:includePossible option flags, the links for the folder are a property of the folder object and the links for contained resources are in the file objects.  For example:
+```javascript
+      let folder = await readFolder( url, {links:"include"} )
+      console.log(folder.links.meta || "no .meta for this folder")
+      console.log(folder.files[0].links.acl) || "no .acl for this file")
+```
+See also, the **getItemLinks()** method which finds the possible locations of linked resources for an item.  See [Low-level Methods](#low-level-methods)
 
 ## <a name="low-level-methods">Low-level methods</a>
 
