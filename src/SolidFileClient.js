@@ -8,19 +8,8 @@ import SolidApi from './SolidApi'
 /**
  * Class for working with files on Solid Pods
  * @extends SolidApi
- * @example
- * const { auth } = require('solid-auth-client')
- * const fileClient = new SolidFileClient(auth)
- * await fileClient.popupLogin()
- * fileClient.createFolder('https:/.../foo/bar/')
- *   .then(response => console.log(`Created: ${response.url}`))
  */
 class SolidFileClient extends SolidApi {
-  /**
-   * backwards incompatible change :
-   *    users need to use new SolidFileClient(auth)
-   */
-
   /**
    * @param {SolidAuthClient} auth - An auth client, for instance solid-auth-client or solid-auth-cli
    * @param {SolidFileClientOptions} [options]
