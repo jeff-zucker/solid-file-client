@@ -8,21 +8,33 @@
 </head>
 
 <body>
-    This test runs in the browser's console, so please open dev-tools and choose
-    "console" to watch.
+    <p>This test runs in the browser's console, so please open dev-tools and choose
+    "console" to watch.</p>
+    <p>It should prompt you to login and load your profile as a string</p>
 
-    <script src="https://solid.github.io/releases/rdflib.js/rdflib-0.12.2.min.js"></script>
     <script src="../solid-auth-client/solid-auth-client.bundle.js"></script>
     <script src="../../dist/window/solid-file-client.bundle.js"></script>
     <script>
         async function main() {
-            const fileClient = new SolidFileClient(solid.auth, $rdf);
-            const webId = await fileClient.popupLogin()
+            const fileClient = new SolidFileClient(solid.auth, { enableLogging: true });
+            const { webId } = await popupLogin()
             console.log(`Logged in as ${webId}`)
             const cardResponse = await fileClient.get(webId)
             const card = await cardResponse.text()
             console.log(card)
         }
+
+        // If currently not logged in, login. Then return session object
+        async function popupLogin() {
+            const session = await solid.auth.currentSession();
+            if (session) {
+                return session
+            } else {
+                const popupUri = 'https://solid.community/common/popup.html';
+                return solid.auth.popupLogin({ popupUri });
+            }
+        }
+
         main()
     </script>
 </body>
