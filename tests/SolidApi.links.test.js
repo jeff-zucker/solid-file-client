@@ -140,12 +140,19 @@ describe('copying links', () => {
             await api.copyAclFileForItem(fileWithAcl.url, targetWithAcl.url)
             await expect(api.itemExists(targetWithAcl.acl.url)).resolves.toBe(true)
         })
-        test('modify paths in acl file of a file to match new location ', async () => {
+        test('modify paths in acl file of a file to match new location', async () => {
             fileWithAcl.acl.content = createPseudoAcl(fileWithAcl.url, fileWithAcl.name)
             const expectedAcl = expectedPseudoAcl(targetWithAcl.name)
             await fileWithAcl.acl.reset()
             await api.copyAclFileForItem(fileWithAcl.url, targetWithAcl.url)
             await expect(api.get(targetWithAcl.acl.url).then(res => res.text())).resolves.toEqual(expectedAcl)
+        })
+        test('keep original paths in acl file of a file with modifyAcl=false', async () => {
+            const aclContent = createPseudoAcl(fileWithAcl.url, fileWithAcl.name)
+            fileWithAcl.acl.content = aclContent
+            await fileWithAcl.acl.reset()
+            await api.copyAclFileForItem(fileWithAcl.url, targetWithAcl.url, { modifyAcl: false })
+            await expect(api.get(targetWithAcl.acl.url).then(res => res.text())).resolves.toEqual(aclContent)
         })
         test('modify paths in acl file of a folder to new location', async () => {
             folderWithAcl.acl.content = createPseudoAcl(folderWithAcl.url, '')
