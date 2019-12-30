@@ -292,7 +292,7 @@ Solid-file-client makes a special case for access control (.acl) files.  These
 files may contain absolute links which will no longer work when the file is 
 copied or moved.  So solid-file-client, by default, will modify .acl files to change absolute links to relative ones.  
 
-Solid servers provide the possible location of linked resources in the headers of all resources.  Solid-file-client supports the links=includePossible option to include these possible locations without checking to see if the linked file actually exists. The possible locations tell you where to create the linked file if they don't already exist.
+Solid servers provide the possible location of linked resources in the headers of all resources.  Solid-file-client supports the links=include_possible option to include these possible locations without checking to see if the linked file actually exists. The possible locations tell you where to create the linked file if they don't already exist.
 
 Advanced users can modify how linked files are handled with the withAcl, withMeta, and links option flags shown below.
 
@@ -319,7 +319,7 @@ To avoid typos, you may also import the constants for the link options:
     const { LINKS } = SolidFileClient
     await copyFolder( source, target, {links: LINKS.INCLUDE_POSSIBLE} )
 ```
-With readFolder()'s links:include and links:includePossible option flags, the links for the folder are a property of the folder object and the links for contained resources are in the file objects.  For example:
+With readFolder()'s links:include and links:include_possible option flags, the links for the folder are a property of the folder object and the links for contained resources are in the file objects.  For example:
 ```javascript
       let folder = await readFolder( url, {links:"include"} )
       console.log(folder.links.meta || "no .meta for this folder")
