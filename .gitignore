@@ -15,4 +15,3 @@ test-folder/
 examples/cred.json
 .bin/test
 .bin/cred.json
-.npmignore
