@@ -252,7 +252,7 @@ With the **copyFolder()** and **moveFolder()** methods, you can elect to merge t
 
 For example :
 ```javascript
-    await copyFolder( source, target, {merge:"source"} )
+    await copyFolder( source, target, {merge:"keep_source"} )
 ```
 To avoid typos, you may also import the constants for these options:
 ```javascript
