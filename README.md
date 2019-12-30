@@ -300,8 +300,9 @@ Advanced users can modify how linked files are handled with the withAcl, withMet
   * **copyFile(),copyFolder(),moveFile(),moveFolder()**
 
       * **default**        - .acl and .meta items are copied/moved, acl is modified
-      * **withAcl=false**  - .acl items are not copied/moved
-      * **withMeta=false** - .meta items are not copied/moved
+      * **withAcl=false**   - .acl items are not copied/moved
+      * **withMeta=false**  - .meta items are not copied/moved
+      * **modifyAcl=false** - copy/move .acl without modifications
 
 
   *  **readFolder()**
