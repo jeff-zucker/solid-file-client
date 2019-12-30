@@ -42,11 +42,6 @@
       "expect"
     ]
   },
-  "peerDependencies": {
-    "solid-auth-cli": "1.0.10",
-    "solid-rest": "^1.1.2",
-    "solid-auth-client": "^2.3.0"
-  },
   "devDependencies": {
     "@babel/cli": "^7.7.7",
     "@babel/core": "^7.7.7",
