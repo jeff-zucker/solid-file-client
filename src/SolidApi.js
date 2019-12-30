@@ -34,6 +34,7 @@ export const LINKS = {
  * @typedef {object} WriteOptions
  * @property {boolean} [createPath=true] create parent containers if they don't exist
  * @property {boolean} [withAcl=true] also copy acl files
+ * @property {boolean} [modifyAcl=true]
  * @property {boolean} [withMeta=true] also copy meta files
  * @property {MERGE} [merge="replace"] specify how to handle existing files/folders
  */
@@ -41,6 +42,7 @@ export const LINKS = {
 const defaultWriteOptions = {
   withAcl: true,
   withMeta: true,
+  modifyAcl: true,
   merge: MERGE.REPLACE,
   createPath: true
 }
@@ -474,6 +476,11 @@ class SolidAPI {
    */
   async copyAclFileForItem (oldTargetFile, newTargetFile, options) {
     // TODO: Default options?
+    options = {
+      ...defaultWriteOptions,
+      ...options
+    }
+
     const { acl: aclFrom } = await this.getItemLinks(oldTargetFile)
     const { acl: aclTo } = await this.getItemLinks(newTargetFile)
 
@@ -486,17 +493,20 @@ class SolidAPI {
     // TODO: Use nodejs url module, make URL and use its host/base/origin/... instead of getRootUrl
     // Make absolute paths to the same directory relative
     // Update relative paths to the new location
-    const fromName = getItemName(oldTargetFile)
-    const toName = areFolders(newTargetFile) ? '' : getItemName(newTargetFile)
-    if (content.includes(oldTargetFile)) {
-      // if object values are absolute URI's make them relative to the destination
-      content = content.replace(new RegExp('<' + oldTargetFile + '>', 'g'), '<./' + toName + '>')
-      content = content.replace(new RegExp('<' + getRootUrl(oldTargetFile) + 'profile/card#me>'), '</profile/card#me>')
+    if (options.modifyAcl) {
+      const fromName = getItemName(oldTargetFile)
+      const toName = areFolders(newTargetFile) ? '' : getItemName(newTargetFile)
+      if (content.includes(oldTargetFile)) {
+        // if object values are absolute URI's make them relative to the destination
+        content = content.replace(new RegExp('<' + oldTargetFile + '>', 'g'), '<./' + toName + '>')
+        content = content.replace(new RegExp('<' + getRootUrl(oldTargetFile) + 'profile/card#me>'), '</profile/card#me>')
+      }
+      if (toName !== fromName) {
+        // if relative replace file destination
+        content = content.replace(new RegExp(fromName + '>', 'g'), toName + '>')
+      }
     }
-    if (toName !== fromName) {
-      // if relative replace file destination
-      content = content.replace(new RegExp(fromName + '>', 'g'), toName + '>')
-    }
+
     return this.putFile(aclTo, content, contentType, options)
   }
 
