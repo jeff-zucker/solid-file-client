@@ -2,7 +2,7 @@
 
 # Interpreting Error Responses
 
-When encountering and error while performing operations on multiple items, 
+When encountering an error while performing operations on multiple items, 
 e.g. copyFolder(), Solid-File-Client will record the error and
 continue with the operation.
 
@@ -22,7 +22,7 @@ A text description of the error.
 
 # message
 
-ncludes status codes, statusTexts and for some errors solid specific explanations why it probably happened)
+Includes status codes, statusTexts and for some errors solid specific explanations why it probably happened.
 
 # succesful
 
