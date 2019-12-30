@@ -17,8 +17,8 @@ const { parseFolderResponse } = folderUtils
  */
 export const MERGE = {
   REPLACE: 'replace',
-  KEEP_SOURCE: 'source',
-  KEEP_TARGET: 'target'
+  KEEP_SOURCE: 'keep_source',
+  KEEP_TARGET: 'keep_target'
 }
 /**
  * @typedef {"exclude"|"include"|"includePossible"} LINKS
@@ -27,7 +27,7 @@ export const MERGE = {
 export const LINKS = {
   EXCLUDE: 'exlude',
   INCLUDE: 'include',
-  INCLUDE_POSSIBLE: 'includePossible'
+  INCLUDE_POSSIBLE: 'include_possible'
 }
 
 /**

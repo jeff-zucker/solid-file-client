@@ -1,3 +1,5 @@
+<a href="../README.md">back to README</a>
+
 // DEMO OF USING COPYFILE IN NODE TO UPLOAD A LOCAL FILE TO A REMOTE POD
 
 const auth = require('../node_modules/solid-auth-cli')

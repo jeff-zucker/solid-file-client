@@ -2,9 +2,9 @@
 
 A library for managing Solid files and folders.
 
-current version : <a href="http://badge.fury.io/js/solid-file-client@1.0.0">![npm](https://badge.fury.io/js/solid-file-client.svg)</a>
+current version : <a href="http://badge.fury.io/js/solid-file-client">![npm](https://img.shields.io/npm/v/solid-file-client)</a>
 <br>
-previous version : <a href="https://www.npmjs.com/package/solid-file-client/v/0.5.2"><img src="sfc-0.5.2.png"></a>
+previous version : <a href="https://www.npmjs.com/package/solid-file-client/v/0.5.2"><img src="https://img.shields.io/badge/npm%20package-0.5.2-brightgreen.svg"></a>
 
 <b>Table of Contents</b> : <a href="#introduction">Introduction</a> |
 <a href="#installing">Installing</a> |
@@ -42,7 +42,7 @@ To download
 
 ### Using with front-ends
 
-Several front-ends for Solid-File-Client have been built.  In a browser you can use GUIs like [Solid-file-manager](https://github.com/Otto-AA/solid-filemanager) or [Solid-IDE](https://github.com/jeff-zucker/solid-ide) or create your own GUI using [Solid-File-Widget](https://github.com/bourgeoa/solid-file-widget).  In node or from the command line, you can use [Solid-Shell](https://github.com/jeff-zucker/solid-shell). 
+Several front-ends for Solid-File-Client have been built.  In a browser you can use a GUI/editor [Solid-IDE](https://github.com/jeff-zucker/solid-ide) or create your own GUI using [Solid-File-Widget](https://github.com/bourgeoa/solid-file-widget).  In node or from the command line, you can use [Solid-Shell](https://github.com/jeff-zucker/solid-shell), an interactive shell, batch-processor, and command-line front-end for Solid-File-Client. 
 
 ### Overview of writing methods
 
@@ -65,7 +65,7 @@ If you are writing scripts only for the browser, you may wish to use a CDN code 
 If you are writing scripts for node or you want a local version, install using 
 npm
 ```
-    npm install solid-file-client@1.0.0 // or latest version
+    npm install solid-file-client
 ```
 Once installed the executables will be found within the solid-file-client folder :
 ```
@@ -128,7 +128,7 @@ Or, in an async method :
         console.log( error.message ) // Just the status code and statusText
     }
 ```
-See [TBD : Error Response](docs/error-handling.md) for further options and a
+See [Interpreting Error Responses](docs/error-handling.md) for further options and a
 description of errors for recursive methods like copyFolder().
 
 ## <a name="high-level-methods">High-level Methods</a>
@@ -247,12 +247,17 @@ With any of the create/copy/move methods, you can use the [itemExists()](#itemEx
 With the **copyFolder()** and **moveFolder()** methods, you can elect to merge the source and target with preference for the source or preference for the target:
  
    * **default** - target is replaced by source
-   * **merge=source** - target becomes source plus items found only in target 
-   * **merge=target** - target becomes target plus items found only in source
+   * **merge=keep_source** - target becomes source plus items found only in target 
+   * **merge=keep_target** - target becomes target plus items found only in source
 
 For example :
 ```javascript
-      await copyFolder( source, target, {merge:"source"} )
+    await copyFolder( source, target, {merge:"source"} )
+```
+To avoid typos, you may also import the constants for these options:
+```javascript
+    const { MERGE } = SolidFileClient
+    await copyFolder( source, target, {merge: MERGE.KEEP_SOURCE } )
 ```
 ### <a name="creating-paths">Creating Paths</a>
 
@@ -289,26 +294,30 @@ copied or moved.  So solid-file-client, by default, will modify .acl files to ch
 
 Solid servers provide the possible location of linked resources in the headers of all resources.  Solid-file-client supports the links=includePossible option to include these possible locations without checking to see if the linked file actually exists. The possible locations tell you where to create the linked file if they don't already exist.
 
-Advanced users can modify how linked files are handled with the "links" 
-option flags shown below.
+Advanced users can modify how linked files are handled with the withAcl, withMeta, and links option flags shown below.
 
   * **copyFile(),copyFolder(),moveFile(),moveFolder()**
 
-      * **default**        - linked items are copied/moved, acl is modified
-      * **links=exclude**  - linked items are not copied/moved
-      * **links=noModify** - linked items are copied/moved, acl is not modified
+      * **default**        - .acl and .meta items are copied/moved, acl is modified
+      * **withAcl=false**  - .acl items are not copied/moved
+      * **withMeta=false** - .meta items are not copied/moved
+
 
   *  **readFolder()**
 
-      * **default**               - linked items are not listed
-      * **links=include**         - linked items are listed, when they exist
-      * **links=includePossible** - possible locations of links are listed
-
+      * **default**                - linked items are not listed
+      * **links=include**          - linked items are listed, when they exist
+      * **links=include_possible** - possible locations of links are listed
 
 For example:
 ```javascript
       await copyFile( source, target, {links:"exclude"} )
-      await readFolder( url, {links:"includePossible"} )
+      await readFolder( url, {links:"include_possible"} )
+```
+To avoid typos, you may also import the constants for the link options:
+```javascript
+    const { LINKS } = SolidFileClient
+    await copyFolder( source, target, {links: LINKS.INCLUDE_POSSIBLE} )
 ```
 With readFolder()'s links:include and links:includePossible option flags, the links for the folder are a property of the folder object and the links for contained resources are in the file objects.  For example:
 ```javascript
