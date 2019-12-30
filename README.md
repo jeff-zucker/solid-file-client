@@ -182,6 +182,7 @@ On success, the readFolder() method returns a folder object in this format:
    parent : // parentFolder or undef if none
     files : // an array of files in the folder
   folders : // an array of sub-folders in the folder
+    links : // an array of links for the folder itself IF links=include specified
 }
 ```
 Each item in the arrays of files and sub-folders will be a file object which is the same as a folder object except it does not have the last two fields (files,folders). The content-type in this case is not guessed, it is read from the folder's triples, i.e. what the server sends.
