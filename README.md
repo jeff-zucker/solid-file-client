@@ -4,7 +4,7 @@ A library for managing Solid files and folders.
 
 current version : <a href="http://badge.fury.io/js/solid-file-client">![npm](https://img.shields.io/npm/v/solid-file-client)</a>
 <br>
-previous version : <a href="https://www.npmjs.com/package/solid-file-client/v/0.5.2"><img src="https://img.shields.io/badge/npm%20package-0.5.2-brightgreen.svg"></a>
+previous version : <a href="https://www.npmjs.com/package/solid-file-client/v/0.5.3"><img src="https://img.shields.io/badge/npm%20package-0.5.3-brightgreen.svg"></a>
 
 <b>Table of Contents</b> : <a href="#introduction">Introduction</a> |
 <a href="#installing">Installing</a> |
