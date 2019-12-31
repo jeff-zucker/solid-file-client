@@ -15,16 +15,16 @@
     const auth = solid.auth
     const fc   = new SolidFileClient(auth)
 
-// DEFINE A URL THAT CONTAINS A POPUP LOGIN SCREEN
+// DEFINE A URI THAT CONTAINS A POPUP LOGIN SCREEN
 //
-    const popUrl = 'https://solid.community/common/popup.html'
+    const popUri = 'https://solid.community/common/popup.html'
 
 // USE THE AUTH OBJECT TO LOGIN AND CHECK THE SESSION
 // USE THE FILE-CLIENT OBJECT TO READ AND WRITE
 //
     async function run(){
         let session = await auth.currentSession()
-        if (!session) { session = await auth.popupLogin( popUrl ) }
+        if (!session) { session = await auth.popupLogin({ popupUri:popUri }) }
         console.log(`Logged in as ${session.webId}.`)
         let content = readFile( someUrl )
     }
