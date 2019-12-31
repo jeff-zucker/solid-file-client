@@ -1,4 +1,3 @@
-
 import SolidApi, { LINKS } from '../src/SolidApi'
 import TestFolderGenerator from './utils/TestFolderGenerator'
 import contextSetupModule from './utils/contextSetup'
@@ -94,6 +93,10 @@ describe('copying links', () => {
 //        meta: false,
         placeholder: { acl: true }
     })
+    const targetFileWithAcl = new File('child-file.txt', 'target', 'text/plain', {
+//        meta: false,
+        placeholder: { acl: true }
+    })
     const fileWithLinks = new File('file-with-links.txt', 'file with links', 'text/plain', {
 //        meta: new File('file-with-links.txt.meta', undefined, undefined, {
 //            acl: true
@@ -126,7 +129,8 @@ describe('copying links', () => {
         folderWithAcl,
         folderWithMeta,
         new Folder('nested', [
-            targetWithAcl
+            targetWithAcl,
+            targetFileWithAcl
         ]),
         fileWithLinks,
         filePlaceholder,
@@ -151,8 +155,8 @@ describe('copying links', () => {
             const aclContent = createPseudoAcl(fileWithAcl.url, fileWithAcl.name)
             fileWithAcl.acl.content = aclContent
             await fileWithAcl.acl.reset()
-            await api.copyAclFileForItem(fileWithAcl.url, targetWithAcl.url, { modifyAcl: false })
-            await expect(api.get(targetWithAcl.acl.url).then(res => res.text())).resolves.toEqual(aclContent)
+            await api.copyAclFileForItem(fileWithAcl.url, targetFileWithAcl.url, { modifyAcl: false })
+            await expect(api.get(targetFileWithAcl.acl.url).then(res => res.text())).resolves.toEqual(aclContent)
         })
         test('modify paths in acl file of a folder to new location', async () => {
             folderWithAcl.acl.content = createPseudoAcl(folderWithAcl.url, '')

@@ -493,18 +493,16 @@ class SolidAPI {
     // TODO: Use nodejs url module, make URL and use its host/base/origin/... instead of getRootUrl
     // Make absolute paths to the same directory relative
     // Update relative paths to the new location
-    if (options.modifyAcl) {
-      const fromName = getItemName(oldTargetFile)
-      const toName = areFolders(newTargetFile) ? '' : getItemName(newTargetFile)
-      if (content.includes(oldTargetFile)) {
-        // if object values are absolute URI's make them relative to the destination
-        content = content.replace(new RegExp('<' + oldTargetFile + '>', 'g'), '<./' + toName + '>')
-        content = content.replace(new RegExp('<' + getRootUrl(oldTargetFile) + 'profile/card#me>'), '</profile/card#me>')
-      }
-      if (toName !== fromName) {
-        // if relative replace file destination
-        content = content.replace(new RegExp(fromName + '>', 'g'), toName + '>')
-      }
+    const fromName = getItemName(oldTargetFile)
+    const toName = areFolders(newTargetFile) ? '' : getItemName(newTargetFile)
+    if (options.modifyAcl && content.includes(oldTargetFile)) {
+      // if object values are absolute URI's make them relative to the destination
+      content = content.replace(new RegExp('<' + oldTargetFile + '>', 'g'), '<./' + toName + '>')
+      content = content.replace(new RegExp('<' + getRootUrl(oldTargetFile) + 'profile/card#me>'), '</profile/card#me>')
+    }
+    if (toName !== fromName) {
+    // if needed replace file destination
+    content = content.replace(new RegExp(fromName + '>', 'g'), toName + '>')
     }
 
     return this.putFile(aclTo, content, contentType, options)
