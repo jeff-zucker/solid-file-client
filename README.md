@@ -42,7 +42,7 @@ To download
 
 ### Using with front-ends
 
-Several front-ends for Solid-File-Client have been built.  In a browser you can use a GUI/editor [Solid-IDE](https://github.com/jeff-zucker/solid-ide) or create your own GUI using [Solid-File-Widget](https://github.com/bourgeoa/solid-file-widget).  In node or from the command line, you can use [Solid-Shell](https://github.com/jeff-zucker/solid-shell), an interactive shell, batch-processor, and command-line front-end for Solid-File-Client. 
+Several front-ends for Solid-File-Client have been built.  In a browser you can use a GUI/editor [Solid-IDE](https://github.com/jeff-zucker/solid-ide) or create your own GUI using [Solid-File-Widget](https://github.com/bourgeoa/solid-file-widget) or any GUI framework such as React or Vue.  In node or from the command line, you can use [Solid-Shell](https://github.com/jeff-zucker/solid-shell), an interactive shell, batch-processor, and command-line front-end for Solid-File-Client. 
 
 ### Overview of writing methods
 
