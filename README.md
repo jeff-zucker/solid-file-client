@@ -56,7 +56,7 @@ For many purposes, these defaults will suffice.  However, if you need to, you ma
 
 ### Demo scripts
 
-See the [Upload Demo](examples/upload/index.html) and [Copy Demo](examples/copy/index.html) for working examples.
+See the [Upload & Copy Demos](https://jeff-zucker.github.io/solid-file-client/docs/examples/) for working examples.
 
 ## <a name="Installing">Installing</a>
 
