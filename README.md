@@ -27,7 +27,7 @@ There are a number of changes which are not backward compatible.  See [Guide for
 ### Using alternate storage spaces
 
 Solid-file-client can work with web resources (https://).  It can also work
-with resources stored in a browser's local storage (app://), or a local file system (file://).  See the [Upload Demo](examples/upload/index.html) for an example of copying files from a local filesystem to a pod in the browser and [Node Upload Demo](docs/node-upload.js) for the same thing in node.  See [Solid-Rest](https://github.com/jeff-zucker/solid-rest) for a description of using browser local storage or accessing the local file system from node scripts.
+with resources stored in a browser's local storage (app://), or a local file system (file://).  See the [Upload Demo](https://jeff-zucker.github.io/solid-file-client/docs/examples/) for an example of copying files from a local filesystem to a pod in the browser and [Node Upload Demo](docs/node-upload.md) for the same thing in node.  See [Solid-Rest](https://github.com/jeff-zucker/solid-rest) for a description of using browser local storage or accessing the local file system from node scripts.
 
 In node, the copyFile() and copyFolder() commands can upload files from a local file system to a remote pod and vice-versa:
 
@@ -198,7 +198,7 @@ You may inspect specific headers with the headers.get() method :
     let contentType = response.headers.get('content-type')
 ``` 
 
-### itemExists( fileOrFolderURL )
+### <a name="itemExists">itemExists( fileOrFolderURL )</a>
 
 Returns true if the URL exists and false otherwise.
 
