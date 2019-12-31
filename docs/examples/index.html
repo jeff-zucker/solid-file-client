@@ -1,0 +1,55 @@
+<head>
+<!-- Bootstrap CSS
+-->
+<link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css" integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous"></link>
+
+<style>
+body {
+    padding:0;
+    margin:0;
+    overflow:hidden;
+}
+#sidebar {
+    width : 20vw;
+    height : 100vh;
+    padding:5vh;
+    background-color:#e4e4e4;
+    position:absolute;
+}
+#sidebar h3 {
+    text-align:center;
+    width:100%;
+    margin-bottom:1em;
+}
+#sidebar button {
+    width:100%;
+    margin-bottom:1em;
+    font-size : large;
+}
+#dispaly,iframe {
+    border:0;
+    left : 20vw;
+    width : 80vw;
+    height : 99vh;
+    position:absolute;
+}
+</style>
+</head><body>
+
+<div id="sidebar">
+    <h3>Solid-File-Client Demo</h3>
+    <button id="copy" class="btn btn-primary">Copy</button>
+    <button id="upload" class="btn btn-primary">Upload</button>
+</div>
+<iframe id="main" src="copy/"></iframe>
+
+<script>
+document.getElementById('copy').addEventListener( 'click', e => {
+   document.getElementById('main').src="./copy/index.html"
+
+})
+document.getElementById('upload').addEventListener( 'click', e => {
+   document.getElementById('main').src="./upload/index.html"
+
+})
+</script>

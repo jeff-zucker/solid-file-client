@@ -1,0 +1,42 @@
+<!doctype html>
+<html>
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width" />
+    <title>Solid File Client example</title>
+</head>
+
+<body>
+    <p>This test runs in the browser's console, so please open dev-tools and choose
+    "console" to watch.</p>
+    <p>It should prompt you to login and load your profile as a string</p>
+
+    <script src="https://cdn.jsdelivr.net/npm/solid-auth-client@2/lib/index.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/solid-file-client/lib/index.min.js"></script>
+    <script>
+        async function main() {
+            const fileClient = new SolidFileClient(solid.auth, { enableLogging: true });
+            const { webId } = await popupLogin()
+            console.log(`Logged in as ${webId}`)
+            const cardResponse = await fileClient.get(webId)
+            const card = await cardResponse.text()
+            console.log(card)
+        }
+
+        // If currently not logged in, login. Then return session object
+        async function popupLogin() {
+            const session = await solid.auth.currentSession();
+            if (session) {
+                return session
+            } else {
+                const popupUri = 'https://solid.community/common/popup.html';
+                return solid.auth.popupLogin({ popupUri });
+            }
+        }
+
+        main()
+    </script>
+</body>
+
+</html>

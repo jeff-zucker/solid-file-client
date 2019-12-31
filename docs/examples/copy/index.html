@@ -1,0 +1,227 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+    <!-- Required meta tags -->
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+
+    <!-- Bootstrap CSS -->
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css"
+        integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
+
+    <title>Solid Copy</title>
+</head>
+
+<body>
+
+    <div class="container">
+        <div class="py-5 text-center">
+            <h2>Solid Copy</h2>
+            <p class="lead">Copy folders or files within your solid pod or from a public source to your pod.</p>
+        </div>
+
+        <div class="row">
+            <div class="col-md-4 order-md-2 mb-4">
+                <h4 class="d-flex justify-content-between align-items-center mb-3">
+                    <span class="text-muted">Login to your Pod</span>
+                </h4>
+                <div class="logged-out">
+                    <button id="login" class="btn btn-primary">Login</button>
+                </div>
+                <div class="logged-in">
+                    <p class="text-muted">Logged in as <span class="webid"></span></p>
+                    <button id="logout" class="btn btn-secondary">Logout</button>
+                </div>
+            </div>
+            <div class="col-md-8 order-md-1">
+                <h4 class="mb-3">Settings</h4>
+                <form id="copy-form" class="needs-validation">
+                    <div class="mb-3">
+                        <label for="src">Folder/File from your pod or public pod</label>
+                        <div class="input-group">
+                            <div class="input-group-prepend">
+                                <span class="input-group-text">From</span>
+                            </div>
+                            <input type="text" class="form-control" id="src"
+                                placeholder="https://solid.example.org/folder/" required>
+                            <div class="invalid-feedback" style="width: 100%;">
+                                Please specify which item you want to copy.
+                            </div>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label for="dest">Destination at your pod</label>
+                        <div class="input-group">
+                            <div class="input-group-prepend">
+                                <span class="input-group-text">To</span>
+                            </div>
+                            <input type="text" class="form-control" id="dest"
+                                placeholder="https://solid.example.org/other/" required>
+                            <div class="invalid-feedback" style="width: 100%;">
+                                Please specify where it should be copied to.
+                            </div>
+                        </div>
+                    </div>
+
+                    <hr class="mb-4">
+                    <div class="form-check form-check-inline">
+                        <input class="form-check-input" type="radio" name="merge-option" id="merge-replace" value="replace" checked>
+                        <label class="form-check-label" for="merge-replace">Replace target</label>
+                      </div>
+                      <div class="form-check form-check-inline">
+                        <input class="form-check-input" type="radio" name="merge-option" id="merge-keep-source" value="keep-source">
+                        <label class="form-check-label" for="merge-keep-source">Merge and keep source</label>
+                      </div>
+                      <div class="form-check form-check-inline">
+                        <input class="form-check-input" type="radio" name="merge-option" id="merge-keep-target" value="keep-target">
+                        <label class="form-check-label" for="merge-keep-target">Merge and keep target</label>
+                      </div>
+                    <div class="custom-control custom-checkbox">
+                        <input type="checkbox" class="custom-control-input" id="create-path" checked>
+                        <label class="custom-control-label" for="create-path">Create path to target container</label>
+                    </div>
+                    <div class="custom-control custom-checkbox">
+                        <input type="checkbox" class="custom-control-input" id="with-acl" checked>
+                        <label class="custom-control-label" for="with-acl">Include acl files</label>
+                    </div>
+                    <div class="custom-control custom-checkbox">
+                        <input type="checkbox" class="custom-control-input" id="with-meta" checked>
+                        <label class="custom-control-label" for="with-meta">Include meta files</label>
+                    </div>
+                    <hr class="mb-4">
+                    <div class="not-copying">
+                        <button class="btn btn-primary btn-lg btn-block" type="submit">Start Copying</button>
+                    </div>
+                    <div class="copying">
+                        <button class="btn btn-primary btn-lg btn-block disabled" type="submit">
+                            Copying...
+                            <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+                        </button>
+                    </div>
+                    <ul class="logs my-2 list-group"></ul>
+                </form>
+            </div>
+        </div>
+
+        <footer class="my-5 pt-5 text-muted text-center text-small">
+            <p class="mb-1">Implemented using solid-file-client</p>
+            <ul class="list-inline">
+                <li class="list-inline-item"><a href="https://github.com/jeff-zucker/solid-file-client">Source Code</a></li>
+                <li class="list-inline-item"><a href="https://jeff-zucker.github.io/solid-file-client/">Docs</a></li>
+                <li class="list-inline-item"><a href="https://github.com/jeff-zucker/solid-file-client/issues">Bugs</a></li>
+            </ul>
+        </footer>
+    </div>
+
+    <!-- Optional JavaScript -->
+    <!-- jQuery first, then Popper.js, then Bootstrap JS -->
+    <script src="https://code.jquery.com/jquery-3.3.1.slim.min.js"
+        integrity="sha384-q8i/X+965DzO0rT7abK41JStQIAqVgRVzpbzo5smXKp4YfRvH+8abtTE1Pi6jizo"
+        crossorigin="anonymous"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js"
+        integrity="sha384-UO2eT0CpHqdSJQ6hJty5KVphtPhzWj9WO1clHTMGa3JDZwrnQq4sF86dIHNDz0W1"
+        crossorigin="anonymous"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js"
+        integrity="sha384-JjSmVgyd0p3pXB1rRibZUAYoIIy6OrQ6VrjIEaFf/nJGzIxFDsf4x0xIM+B07jRM"
+        crossorigin="anonymous"></script>
+
+    <!-- Solid Copy -->
+    <script src="https://cdn.jsdelivr.net/npm/solid-auth-client@2/lib/index.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/solid-file-client/lib/index.min.js"></script>
+    <script>
+        const fileClient = new SolidFileClient(solid.auth, { enableLogging: true })
+        const { MERGE: { REPLACE, KEEP_SOURCE, KEEP_TARGET } } = SolidFileClient
+
+        document.getElementById('login').addEventListener('click', e => solid.auth.popupLogin({ popupUri: 'https://solid.community/common/popup.html' }))
+        document.getElementById('logout').addEventListener('click', e => solid.auth.logout())
+        solid.auth.trackSession(session => {
+            if (!session) {
+                $('.logged-in').hide()
+                $('.logged-out').show()
+            } else {
+                $('.logged-in').show()
+                $('.logged-out').hide()
+                $('.webid').text(session.webId)
+            }
+        })
+
+        const setCopyStatus = isCopying => {
+            if (isCopying) {
+                $('.not-copying').hide()
+                $('.copying').show()
+            } else {
+                $('.not-copying').show()
+                $('.copying').hide()
+            }
+        }
+        setCopyStatus(false)
+
+        const setLogStatus = showLogs => {
+            if (showLogs) {
+                $('.logs').show()
+            } else {
+                $('.logs').hide()
+            }
+        }
+        const resetLogs = () => {
+            setLogStatus(false)
+            $('.logs').empty()
+        }
+        const addSuccessLog = msg => $('.logs').append(`<li class="list-group-item list-group-item-success">${msg}</li>`)
+        const addErrorLog = msg => $('.logs').append(`<li class="list-group-item list-group-item-danger">${msg}</li>`)
+        resetLogs()
+
+        const fromInput = document.getElementById('src')
+        const destInput = document.getElementById('dest')
+        const createPathInput = document.getElementById('create-path')
+        const withAclInput = document.getElementById('with-acl')
+        const withMetaInput = document.getElementById('with-acl')
+        const getMergeInput = () => document.querySelector('input[name="merge-option"]:checked')
+
+        document.getElementById('copy-form').addEventListener('submit', async e => {
+            e.preventDefault()
+            const from = fromInput.value
+            const to = destInput.value
+            const createPath = createPathInput.checked
+            const withMeta = withMetaInput.checked
+            const withAcl = withAclInput.checked
+
+            const mergeVal = getMergeInput().value
+            let merge = REPLACE
+            if (mergeVal === 'keep-source')
+                merge = KEEP_SOURCE
+            else if (mergeVal === 'keep-target')
+                merge = KEEP_TARGET
+            
+
+            const responseToMsg = response => `${response.status} ${response.statusText} ${response.url}`
+            try {
+                setCopyStatus(true)
+                resetLogs()
+
+                // Copy a file or folder
+                const res = await fileClient.copy(from, to, {
+                    merge,
+                    createPath,
+                    withAcl,
+                    withMeta
+                })
+                res.forEach(response => {
+                    const msg = responseToMsg(response)
+                    console.log(msg)
+                    addSuccessLog(msg)
+                })
+            } catch (err) {
+                err.rejectedErrors.forEach(err => {
+                    console.error(err)
+                    addErrorLog(err.message)
+                })
+            }
+            setCopyStatus(false)
+            setLogStatus(true)
+        })
+    </script>
+</body>
+
+</html>

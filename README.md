@@ -1,261 +1,176 @@
-# solid-file-client
+# Solid-File-Client
 
-**A library for creating and managing files and folders in Solid data stores**
+A library for managing Solid files and folders.
+
+current version : <a href="http://badge.fury.io/js/solid-file-client">![npm](https://img.shields.io/npm/v/solid-file-client)</a>
 <br>
-<a href="http://badge.fury.io/js/solid-file-client">![npm](https://badge.fury.io/js/solid-file-client.svg)</a>
+previous version : <a href="https://www.npmjs.com/package/solid-file-client/v/0.5.3"><img src="https://img.shields.io/badge/npm%20package-0.5.3-brightgreen.svg"></a>
 
-This library provides a simple interface for logging in and out of a
-Solid data store, maintaining a persistent session, and for managing
-files and folders. It may be used either directly in the browser or
-with node/require. The library is based on solid-auth-client and 
-solid-cli, providing an error-handling interface and some convenience
-shortcuts on top of their methods and providing a common interface to
-the two modules.
+<b>Table of Contents</b> : <a href="#introduction">Introduction</a> |
+<a href="#installing">Installing</a> |
+<a href="#importing">Importing, Invoking, Logging In</a> |
+<a href="#error-handling">Error Handling</a> |
+<a href="#high-level-methods">High Level Methods</a> |
+<a href="#advanced-options">Advanced Options</a> |
+<a href="#low-level-methods">Low-level Methods</a> |
+<a href="#terminology">Note on Terminology</a> |
+<a href="#acknowledgements">Acknowledgements</a>
 
-    solid-cli-----------+                       +--> browser apps
-                        +---solid-file-client---+
-    solid-auth-client---+                       +--> console apps
+## Introduction
 
-## Using in the browser
+Solid-File-Client is a JavaScript library with high-level methods to create, read, and manage files and folders.  The methods may be used in browser scripts or in nodejs shell scripts.  The library supports both text and binary files and can read and write data from Solid Pods, from local file systems, and from virtual in-memory storage.  It can also recursively move and copy entire folder trees between any of those storage locations. For advanced users, there are also a number of options and lower-level methods which allow fine-tuned control over linked resources and other features of Solid. 
 
-Either download locally as shown below or use CDN like this:
+### Note for users of version 0.x of Solid-File-Client
 
-```HTML
-<script src="https://cdn.jsdelivr.net/npm/solid-file-client/dist/browser/solid-file-client.bundle.js"></script>
-```
+There are a number of changes which are not backward compatible.  See [Guide for transitioning to v.1](docs/transition-to-v.1.md) for details and hints for upgrading.
 
-## Downloading locally
+### Using alternate storage spaces
 
-       npm install solid-file-client
+Solid-file-client can work with web resources (https://).  It can also work
+with resources stored in a browser's local storage (app://), or a local file system (file://).  See the [Upload Demo](examples/upload/index.html) for an example of copying files from a local filesystem to a pod in the browser and [Node Upload Demo](docs/node-upload.js) for the same thing in node.  See [Solid-Rest](https://github.com/jeff-zucker/solid-rest) for a description of using browser local storage or accessing the local file system from node scripts.
 
-## Build Options
+In node, the copyFile() and copyFolder() commands can upload files from a local file system to a remote pod and vice-versa:
 
-If you install locally, the node_modules/solid-file-client/ folder contains these builds:
-
-    ./dist/console for use with node
-    ./dist/browser for use with browser, bundled rdflib & solid-auth-client
-
-## Invocation
-
-In the browser
-
-       const fileClient = SolidFileClient;
-
-In a node/require context
-
-       const fileClient = require('solid-file-client');
-
-## Error reporting
-
-All methods are promises. For example
+To upload
 ```javascript
-fileClient.delete( url ).then( response => {
-    alert( url+" successfully deleted" )
-}, err => console.log(url+" not deleted : "+err) );
+   await copyFolder( "file:///somepath/foo/", "https://somehost/somepath/foo/" )
 ```
-
-## Connection Methods
-
-**popupLogin()** **only in browser context**
-
-Opens a popup window that prompts for an IDP then lets you login.
-
+To download
 ```javascript
-fileClient.popupLogin().then( webId => {
-    else console.log( `Logged in as ${webId}.`)
-}, err => console.log(err) );
+   await copyFolder( "https://somehost/somepath/foo/", "file:///somepath/foo/", 
 ```
 
-**login(**IDP**)** **only in browser context**
+### Using with front-ends
 
-Logs in to the specified IDP (Identity Provider, e.g. 'https://solid.community') on a redirected page and returns to wherever it was called from. 
+Several front-ends for Solid-File-Client have been built.  In a browser you can use a GUI/editor [Solid-IDE](https://github.com/jeff-zucker/solid-ide) or create your own GUI using [Solid-File-Widget](https://github.com/bourgeoa/solid-file-widget).  In node or from the command line, you can use [Solid-Shell](https://github.com/jeff-zucker/solid-shell), an interactive shell, batch-processor, and command-line front-end for Solid-File-Client. 
 
+### Overview of writing methods
+
+By default, all high-level methods that create, copy, or move files or folders have these behaviors :
+
+  * the source always completely overwrites the target
+  * if the path to the item doesn't pre-exist, it will be created
+  * linked files (.acl and .meta) are copied/moved along with their resources
+
+For many purposes, these defaults will suffice.  However, if you need to, you may change any of them with option flags.  There are several options for merging folder trees as well as for using Solid's POST features. See the sections on [Overwriting](#overwriting), on [Creating Paths](#creating-paths), and on [Linked Files](#linked-files) for more information.
+
+### Demo scripts
+
+See the [Upload Demo](examples/upload/index.html) and [Copy Demo](examples/copy/index.html) for working examples.
+
+## <a name="Installing">Installing</a>
+
+If you are writing scripts only for the browser, you may wish to use a CDN code repository rather than using a local version. See [here](docs/using-in-browser.md) for an example of using a CDN.
+
+If you are writing scripts for node or you want a local version, install using 
+npm
+```
+    npm install solid-file-client
+```
+Once installed the executables will be found within the solid-file-client folder :
+```
+    dist/node/solid-file-client.bundle.js      // for node scripts
+    dist/windowo/solid-file-client.bundle.js   // for browser scripts
+```
+You can also clone or fork the github repository if wish.
+
+## <a name="importing">Importing, invoking, and logging-in</a>
+
+Here is the general process for a script using Solid-File-Client :
+
+* Import the solid-file-client and solid-auth-cli(ent) libraries
+* Instantiate an auth object
+* Instantiate a file-client object using the auth object
+* Use the auth object to login and for session management
+* Use the file-client object to read and write files and folders
+
+Here is a short node script illustrating the process.
 ```javascript
-fileClient.login(idp).then( webId => {
-    console.log( `Logged in as ${webId}.`)
-}, err => console.log(err) );
+    const auth = require('solid-auth-cli')
+    const FC   = require('solid-file-client')
+    const fc   = new FC( auth )
+    async function run(){
+        let session = await auth.currentSession()
+        if (!session) { session = await auth.login() }
+        console.log(`Logged in as ${session.webId}.`)
+        if( await fc.itemExists( someUrl ) {
+            let content = await fc.readFile( someUrl )
+            // ... other file methods
+            // ... and/or other auth methods
+        }
+    }
+    run()
 ```
+See [Using with Node](docs/using-with-node.md) for details of logging
+in with node and command line scripts.  See [Using in a Browser](docs/using-in-browser.md) for a detailed example of importing, invoking, and logging in from a browser script.
 
-**login(**credentials**)** **only in node/console context**
+For more information on auth and session functions see [solid-auth-client](https://github.com/solid/solid-auth-client) for the browser and [solid-auth-cli](https://github.com/jeff-zucker/solid-auth-cli) for node.
 
-Logs in using a credentials object that may be created in a script 
-or pulled from a config file.  See getCredentials() below for details
+## <a name="error-handling">Error Handling</a>
 
+All Solid-File-Client methods should throw an error if they do not succeed.
+To trap and examine errors, use try/catch:
 ```javascript
-fileClient.login(credentials).then( webId => {
-    console.log( `Logged in as ${webId}.`)
-}, err => console.log(err) );
+    fc.readFile(url).then((content) => {
+        console.log(content'))
+    })
+    .catch(err => console.error(`Error: ${err}`))
 ```
-
-**getCredentials( configFile )** **only in node/console context**
-
-The configFile parameter is optional.  It should point to a JSON file
-as described below. If no configFile is specified, the method will
-look for the file named ~/.solid-auth-client-config.json.
-
-Wherever it is located, the file must contain a JSON structure like
-this:
-
+Or, in an async method :
 ```javascript
-{
-    "idp"      : "https://solid.community",
-    "username" : "YOUR-USER-NAME",                  
-    "password" : "YOUR-PASSWORD",     // OPTIONAL !!!
-    "base"     : "https://YOU.solid.community",
-    "test"     : "/public/test/"
-}
+    try {
+        let content = await fc.readFile( someUrl )
+        console.log(content)
+    }
+    catch(error) {
+        console.log( error )         // A full error response 
+        console.log( error.status )  // Just the status code of the error
+        console.log( error.message ) // Just the status code and statusText
+    }
 ```
+See [Interpreting Error Responses](docs/error-handling.md) for further options and a
+description of errors for recursive methods like copyFolder().
 
-The base field should be the root of your POD with the trailing slash
-omitted.  The test field should specify a directory under the base that
-can be used to write test files. In the example above, the folder at
-https://YOU.solid.community/public/test/ would be used for testing.
+## <a name="high-level-methods">High-level Methods</a>
 
-If you choose not to store passwords in the configuration file, your script
-should prompt for a password.
+### createFile( fileURL, content, contentType, options )
 
+Creates a new file at the specified URL.  Content is required, even if only a blank string.  ContentType should be something like "text/turtle" or "image/png" and is required. 
 
-**logout()**
+Default behavior :
+  * If a file already exists at that URL, it will be overwritten.
+  * If the file's parent path does not exist, it will be created.
 
-```javascript
-fileClient.logout().then( console.log( `Bye now!` )
-```
+See [Overwriting](#overwriting) and [Creating Paths](#creating-paths) if you need to change the default behavior.
 
-**checkSession()**
+Note for all: Previous versions of of Solid Server tried to guess the content-type from the file extension but you should not depend on this behavior.  Previous versions would sometimes add an extension e.g. if you created a file named "foo" with type "text/turtle", it would be renamed "foo.ttl".  This is no longer the case, the file will be named "foo" and will still have the type "text/turtle".
 
-```javascript
-fileClient.checkSession().then( session => {
-    console.log("Logged in as "+session.webId)
-}, err => console.log(err) );
-```
-
-## File Methods
-
-**createFile(**URL,content,contentType**)**
-
-```javascript
-fileClient.createFile(newFile).then( fileCreated => {
-  console.log(`Created file ${fileCreated}.`);
-}, err => console.log(err) );
-
-```
-
-This method creates a new empty file.
-The contentType should be specified either in the URL's extension or in
-the contentType parameter, but not both.
-
-NOTE : if the file already exists, the solid.community server (and others) will create an additional file with a prepended numerical ID so if you don't want that to happen, use updateFile() which will first delete the file if it exists, and then add the new file. If you do want to create the additional file, you can retrieve it's name, including the prepended numerical ID in the return from createFile() as shown above with the "fileCreated" parameter.
-
-**readFile(**URL**)**
-
-```javascript
-fileClient.readFile(newFile).then(  body => {
-  console.log(`File content is : ${body}.`);
-}, err => console.log(err) );
-```
-
-**updateFile(**URL,content,contentType**)**
-
-```javascript
-fileClient.updateFile( url, newContent, contentType ).then( success => {
-    console.log( `Updated ${url}.`)
-}, err => console.log(err) );
-```
-NOTE : this is a file-level update, it replaces the file with the new content by removing the old version of the file and adding the new one.  The contentType parameter is optional, do not specify it if you include a file extension.
-
-**deleteFile(**URL**)**
-
-```javascript
-fileClient.deleteFile(url).then(success => {
-  console.log(`Deleted ${url}.`);
-}, err => console.log(err) );
-```
-
-**copyFile(**old,new**)**
-
-Copies a file from one location on a Solid Server to another location on
-the same or a different Solid server.  Use the full URL, including file
-name, to both the old and new parameters. 
-
-```javascript
-fileClient.copyFile(old,new).then(success => {
-  console.log(`Copied ${old} to ${new}.`);
-}, err => console.log(err) );
-```
-
-**download(**localPath,URL**)**
-
-Downloads the specified URL. The localPath should be a local folder with a path
-relative to the folder the script is running in.
-
-**Note**: only available in console for now.
+Note for advanced users : This method uses PUT, if you prefer the behavior of 
+POST (for example creating alternate versions of a resource rather than replacing it) use the post() method, see [Low-level Methods](#low-level-methods).
 
 
-```javascript
-fileClient.downloadFile(localPath,URL).then(success => {
-  console.log(`Downloaded ${url} to ${localPath}.`);
-}, err => console.log(err) );
-```
-**upload(**remotePath,file**)**
+### <a name="createFolder">createFolder( folderURL, options )</a>
 
-Uploads the specified local file whose path should be specified relative
-to the folder the script is running in.
+Creates a new folder at the specified URL.  
 
-**Note**: only available in console for now.
+Default behavior :
+  * If a folder already exists at that URL, it will be overwritten and all of its contents lost.
+  * If the folder's parent path does not exist, it will be created.
 
-```javascript
-fileClient.uploadFile(localPath,url).then(success => {
-  console.log(`Uploaded ${localPath} to ${url}.`);
-}, err => console.log(err) );
-```
+See [Overwriting](#overwriting) and [Creating Paths](#creating-paths) to change the default behavior.
 
-**fetchAndParse(**URL,contentType**)**
 
-Results will be empty on either a failure to fetch or a failure to parse
-and the relevant error will be in fileClient.err. If the content-type is
-omitted, it will be guessed from the file extension. If the content-type
-is or is guessed to be 'text/turtle' or any other format that rdflib can
-parse, the response will be parsed by rdflib and returned as an rdflib
-graph object. If the content-type is 'application/json' the response will
-be a JSON object.
+### readFile( fileURL, options )
 
-```javascript
-fileClient.fetchAndParse(url, 'text/turtle').then(graph => {
-    let something = graph.any(someSubject, somePredicate);
-}, err => console.log(err) );
-```
+On success, the readFile() method returns the contents of the specified file.
+The return value will be a string for text files and a blob for binary files
+such as images and music.  
 
-## Folder Methods
+Advanced users : If you want the content as a ReadableStream, or you need to specify an accept header, use the get() or fetch() methods - see [Low-level Methods](#low-level-methods).
 
-**createFolder(**URL**)**<br>
-
-```javascript
-fileClient.createFolder(url).then(success => {
-  console.log(`Created folder ${url}.`);
-}, err => console.log(err) );
-```
-
-**deleteFolder(**URL**)**
-
-```javascript
-fileClient.deleteFolder(url).then(success => {
-  console.log(`Deleted ${url}.`);
-}, err => console.log(err) );
-```
-
-Attempting to delete a non-empty folder will fail with a "409 Conflict"
-error.
-
-**readFolder(**URL**)**
-
-```javascript
-fileClient.readFolder(url).then(folder => {
-  console.log(`Read ${folder.name}, it has ${folder.files.length} files.`);
-}, err => console.log(err) );
-```
+### readFolder( folderURL, options )
 
 On success, the readFolder() method returns a folder object in this format:
-
 ```javascript
 {
      type : "folder",
@@ -264,54 +179,173 @@ On success, the readFolder() method returns a folder object in this format:
  modified : // dcterms:modified date
     mtime : // stat:mtime
      size : // stat:size
-   parent : // parentFolder or undef if none,
-  content : // raw content of the folder's turtle representation,
+   parent : // parentFolder or undef if none
     files : // an array of files in the folder
-  folders : // an array of sub-folders in the folder,
+  folders : // an array of sub-folders in the folder
+    links : // an array of links for the folder itself IF links=include specified
 }
 ```
+Each item in the arrays of files and sub-folders will be a file object which is the same as a folder object except it does not have the last two fields (files,folders). The content-type in this case is not guessed, it is read from the folder's triples, i.e. what the server sends.
 
-Each item in the arrays of files and sub-folders will be a file object
-which is the same as a folder object except it does not have the
-last two fields (files,folders). The content-type in this
-case is not guessed, it is read from the folder's triples, i.e. what the
-server sends.
+By default, readFolder() does not list linked resources (.acl and .meta files).  To change this behavior, see [Linked files](#linked-files).
 
-**copyFolder(**oldFolder,newFolder**)**
+### readHead( folderOrFileURL )
 
-Does a deep (recursive) copy from one Solid folder to another, creating
-sub-folders as needed or filling them if they already exist.
-
-
+Returns the header for a file.  The file content is not returned.
+You may inspect specific headers with the headers.get() method :
 ```javascript
-fileClient.copy(old,new).then(success => {
-  console.log(`Copied ${old} to ${new}.`);
-}, err => console.log(err) );
-```
+    let response = await fc.readHead( url )
+    let contentType = response.headers.get('content-type')
+``` 
+
+### itemExists( fileOrFolderURL )
+
+Returns true if the URL exists and false otherwise.
+
+### deleteFile( fileURL, options )
+
+Deletes the specified file and all linked filed (.acl,.meta)
+
+### deleteFolder( folderURL )
+
+Recursively deletes a folder and all of its contents including all linked files (.acl, .meta).
+
+### moveFile( sourceURL, targetURL, options ), copyFile( sourceURL, targetURL, options )
+
+Copies or moves the specified source to the target.
+
+Defaults :
+  * If a file already exists at that target, it will be overwritten.
+  * If the target URL's parent path does not exist, it will be created.
+  * Linked files (.acl and .meta) will be copied if they exist.
+
+See [Advanced Options](#advanced-options) to modify these default behaviors.
+
+### moveFolder(sourceURL,targetURL,options), copyFolder(sourceURL,targetURL,options)
+
+Recursively copies or moves a folder and all of its contents.
+
+Defaults :
+  * If the target exists, it is replaced by the source.
+  * If the top target folder's parent path does not exist, it will be created.
+  * Linked files (.acl and .meta) will be copied/moved if they exist.
+
+These default behaviors may all be modified.  For example, you can choose from several ways to merge the source and target folders.  See [Advanced Options](#advanced-options) for more details.
 
 
-## A General Fetch Method
+## <a name="advanced-options">Advanced Options</a>
 
-**fetch(**URL,request**)**
+### <a name="overwriting">Overwriting</a>
 
-Results will be empty on failure to fetch and on sucess results.value will
-hold the raw text of the resource. It may be called with a simple URL
-parameter or with a full request object which specifies method, headers, etc.
-This is a pass-through to solid-auth-client.fetch providing some error
-trapping to make it consistent with the solid-file-client interface but
-otherwise, see the solid-auth-client docs and the Solid REST spec for
-details.
+By default, methods which create, copy, or move files or folders will overwrite an item of the same name in the target space, replacing it with the source item.  This behavior may be modified in several ways
 
+With any of the create/copy/move methods, you can use the [itemExists()](#itemExists) method to prevent overwriting items.
 ```javascript
-fileClient.fetch( url, request ).then( results => {
-     // do something with results
-}, err => console.log(err) );
-```
-
-## Acknowledgements
-
-Many thanks for patches and issues from https://github.com/linonetwo, 
-https://github.com/scenaristeur, https://github.com/bourgeoa.
+    if( !(await fc.itemExists(x)) ) {
+        await fc.createFolder(x) // only create if it doesn't already exist
+    }
+ ```
+With the **copyFolder()** and **moveFolder()** methods, you can elect to merge the source and target with preference for the source or preference for the target:
  
+   * **default** - target is replaced by source
+   * **merge=keep_source** - target becomes source plus items found only in target 
+   * **merge=keep_target** - target becomes target plus items found only in source
 
-**copyright (c) 2018 Jeff Zucker** may be freely used with MIT license
+For example :
+```javascript
+    await copyFolder( source, target, {merge:"keep_source"} )
+```
+To avoid typos, you may also import the constants for these options:
+```javascript
+    const { MERGE } = SolidFileClient
+    await copyFolder( source, target, {merge: MERGE.KEEP_SOURCE } )
+```
+### <a name="creating-paths">Creating Paths</a>
+
+When you create a file or folder and the path to that item doesn't already exist, Solid-File-Client will create the path for you if it can.  For example, if you ask to create /foo/bar/baz.txt but there is no /foo/ folder and there is no /bar/ folder, Solid-File-Client will create /foo/ and then create /bar/ inside it and then create baz.txt inside that.
+
+If you would rather the program fails if the path you asked for doesn't exist, you may set the "createPath" flag to false.
+
+  * **createFile(),createFolder(),copyFile(),copyFolder(),moveFile(),moveFolder()**
+  
+      * **default** - create intermediary paths if they are missing
+      * **createPath=false** - fail if intermediary paths are missing
+      
+  * **note** for copyFolder() and moveFolder(), the createPath option applies only to the top-level target folder, not to folders within the target which are handled by the merge option      
+
+For example:
+```javascript
+      await createFile( url, {createPath:false} )
+```
+
+### <a name="linked-files">Linked Files</a>
+
+One of Solid's unique features is the use of linked files.  Currently the two
+main types of linked files are .acl files which control access to the main
+file they are linked from and .meta files which describe additional features
+of the file they are linked from.  Solid-file-client, by default treats these
+linked files as tightly bound to the resource they are referencing.  In other
+words when you delete, move, or copy a file that has linked files, the linked
+files will also be deleted, moved, or copied.  These defaults should be
+sufficient for most basic usage.  
+
+Solid-file-client makes a special case for access control (.acl) files.  These
+files may contain absolute links which will no longer work when the file is 
+copied or moved.  So solid-file-client, by default, will modify .acl files to change absolute links to relative ones.  
+
+Solid servers provide the possible location of linked resources in the headers of all resources.  Solid-file-client supports the links=include_possible option to include these possible locations without checking to see if the linked file actually exists. The possible locations tell you where to create the linked file if they don't already exist.
+
+Advanced users can modify how linked files are handled with the withAcl, withMeta, and links option flags shown below.
+
+  * **copyFile(),copyFolder(),moveFile(),moveFolder()**
+
+      * **default**        - .acl and .meta items are copied/moved, acl is modified
+      * **withAcl=false**   - .acl items are not copied/moved
+      * **withMeta=false**  - .meta items are not copied/moved
+      * **modifyAcl=false** - copy/move .acl without modifications
+
+
+  *  **readFolder()**
+
+      * **default**                - linked items are not listed
+      * **links=include**          - linked items are listed, when they exist
+      * **links=include_possible** - possible locations of links are listed
+
+For example:
+```javascript
+      await copyFile( source, target, {links:"exclude"} )
+      await readFolder( url, {links:"include_possible"} )
+```
+To avoid typos, you may also import the constants for the link options:
+```javascript
+    const { LINKS } = SolidFileClient
+    await copyFolder( source, target, {links: LINKS.INCLUDE_POSSIBLE} )
+```
+With readFolder()'s links:include and links:include_possible option flags, the links for the folder are a property of the folder object and the links for contained resources are in the file objects.  For example:
+```javascript
+      let folder = await readFolder( url, {links:"include"} )
+      console.log(folder.links.meta || "no .meta for this folder")
+      console.log(folder.files[0].links.acl) || "no .acl for this file")
+```
+See also, the **getItemLinks()** method which finds the possible locations of linked resources for an item.  See [Low-level Methods](#low-level-methods)
+
+## <a name="low-level-methods">Low-level methods</a>
+
+Solid-File-Client provides a number of low-level methods which either support advanced options or directly reflect the behavior of the Solid server without additional processes as are found in the high-level methods.  
+
+See the [JSdoc for the API](docs/JSdoc/api.md) for more details of these methods.
+
+## <a name="terminology">Note on terminology</a>
+
+Solid servers can store data directly in a physical file system,  or use a database or other storage.  Instead of talking about "Files" and "Folders", it is more correct to talk about "Containers" and "Resources" - logical terms independent of the storage mechanism.  In this documentation, for simplicity, we've used the file/folder terminology with no implication that it represents a physical file system.
+
+
+## <a name="acknowledgements">Acknowledgements</a>
+
+
+This library was originally authored by **<a href="https://github.com/jeff-zucker">Jeff Zucker</a>**. Version 1.0.0 includes many additions and improvements that were the results of a collaboration between Jeff, **<a href="https://github.com/bourgeoa">Alain Bourgeois</a>**, and **<a href="https://github.com/Otto-AA">Otto AA</a>**.
+
+Many thanks for patches and issues from https://github.com/linonetwo, and https://github.com/scenaristeur.
+
+copyright (c) 2018 Jeff Zucker may be freely used with MIT license
+

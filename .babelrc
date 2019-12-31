@@ -3,12 +3,12 @@
     [
       "@babel/preset-env",
       {
-        "useBuiltIns": "entry"
+        "useBuiltIns": "usage",
+        "corejs": "3.0.0"
       }
     ]
   ],
   "plugins": [
-    "@babel/plugin-transform-flow-strip-types",
     "@babel/plugin-transform-runtime"
   ]
 }
