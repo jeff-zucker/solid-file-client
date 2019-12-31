@@ -1,7 +1,7 @@
 <a href="../README.md">back to README</a>
 
-// DEMO OF USING COPYFILE IN NODE TO UPLOAD A LOCAL FILE TO A REMOTE POD
-
+# DEMO OF USING COPYFILE IN NODE TO UPLOAD A LOCAL FILE TO A REMOTE POD
+```javascript
 const auth = require('../node_modules/solid-auth-cli')
 const FileClient = require('../')
 const fc = new FileClient(auth)
@@ -21,5 +21,5 @@ async function run(){
     }
 }
 run()
+```
 
-/* END */
