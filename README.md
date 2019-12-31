@@ -291,11 +291,11 @@ sufficient for most basic usage.
 
 Solid-file-client makes a special case for access control (.acl) files.  These
 files may contain absolute links which will no longer work when the file is 
-copied or moved.  So solid-file-client, by default, will modify .acl files to change absolute links to relative ones.  
+copied or moved.  So solid-file-client, by default, will modify .acl files to change absolute links to relative ones.  You may skip this modification by setting modifyAcl=false **but** be very careful if you do this, it may result in you getting locked out of your own resources.
 
 Solid servers provide the possible location of linked resources in the headers of all resources.  Solid-file-client supports the links=include_possible option to include these possible locations without checking to see if the linked file actually exists. The possible locations tell you where to create the linked file if they don't already exist.
 
-Advanced users can modify how linked files are handled with the withAcl, withMeta, and links option flags shown below.
+Advanced users can modify how linked files are handled with the withAcl, withMeta, modifyAcl, and links option flags shown below.
 
   * **copyFile(),copyFolder(),moveFile(),moveFolder()**
 
