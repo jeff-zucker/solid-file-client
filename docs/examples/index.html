@@ -38,8 +38,9 @@ body {
 
 <div id="sidebar">
     <h3>Solid-File-Client Demo</h3>
-    <button id="copy" class="btn btn-primary">Copy</button>
     <button id="upload" class="btn btn-primary">Upload</button>
+    <button id="copy" class="btn btn-primary">Copy</button>
+    <button id="return" class="btn btn-primary">Back to README</button>
 </div>
 <iframe id="main" src="copy/"></iframe>
 
@@ -51,5 +52,8 @@ document.getElementById('copy').addEventListener( 'click', e => {
 document.getElementById('upload').addEventListener( 'click', e => {
    document.getElementById('main').src="./upload/index.html"
 
+})
+document.getElementById('return').addEventListener( 'click', e => {
+   document.location.href="https://github.com/jeff-zucker/solid-file-client/blob/master/README.md"
 })
 </script>
