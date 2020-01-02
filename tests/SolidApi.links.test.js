@@ -1,4 +1,4 @@
-import SolidApi, { LINKS } from '../src/SolidApi'
+import SolidApi, { LINKS, AGENT } from '../src/SolidApi'
 import TestFolderGenerator from './utils/TestFolderGenerator'
 import contextSetupModule from './utils/contextSetup'
 import errorUtils from '../src/utils/errorUtils'
@@ -6,6 +6,19 @@ import { rejectsWithStatuses, resolvesWithStatus, rejectsWithStatus } from './ut
 
 const { getFetch, getTestContainer, contextSetup } = contextSetupModule
 const { Folder, File, FolderPlaceholder, FilePlaceholder, BaseFolder } = TestFolderGenerator
+
+const getRootUrl = url => {
+  const base = url.split('/')
+  let rootUrl = base[0]
+  let j = 0
+  for (let i = 1; i < base.length - 1; i++) {
+    j = i
+    if (base[i] === '') { rootUrl += '/' }
+    break
+  }
+  rootUrl = rootUrl + '/' + base[j + 1] // + ('/')
+  return rootUrl
+}
 
 /** @type {SolidApi} */
 let api
@@ -57,43 +70,43 @@ describe('getItemLinks', () => {
 })
 
 describe('copying links', () => {
-    const createPseudoAcl = (itemUrl, itemName) => `
+    const createPseudoAcl = (itemUrl, itemName, rootUrl) => `
 @prefix : <#>.
 @prefix n0: <http://www.w3.org/ns/auth/acl#>.
 @prefix n1: <http://xmlns.com/foaf/0.1/>.
+@prefix c: <${rootUrl}/profile/card#>.
 
 :ControlReadWrite
     a n0:Authorization;
     n0:accessTo <${itemUrl}>;
     n0:accessTo <./${itemName}>;
-    n0:agent </profile/card#me>;
+    n0:agent <${rootUrl}/profile/card#me>;
+    n0:agent c:me;
     n0:agentClass n1:Agent;
     n0:default <./>;
     n0:mode n0:Control, n0:Read, n0:Write.
 `
-    const expectedPseudoAcl = newItemName => `
+    const expectedPseudoAcl = (newItemName, newRootUrl) => `
 @prefix : <#>.
 @prefix n0: <http://www.w3.org/ns/auth/acl#>.
 @prefix n1: <http://xmlns.com/foaf/0.1/>.
+@prefix c: <${newRootUrl}/profile/card#>.
 
 :ControlReadWrite
     a n0:Authorization;
     n0:accessTo <./${newItemName}>;
     n0:accessTo <./${newItemName}>;
-    n0:agent </profile/card#me>;
+    n0:agent <${newRootUrl}/profile/card#me>;
+    n0:agent c:me;
     n0:agentClass n1:Agent;
     n0:default <./>;
     n0:mode n0:Control, n0:Read, n0:Write.
 `
-    const fileWithAcl = new File('child-file.txt', 'I am a child', 'text/plain', {
+const fileWithAcl = new File('child-file.txt', 'I am a child', 'text/plain', {
         acl: true,
         placeholder: { meta: true }
     }) // Note: Acl Content will be overriden by some tests
     const targetWithAcl = new File('target.txt', 'target', 'text/plain', {
-//        meta: false,
-        placeholder: { acl: true }
-    })
-    const targetFileWithAcl = new File('child-file.txt', 'target', 'text/plain', {
 //        meta: false,
         placeholder: { acl: true }
     })
@@ -129,8 +142,7 @@ describe('copying links', () => {
         folderWithAcl,
         folderWithMeta,
         new Folder('nested', [
-            targetWithAcl,
-            targetFileWithAcl
+            targetWithAcl
         ]),
         fileWithLinks,
         filePlaceholder,
@@ -145,24 +157,73 @@ describe('copying links', () => {
             await expect(api.itemExists(targetWithAcl.acl.url)).resolves.toBe(true)
         })
         test('modify paths in acl file of a file to match new location', async () => {
-            fileWithAcl.acl.content = createPseudoAcl(fileWithAcl.url, fileWithAcl.name)
-            const expectedAcl = expectedPseudoAcl(targetWithAcl.name)
+            fileWithAcl.acl.content = createPseudoAcl(fileWithAcl.url, fileWithAcl.name, '')
+            const expectedAcl = expectedPseudoAcl(targetWithAcl.name, '')
             await fileWithAcl.acl.reset()
             await api.copyAclFileForItem(fileWithAcl.url, targetWithAcl.url)
             await expect(api.get(targetWithAcl.acl.url).then(res => res.text())).resolves.toEqual(expectedAcl)
         })
-        test('keep original paths in acl file of a file with modifyAcl=false', async () => {
-            const aclContent = createPseudoAcl(fileWithAcl.url, fileWithAcl.name)
-            fileWithAcl.acl.content = aclContent
+        test('modify relative paths in acl file of a file to match new location agent:to_source', async () => {
+            fileWithAcl.acl.content = createPseudoAcl(fileWithAcl.url, fileWithAcl.name, '')
+            const expectedAcl = expectedPseudoAcl(targetWithAcl.name, getRootUrl(fileWithAcl.url)) //'app://ls')
             await fileWithAcl.acl.reset()
-            await api.copyAclFileForItem(fileWithAcl.url, targetFileWithAcl.url, { modifyAcl: false })
-            await expect(api.get(targetFileWithAcl.acl.url).then(res => res.text())).resolves.toEqual(aclContent)
+            await api.copyAclFileForItem(fileWithAcl.url, targetWithAcl.url, { agent: AGENT.TO_SOURCE })
+            await expect(api.get(targetWithAcl.acl.url).then(res => res.text())).resolves.toEqual(expectedAcl)
+        })
+        test('modify absolute paths in acl file of a file to match new location agent:to_source', async () => {
+            fileWithAcl.acl.content = createPseudoAcl(fileWithAcl.url, fileWithAcl.name, getRootUrl(fileWithAcl.url)) // '')
+            const expectedAcl = expectedPseudoAcl(targetWithAcl.name, getRootUrl(fileWithAcl.url)) //'app://ls')
+            await fileWithAcl.acl.reset()
+            await api.copyAclFileForItem(fileWithAcl.url, targetWithAcl.url, { agent: AGENT.TO_SOURCE })
+            await expect(api.get(targetWithAcl.acl.url).then(res => res.text())).resolves.toEqual(expectedAcl)
+        })
+        test('modify absolute paths in acl file of a file to match new location agent:to_target', async () => {
+            fileWithAcl.acl.content = createPseudoAcl(fileWithAcl.url, fileWithAcl.name, getRootUrl(fileWithAcl.url)) // 'app://ls')
+            const expectedAcl = expectedPseudoAcl(targetWithAcl.name, '')
+            await fileWithAcl.acl.reset()
+            await api.copyAclFileForItem(fileWithAcl.url, targetWithAcl.url, { agent: AGENT.TO_TARGET })
+            await expect(api.get(targetWithAcl.acl.url).then(res => res.text())).resolves.toEqual(expectedAcl)
+        })
+        test.skip('modify relative paths in acl file of a file to match new location agent:to_target', async () => {
+            fileWithAcl.acl.content = createPseudoAcl(fileWithAcl.url, fileWithAcl.name, '') // 'app://ls')
+            const expectedAcl = expectedPseudoAcl(targetWithAcl.name, '')
+            await fileWithAcl.acl.reset()
+            await api.copyAclFileForItem(fileWithAcl.url, targetWithAcl.url, { agent: AGENT.TO_TARGET })
+            await expect(api.get(targetWithAcl.acl.url).then(res => res.text())).resolves.toEqual(expectedAcl)
         })
         test('modify paths in acl file of a folder to new location', async () => {
-            folderWithAcl.acl.content = createPseudoAcl(folderWithAcl.url, '')
-            const expectedAcl = expectedPseudoAcl('')
+            folderWithAcl.acl.content = createPseudoAcl(folderWithAcl.url, '', '')
+            const expectedAcl = expectedPseudoAcl('', '')
             await folderWithAcl.acl.reset()
             await api.copyAclFileForItem(folderWithAcl.url, folderWithMeta.url)
+            await expect(api.get(folderWithMeta.acl.url).then(res => res.text())).resolves.toEqual(expectedAcl)
+        })
+        test('modify relative paths in acl file of a folder to match new location agent:to_source', async () => {
+            folderWithAcl.acl.content = createPseudoAcl(folderWithAcl.url, '', '')
+            const expectedAcl = expectedPseudoAcl('', getRootUrl(folderWithAcl.url)) //'app://ls')
+            await folderWithAcl.acl.reset()
+            await api.copyAclFileForItem(folderWithAcl.url, folderWithMeta.url, { agent: AGENT.TO_SOURCE })
+            await expect(api.get(folderWithMeta.acl.url).then(res => res.text())).resolves.toEqual(expectedAcl)
+        })
+        test('modify absolute paths in acl file of a folder to match new location agent:to_source', async () => {
+            folderWithAcl.acl.content = createPseudoAcl(folderWithAcl.url, '', getRootUrl(folderWithAcl.url)) // '')
+            const expectedAcl = expectedPseudoAcl('', getRootUrl(folderWithAcl.url)) //'app://ls')
+            await folderWithAcl.acl.reset()
+            await api.copyAclFileForItem(folderWithAcl.url, folderWithMeta.url, { agent: AGENT.TO_SOURCE })
+            await expect(api.get(folderWithMeta.acl.url).then(res => res.text())).resolves.toEqual(expectedAcl)
+        })
+        test('modify absolute paths in acl file of a folder to match new location agent:to_target', async () => {
+            folderWithAcl.acl.content = createPseudoAcl(folderWithAcl.url, '', getRootUrl(folderWithAcl.url)) // 'app://ls')
+            const expectedAcl = expectedPseudoAcl('', '')
+            await folderWithAcl.acl.reset()
+            await api.copyAclFileForItem(folderWithAcl.url, folderWithMeta.url, { agent: AGENT.TO_TARGET })
+            await expect(api.get(folderWithMeta.acl.url).then(res => res.text())).resolves.toEqual(expectedAcl)
+        })
+        test('modify relative paths in acl file of a folder to match new location agent:to_target', async () => {
+            folderWithAcl.acl.content = createPseudoAcl(folderWithAcl.url, '', '') // 'app://ls')
+            const expectedAcl = expectedPseudoAcl('', '')
+            await folderWithAcl.acl.reset()
+            await api.copyAclFileForItem(folderWithAcl.url, folderWithMeta.url, { agent: AGENT.TO_TARGET })
             await expect(api.get(folderWithMeta.acl.url).then(res => res.text())).resolves.toEqual(expectedAcl)
         })
         test('responds with put response', async () => {

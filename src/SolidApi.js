@@ -12,7 +12,7 @@ const { getLinksFromResponse } = linksUtils
 const { parseFolderResponse } = folderUtils
 
 /**
- * @typedef {"replace"|"source"|"target"} MERGE
+ * @typedef {"replace"|"keep_source"|"keep_target"} MERGE
  * @private
  */
 export const MERGE = {
@@ -29,12 +29,21 @@ export const LINKS = {
   INCLUDE: 'include',
   INCLUDE_POSSIBLE: 'include_possible'
 }
+/**
+ * @typedef {"no_modify"|"to_target"|"to_source"} AGENT
+ * @private
+ */
+export const AGENT = {
+  NO_MODIFY: 'no_modify',
+  TO_TARGET: 'to_target',
+  TO_SOURCE: 'to_source'
+}
 
 /**
  * @typedef {object} WriteOptions
  * @property {boolean} [createPath=true] create parent containers if they don't exist
  * @property {boolean} [withAcl=true] also copy acl files
- * @property {boolean} [modifyAcl=true]
+ * @property {AGENT} [agent="no_modify"] specify how to handle existing .acl
  * @property {boolean} [withMeta=true] also copy meta files
  * @property {MERGE} [merge="replace"] specify how to handle existing files/folders
  */
@@ -42,7 +51,7 @@ export const LINKS = {
 const defaultWriteOptions = {
   withAcl: true,
   withMeta: true,
-  modifyAcl: true,
+  agent: AGENT.NO_MODIFY,
   merge: MERGE.REPLACE,
   createPath: true
 }
@@ -475,9 +484,9 @@ class SolidAPI {
    * @returns {Promise<Response>} creation response
    */
   async copyAclFileForItem (oldTargetFile, newTargetFile, options) {
-    // TODO: Default options?
     options = {
       ...defaultWriteOptions,
+      ...({ agent: AGENT.NO_MODIFY }),
       ...options
     }
 
@@ -493,18 +502,23 @@ class SolidAPI {
     // TODO: Use nodejs url module, make URL and use its host/base/origin/... instead of getRootUrl
     // Make absolute paths to the same directory relative
     // Update relative paths to the new location
-    if (options.modifyAcl) {
-      const fromName = getItemName(oldTargetFile)
-      const toName = areFolders(newTargetFile) ? '' : getItemName(newTargetFile)
-      if (content.includes(oldTargetFile)) {
-        // if object values are absolute URI's make them relative to the destination
-        content = content.replace(new RegExp('<' + oldTargetFile + '>', 'g'), '<./' + toName + '>')
-        content = content.replace(new RegExp('<' + getRootUrl(oldTargetFile) + 'profile/card#me>'), '</profile/card#me>')
-      }
-      if (toName !== fromName) {
-        // if relative replace file destination
-        content = content.replace(new RegExp(fromName + '>', 'g'), toName + '>')
-      }
+    const fromName = getItemName(oldTargetFile)
+    const toName = areFolders(newTargetFile) ? '' : getItemName(newTargetFile)
+    if (content.includes(oldTargetFile)) {
+      // if object values are absolute URI's make them relative to the destination
+      content = content.replace(new RegExp('<' + oldTargetFile + '>', 'g'), '<./' + toName + '>')
+    }
+    if (toName !== fromName) {
+      // if relative replace file destination
+      content = content.replace(new RegExp(fromName + '>', 'g'), toName + '>')
+    }
+    if (options.agent === AGENT.TO_TARGET) {
+      content = content.replace(new RegExp('<' + getRootUrl(oldTargetFile) + 'profile/card#', 'g'), '</profile/card#')
+      content = content.replace(new RegExp('<' + getRootUrl(oldTargetFile) + 'profile/card#me>', 'g'), '</profile/card#me>')
+    } 
+    if (options.agent === AGENT.TO_SOURCE) {
+      content = content.replace(new RegExp('</profile/card#', 'g'), '<' + getRootUrl(oldTargetFile) + 'profile/card#')
+      content = content.replace(new RegExp('</profile/card#me>', 'g'), '<' + getRootUrl(oldTargetFile) + 'profile/card#me>')
     }
 
     return this.putFile(aclTo, content, contentType, options)
