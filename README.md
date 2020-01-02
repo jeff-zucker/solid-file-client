@@ -289,21 +289,15 @@ words when you delete, move, or copy a file that has linked files, the linked
 files will also be deleted, moved, or copied.  These defaults should be
 sufficient for most basic usage.  
 
-Solid-file-client makes a special case for access control (.acl) files.  These
-files may contain absolute links which will no longer work when the file is 
-copied or moved.  So solid-file-client, by default, will modify .acl files to change absolute links to relative ones.  You may skip this modification by setting modifyAcl=false **but** be very careful if you do this, it may result in you getting locked out of your own resources.
-
-Solid servers provide the possible location of linked resources in the headers of all resources.  Solid-file-client supports the links=include_possible option to include these possible locations without checking to see if the linked file actually exists. The possible locations tell you where to create the linked file if they don't already exist.
-
-Advanced users can modify how linked files are handled with the withAcl, withMeta, modifyAcl, and links option flags shown below.
+Advanced users can modify how linked files are handled with the withAcl, withMeta, agent, and links option flags shown below.
 
   * **copyFile(),copyFolder(),moveFile(),moveFolder()**
 
       * **default**        - .acl and .meta items are copied/moved, acl is modified
       * **withAcl=false**   - .acl items are not copied/moved
       * **withMeta=false**  - .meta items are not copied/moved
-      * **modifyAcl=false** - copy/move .acl without modifications
 
+Solid servers provide the possible location of linked resources in the headers of all resources.  Solid-file-client supports the links=include_possible option to include these possible locations without checking to see if the linked file actually exists. The possible locations tell you where to create the linked file if they don't already exist.
 
   *  **readFolder()**
 
@@ -328,6 +322,16 @@ With readFolder()'s links:include and links:include_possible option flags, the l
       console.log(folder.files[0].links.acl) || "no .acl for this file")
 ```
 See also, the **getItemLinks()** method which finds the possible locations of linked resources for an item.  See [Low-level Methods](#low-level-methods)
+
+Solid-file-client makes a special case for access control (.acl) files.  These
+files may contain absolute links which will no longer work when the file is 
+copied or moved.  **You should avoid using absolute links in .acl files.**  If you do use absolute links in your accessTo field, Solid-File-Client will always modify the .acl file to make the accessTo field relative to the new location.  If you use absolute links for the agent field, that could change the owner of the copied or moved resource.  You may control this aspect of modifying the .acl file through the agent flag as shown below.
+
+  * **copyFile(),copyFolder(),moveFile(),moveFolder()**
+
+      * **default**        - accessTo is made relative, agent, untouched
+      * **agent=from_source**   - accessTo is made relative, agent made absolute to source
+      * **agent=from_target**   - accessTo is made relative, agent made relative to target
 
 ## <a name="low-level-methods">Low-level methods</a>
 
