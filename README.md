@@ -330,8 +330,8 @@ copied or moved.  **You should avoid using absolute links in .acl files.**  If y
   * **copyFile(),copyFolder(),moveFile(),moveFolder()**
 
       * **default**        - accessTo is made relative, agent, untouched
-      * **agent=from_source**   - accessTo is made relative, agent made absolute to source
-      * **agent=from_target**   - accessTo is made relative, agent made relative to target
+      * **agent=to_source**   - accessTo is made relative, agent made absolute to source
+      * **agent=to_target**   - accessTo is made relative, agent made relative to target
 
 ## <a name="low-level-methods">Low-level methods</a>
 
