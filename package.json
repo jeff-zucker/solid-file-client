@@ -1,6 +1,6 @@
 {
   "name": "solid-file-client",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "A library for creating and managing files and folders in Solid data stores",
   "author": "Jeff Zucker",
   "license": "MIT",

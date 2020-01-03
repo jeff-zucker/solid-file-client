@@ -380,9 +380,9 @@ class SolidAPI {
       await composedFetch([
         addItemLinks(parsedFolder),
         ...parsedFolder.files.map(addItemLinks),
-        ...parsedFolder.folders.map(addItemLinks)
       ])
     }
+    // DON'T LOOK FOR SUBFOLDER LINKS ...parsedFolder.folders.map(addItemLinks)
 
     return parsedFolder
   }

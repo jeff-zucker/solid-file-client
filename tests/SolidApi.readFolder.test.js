@@ -69,7 +69,7 @@ const sampleFolderObj = {
     folders: [
         {
             ...sampleFolderWithoutLinks.folders[0],
-            links: {}
+//            links: {}
         }
     ],
     files: [
@@ -95,7 +95,7 @@ const sampleFolderObjWithPossibleLinks = {
     folders: [
         {
             ...sampleFolderObj.folders[0],
-            links: getPossibleLinks(sampleFolderObj.folders[0].url)
+//            links: getPossibleLinks(sampleFolderObj.folders[0].url)
         }
     ],
     files: [
@@ -112,10 +112,12 @@ const itemsMap = {
 }
 sampleFolderObj.files.forEach(item => itemsMap[item.url] = item)
 sampleFolderObj.folders.forEach(item => itemsMap[item.url] = item)
+
 Object.entries(sampleFolderObj.links).forEach(([rel, url]) => itemsMap[url] = sampleFolderObj.links[rel])
 sampleFolderObj.files.forEach(item => Object.entries(item.links).forEach(([rel, url]) => itemsMap[url] = item.links[rel]))
+/*
 sampleFolderObj.folders.forEach(item => Object.entries(item.links).forEach(([rel, url]) => itemsMap[url] = item.links[rel]))
-
+*/
 const sampleFetch = jest.fn(async (url, request) => {
     const createLink = url => `<${url}.acl>; rel="acl", <${url}.meta>; rel="describedBy"`
     const createResponse = (options = {}) => {
@@ -153,7 +155,8 @@ describe('readFolder', () => {
         test('can read sample folder with existing links', async () => {
             const res = await api.readFolder(sampleFolderObj.url, { links: LINKS.INCLUDE })
             expect(res).toEqual(sampleFolderObj)
-            expect(sampleFetch).toHaveBeenCalledTimes(1 + 3 + 6)
+//            expect(sampleFetch).toHaveBeenCalledTimes(1 + 3 + 6)
+            expect(sampleFetch).toHaveBeenCalledTimes(1 + 6)
         })
     })
 
@@ -161,7 +164,8 @@ describe('readFolder', () => {
         test('can read sample folder with possible links', async () => {
             const res = await api.readFolder(sampleFolderObj.url, { links: LINKS.INCLUDE_POSSIBLE })
             expect(res).toEqual(sampleFolderObjWithPossibleLinks)
-            expect(sampleFetch).toHaveBeenCalledTimes(1 + 3)
+//            expect(sampleFetch).toHaveBeenCalledTimes(1 + 3)
+            expect(sampleFetch).toHaveBeenCalledTimes(3)
         })
     })
 
