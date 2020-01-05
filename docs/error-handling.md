@@ -20,6 +20,10 @@ If a single response error occurred, the number of that error, e.g. 404.  If mul
 
 A text description of the error.
 
+# url
+
+The url that the error occurred on.
+
 # message
 
 Includes status codes, statusTexts and for some errors solid specific explanations why it probably happened.

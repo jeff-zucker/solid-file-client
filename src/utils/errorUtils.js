@@ -16,6 +16,7 @@ class SingleResponseError extends Error {
     this.ok = false
     this.status = response.status
     this.statusText = response.statusText
+    this.url=response.url
   }
 }
 
