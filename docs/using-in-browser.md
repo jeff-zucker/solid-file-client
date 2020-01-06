@@ -26,7 +26,8 @@
         let session = await auth.currentSession()
         if (!session) { session = await auth.popupLogin({ popupUri:popUri }) }
         console.log(`Logged in as ${session.webId}.`)
-        let content = readFile( someUrl )
+        let content = await fc.readFile( someUrl )
+        console.log(content)
     }
 
     ...
