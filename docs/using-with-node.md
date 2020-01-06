@@ -17,7 +17,7 @@ When logging in from a node script, you may either pass the login credentials as
         let session = await auth.currentSession()
         if (!session) { session = await auth.login(credentials) }
         console.log(`Logged in as ${session.webId}.`)
-        if( fc.itemExists( someUrl ) {
+        if( fc.itemExists( someUrl )) {
             let content = fc.readFile( someUrl )
             // ... other file methods
             // ... and/or other auth methods
