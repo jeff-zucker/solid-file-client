@@ -437,6 +437,7 @@ class SolidAPI {
   async copyFile (from, to, options) {
     options = {
       ...defaultWriteOptions,
+      ...{ withMeta: false },
       ...options
     }
     if (from.endsWith('.acl') || to.endsWith('.acl')) {
