@@ -458,21 +458,42 @@ class SolidAPI {
   }
 
   /**
+   * Checks that urls for copying a link file are defined,
+   * @param {string} from
+   * @param {string} to
+   * @returns {Promise<boolean>} true if both are defined, else false
+   * @throws {FetchError} throws when from is defined and exists, but to is undefined
+   * @private
+   */
+  async _linkUrlsDefined(from, to) {
+    if (typeof from !== 'string') {
+      return false
+    }
+    else if ( typeof to !== 'string' && await this.itemExists(from)) {
+      throw toFetchError(new Error('Cannot copy link file because target location was not provided by the pod'))
+    }
+    else if ( typeof(to) !== 'string' ) {
+      return false
+    }
+    else {
+      return true
+    }
+  }
+
+  /**
    * Copy a meta file
    * @param {string} oldTargetFile
    * @param {string} newTargetFile
    * @param {WriteOptions} [options]
-   * @returns {Promise<Response>} creation response
+   * @returns {Promise<Response|undefined>} creation response
    */
   async copyMetaFileForItem (oldTargetFile, newTargetFile, options = {}) {
     // TODO: Default options?
     const { meta: metaFrom } = await this.getItemLinks(oldTargetFile)
     const { meta: metaTo } = await this.getItemLinks(newTargetFile)
-
-    // TODO: Handle not finding of meta links (ie metaFrom/metaTo is undefined)
-    //       Possible to try this.getItemLinks again
-    //       Else throw (?)
-
+    if (!(await this._linkUrlsDefined(metaFrom, metaTo))) {
+      return undefined
+    }
     return this.copyFile(metaFrom, metaTo, { withAcl: options.withAcl, withMeta: false })
   }
 
@@ -493,7 +514,9 @@ class SolidAPI {
     const { acl: aclFrom } = await this.getItemLinks(oldTargetFile)
     const { acl: aclTo } = await this.getItemLinks(newTargetFile)
 
-    // TODO: Handle not finding of acl links (same as in copy meta)
+    if (!(await this._linkUrlsDefined(aclFrom, aclTo))) {
+      return undefined
+    }
 
     const aclResponse = await this.get(aclFrom)
     const contentType = aclResponse.headers.get('Content-Type')
@@ -543,7 +566,7 @@ class SolidAPI {
       responses.push(await this.copyAclFileForItem(oldTargetFile, newTargetFile, options)
         .catch(assertResponseStatus(404)))
     }
-    return responses.filter(res => !(res instanceof Error))
+    return responses.filter(res => res && !(res instanceof Error))
   }
 
   /**
