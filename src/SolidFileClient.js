@@ -33,7 +33,14 @@ class SolidFileClient extends SolidApi {
     return res
   }
 
-  readHead (url, options) { return super.head(url, options) }
+  async readHead (url, options) { 
+    let response = await super.head(url, options) 
+    let headStr = ""
+    for (var pair of response.headers.entries()) {
+      headStr += pair[0]+ ': '+ pair[1] + "\n"
+    }
+    return headStr
+  }
 
   async deleteFile (url) { return super._deleteItemWithLinks(url) }
 
