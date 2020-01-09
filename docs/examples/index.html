@@ -10,7 +10,7 @@ body {
     overflow:hidden;
 }
 #sidebar {
-    width : 20vw;
+    width : 25vw;
     height : 100vh;
     padding:5vh;
     background-color:#e4e4e4;
@@ -28,10 +28,14 @@ body {
 }
 #dispaly,iframe {
     border:0;
-    left : 20vw;
-    width : 80vw;
+    left : 25vw;
+    width : 75vw;
     height : 99vh;
     position:absolute;
+}
+#note {
+    padding:1em;
+    border:1px solid black;
 }
 </style>
 </head><body>
@@ -41,6 +45,11 @@ body {
     <button id="upload" class="btn btn-primary">Upload</button>
     <button id="copy" class="btn btn-primary">Copy</button>
     <button id="return" class="btn btn-primary">Back to README</button>
+    <div id="note">To use this (or any app), you must specify the origin
+      of the app as a trustedApp for your pod. In this case, you need to
+      add Write permissions for https://jeff-zucker.github.io - no trailing
+      slash.  Go here to learn <a href="https://github.com/solid/userguide#manage-your-trusted-applications">how to specify trustedApps</a>.
+    </div>
 </div>
 <iframe id="main" src="copy/"></iframe>
 

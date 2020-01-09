@@ -72,7 +72,7 @@ class FetchError extends Error {
 
 const defaultErrorDescriptions = {
   401: 'Make sure that the user is properly logged in',
-  403: 'Make sure that the user has access to the resource',
+  403: 'Make sure that the origin of your app is authorized for your pod',
   404: 'The requested resource could not be found',
   409: 'A conflict appeared. If you tried to delete a folder, make sure that it is empty',
   500: 'An internal server error occured'
