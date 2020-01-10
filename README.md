@@ -33,11 +33,11 @@ In node, the copyFile() and copyFolder() commands can upload files from a local 
 
 To upload
 ```javascript
-   await copyFolder( "file:///somepath/foo/", "https://somehost/somepath/foo/" )
+   await fc.copyFolder( "file:///somepath/foo/", "https://somehost/somepath/foo/" )
 ```
 To download
 ```javascript
-   await copyFolder( "https://somehost/somepath/foo/", "file:///somepath/foo/", 
+   await fc.copyFolder( "https://somehost/somepath/foo/", "file:///somepath/foo/", 
 ```
 
 ### Using with front-ends
@@ -66,11 +66,14 @@ If you are writing scripts for node or you want a local version, install using
 npm
 ```
     npm install solid-file-client
+    change to the solid-file-client folder
+    npm install   // this pulls in dependencies
+    npm run build // this creates the executables
 ```
 Once installed the executables will be found within the solid-file-client folder :
 ```
     dist/node/solid-file-client.bundle.js      // for node scripts
-    dist/windowo/solid-file-client.bundle.js   // for browser scripts
+    dist/window/solid-file-client.bundle.js   // for browser scripts
 ```
 You can also clone or fork the github repository if wish.
 
