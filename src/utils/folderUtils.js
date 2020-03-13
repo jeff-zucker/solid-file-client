@@ -55,7 +55,7 @@ function _processStatements (url, stmts) {
     const predicate = stm.predicate.value.replace(/.*\//, '').replace(/.*#/, '')
     let object = stm.object.value.match(ianaMediaType) ? stm.object.value.replace(ianaMediaType, '') : stm.object.value.replace(/.*\//, '')
     if (!predicate.match('type')) object = object.replace(/.*#/, '')
-    else if (object !== 'ldp#Resource' && object !== 'ldp#Container') {
+    if (object !== 'ldp#Resource' && object !== 'ldp#Container') {
       processed[predicate] = [...(processed[predicate] || []), object.replace('#Resource', '')] // keep only contentType and ldp#BasicContainer
     }
   })
