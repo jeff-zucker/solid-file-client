@@ -4,8 +4,10 @@
  *  by Jeff Zucker with contributions from Otto_A_A and Alain Bourgeois
  *  &copy; 2019, Jeff Zucker, may be freely distributed using an MIT license
  */
-const N3 = require('n3')
-const ns = require('solid-namespace')()
+import * as N3 from 'n3';
+import solidNS from 'solid-namespace';
+
+const ns = solidNS();
 
 const { DataFactory } = N3
 const { namedNode, literal } = DataFactory
