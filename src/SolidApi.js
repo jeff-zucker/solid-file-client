@@ -439,6 +439,9 @@ class SolidAPI {
       ...defaultWriteOptions,
       ...options
     }
+    if (from.endsWith('/') || to.endsWith('/')) {
+      throw toFetchError(new Error(`Folders are not allowed with copyFile. Found: ${from} and ${to}`))
+    }
     if (from.endsWith('.acl') || to.endsWith('.acl')) {
       throw toFetchError(new Error(`Use copyAclFile for copying ACL files. Found: ${from} and ${to}`))
     }
@@ -586,6 +589,9 @@ class SolidAPI {
     }
     if (typeof from !== 'string' || typeof to !== 'string') {
       throw toFetchError(new Error(`The from and to parameters of copyFolder must be strings. Found: ${from} and ${to}`))
+    }
+    if (!from.endsWith('/') || !to.endsWith('/')) {
+      throw toFetchError(new Error(`Files are not allowed with copyFolder. Found: ${from} and ${to}`))
     }
 
     const { folders, files } = await this.readFolder(from)
