@@ -497,7 +497,8 @@ class SolidAPI {
     if (!(await this._linkUrlsDefined(metaFrom, metaTo))) {
       return undefined
     }
-    return this.copyFile(metaFrom, metaTo, { withAcl: options.withAcl, withMeta: false })
+    const metaResponse = await this.get(metaFrom);
+    return this.pasteFile(metaResponse, metaTo, { withAcl: options.withAcl, withMeta: false })
   }
 
   /**
@@ -541,7 +542,7 @@ class SolidAPI {
     if (options.agent === AGENT.TO_TARGET) {
       content = content.replace(new RegExp('<' + getRootUrl(oldTargetFile) + 'profile/card#', 'g'), '</profile/card#')
       content = content.replace(new RegExp('<' + getRootUrl(oldTargetFile) + 'profile/card#me>', 'g'), '</profile/card#me>')
-    } 
+    }
     if (options.agent === AGENT.TO_SOURCE) {
       content = content.replace(new RegExp('</profile/card#', 'g'), '<' + getRootUrl(oldTargetFile) + 'profile/card#')
       content = content.replace(new RegExp('</profile/card#me>', 'g'), '<' + getRootUrl(oldTargetFile) + 'profile/card#me>')
@@ -609,7 +610,65 @@ class SolidAPI {
   }
 
   /**
-   * Copy a file (url ending with file name) or folder (url ending with "/").
+   * Paste file contents.
+   * @param {Promise<Response>} getResoponse
+   * @param {string} to
+   * @param {WriteOptions} [options]
+   * @returns {Promise<Response>}
+   */
+  async pasteFile(getResponse, to, options) {
+    const from = getResponse.url;
+    const content = await getResponse.blob()
+    const contentType = getResponse.headers.get('content-type')
+    const putResponse = await this.putFile(to, content, contentType, options)
+
+    // Optionally copy ACL and Meta Files
+    // TODO: What do we want to do when the source has no acl, but the target has one?
+    //       Currently it keeps the old acl.
+    await this.copyLinksForItem(from, to, options, getResponse, putResponse)
+
+    return putResponse
+  }
+
+  /**
+   * Copies Folder contents.
+   * @param {Promise<Response>} getResoponse
+   * @param {string} to
+   * @param {WriteOptions} [options]
+   * @returns {Promise<Response[]>} Resolves to an array of responses to copy further or paste.
+   */
+  async copyFolderContents(getResponse, to, options) {
+    const from = getResponse.url;
+    const { folders, files } = await parseFolderResponse(getResponse)
+    const folderResponse = await this.createFolder(to, options)
+
+    await this.copyLinksForItem(from, to, options, undefined, folderResponse)
+
+    const foldersCreation = folders.map(async ({ name }) => {
+      const folderResp = await this.get(`${from}${name}/`, { headers: { Accept: 'text/turtle' } })
+      return this.copyFolderContents(folderResp, `${to}${name}/`, options)
+    })
+
+    const filesCreation = files.map(async ({ name }) => {
+      try {
+        const fileResp = await this.get(`${from}${name}`)
+        return this.pasteFile(fileResp, `${to}${name}`, options)
+      }
+      catch (error) {
+        return err.message.includes('already existed') // Don't throw when merge=KEEP_TARGET and it tried to overwrite a file
+      }
+    })
+
+    const creationResults = await composedFetch([
+      ...foldersCreation,
+      ...filesCreation,
+    ]).then(responses => responses.filter(item => !(item instanceof FetchError)))
+
+    return [folderResponse].concat(...creationResults) // Alternative to Array.prototype.flat
+  }
+
+  /**
+   * Copy a file or folder.
    * Per default existing folders will be deleted before copying and links will be copied.
    * @param {string} from
    * @param {string} to
@@ -618,16 +677,40 @@ class SolidAPI {
    * The first one will be the folder specified by "to".
    * If it is a folder, the others will be creation responses from the contents in arbitrary order.
    */
-  copy (from, to, options) {
-    // TBD: Rewrite to detect folders not by url (ie remove areFolders)
-    if (areFolders(from, to)) {
-      return this.copyFolder(from, to, options)
+  async copy (from, to, options) {
+    options = {
+      ...defaultWriteOptions,
+      ...options
     }
-    if (areFiles(from, to)) {
-      return this.copyFile(from, to, options)
+    if (typeof from !== 'string' || typeof to !== 'string') {
+      throw toFetchError(new Error(`The from and to parameters of copyFolder must be strings. Found: ${from} and ${to}`))
     }
 
-    toFetchError(new Error('Cannot copy from a folder url to a file url or vice versa'))
+    let fromItem = await this.get(from);
+    // TBD: Check if response is text && RDF and parse RDF for this check
+    //      Optimization: Reuse the RDF hence created for parseFolderResponse
+    const fromItemType = (fromItem.url.endsWith('/') && fromItem.headers.get('content-type') === 'text/turtle') ?
+      'Container' : 'Resource';
+
+    if (fromItemType === 'Resource') {
+      if (to.endsWith('/')) {
+        throw toFetchError(new Error('May not copy file to a folder'))
+      }
+      return this.pasteFile(fromItem, to, options);
+    }
+    else if (fromItemType === 'Container') {
+      // TBD: Add additional check to see if response can be converted to turtle
+      //      and avoid this additional fetch. For now, this test is redundant because
+      //      of the test above and default response being 'text/turtle'.
+      if (fromItem.headers.get('content-type') !== 'text/turtle') {
+        fromItem = await this.get(url, { headers: { Accept: 'text/turtle' } })
+      }
+      to = to.endsWith('/') ? to : `${to}/`
+      return this.copyFolderContents(fromItem, to, options);
+    }
+    else {
+      throw toFetchError(new Error(`Unrecognized item type ${fromItemType}`))
+    }
   }
 
   /**

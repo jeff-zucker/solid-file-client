@@ -198,75 +198,64 @@ describe('composed methods', () => {
     })
 
     describe('copy', () => {
-      describe('copyFile', () => {
-        test('rejects with 404 on inexistent file', () => rejectsWithStatus(api.copyFile(inexistentFile.url, filePlaceholder.url), 404))
-        test('rejects if no second url is specified', () => expect(api.copyFile(childFile.url)).rejects.toBeDefined())
-        test('resolves with 201', () => resolvesWithStatus(api.copyFile(childFile.url, filePlaceholder.url), 201))
-        test('resolves and has same content and contentType afterwards', async () => {
-          await resolvesWithStatus(api.copyFile(childFile.url, filePlaceholder.url), 201)
-          await expect(api.itemExists(filePlaceholder.url)).resolves.toBe(true)
-          const fromResponse = await api.get(childFile.url)
-          const toResponse = await api.get(filePlaceholder.url)
-          expect(fromResponse.headers.get('Content-Type')).toBe(toResponse.headers.get('Content-Type'))
-          expect(await fromResponse.text()).toBe(await toResponse.text())
-        })
-        test('rejects when copying to existent file with merge=KEEP_TARGET', () => {
-          return expect(api.copyFile(childFile.url, childFileTwo.url, { merge: MERGE.KEEP_TARGET })).rejects.toThrowError('already existed')
-        })
-        test('rejects when copying from folder', () => {
-          return expect(api.copyFile(childOne.url, childFileTwo.url)).rejects.toBeDefined()
-        })
+      test('rejects with 404 on inexistent source', () => rejectsWithStatus(api.copy(inexistentFile.url, filePlaceholder.url), 404))
+      test('rejects if no destination is specified', () => expect(api.copy(childFile.url)).rejects.toBeDefined())
+      test('resolves with 201 when copying a file', () => resolvesWithStatus(api.copy(childFile.url, filePlaceholder.url), 201))
+      test('resolves when copying a file and has same content and contentType afterwards', async () => {
+        await resolvesWithStatus(api.copy(childFile.url, filePlaceholder.url), 201)
+        await expect(api.itemExists(filePlaceholder.url)).resolves.toBe(true)
+        const fromResponse = await api.get(childFile.url)
+        const toResponse = await api.get(filePlaceholder.url)
+        expect(fromResponse.headers.get('Content-Type')).toBe(toResponse.headers.get('Content-Type'))
+        expect(await fromResponse.text()).toBe(await toResponse.text())
+      })
+      test('rejects when copying to existent file with merge=KEEP_TARGET', () => {
+        return expect(api.copy(childFile.url, childFileTwo.url, { merge: MERGE.KEEP_TARGET })).rejects.toThrowError('already existed')
       })
 
-      describe('copyFolder', () => {
-        test('rejects with 404 on inexistent folder', async () => rejectsWithStatus(api.copyFolder(inexistentFolder.url, inexistentFolder.url), 404))
-        test('rejects if no second url is specified', () => expect(api.copyFolder(emptyFolder.url)).rejects.toBeDefined())
-        test('resolves and copies empty folder', async () => {
-          await expect(api.copyFolder(emptyFolder.url, folderPlaceholder.url)).resolves.toBeDefined()
-          await expect(api.itemExists(folderPlaceholder.url)).resolves.toBe(true)
-        })
-        test('resolves copying folder with depth 1', () => {
-          return expect(api.copyFolder(childOne.url, folderPlaceholder.url)).resolves.toBeDefined()
-        })
-        test('resolves with 201 and copies folder with depth 1 including its contents', async () => {
-          const responses = await api.copyFolder(childOne.url, folderPlaceholder.url)
-          expect(responses).toHaveLength(childOne.contents.length + 1)
-          expect(responses[0]).toHaveProperty('url', apiUtils.getParentUrl(folderPlaceholder.url))
-          expect(responses[0]).toHaveProperty('status', 201)
-
-          await expect(api.itemExists(folderPlaceholder.url)).resolves.toBe(true)
-          await expect(api.itemExists(`${folderPlaceholder.url}${emptyFolder.name}/`)).resolves.toBe(true)
-          await expect(api.itemExists(`${folderPlaceholder.url}${childFile.name}`)).resolves.toBe(true)
-        })
-        test('resolves copying folder with depth 2', async () => {
-          const responses = await api.copyFolder(parentFolder.url, folderPlaceholder.url)
-          expect(responses).toHaveLength(parentFolder.contents.length + 1)
-          expect(responses[0]).toHaveProperty('url', apiUtils.getParentUrl(folderPlaceholder.url))
-          expect(responses[0]).toHaveProperty('status', 201)
-
-          await expect(api.itemExists(folderPlaceholder.url)).resolves.toBe(true)
-          // Note: Could test for others to exist too
-        })
-        test('replaces existing folders per default', async () => {
-          await expect(api.copyFolder(childTwo.url, childOne.url)).resolves.toBeDefined()
-          await expect(api.itemExists(emptyFolder.url)).resolves.toBe(false) // empty folder was only in childOne
-          await expect(api.itemExists(childFile.url)).resolves.toBe(true) // childFile is in both
-        })
-        test('overwrites files from target folder with merge=KEEP_SOURCE', async () => {
-          await expect(api.copyFolder(childTwo.url, childOne.url, { merge: MERGE.KEEP_SOURCE })).resolves.toBeDefined()
-          await expect(api.itemExists(emptyFolder.url)).resolves.toBe(true)
-          await expect(api.get(childFile.url).then(res => res.text())).resolves.toBe(childFileTwo.content)
-        })
-        test('keeps files from target folder with merge=KEEP_TARGET', async () => {
-          await expect(api.copyFolder(childTwo.url, childOne.url, { merge: MERGE.KEEP_TARGET })).resolves.toBeDefined()
-          await expect(api.itemExists(emptyFolder.url)).resolves.toBe(true)
-          await expect(api.get(childFile.url).then(res => res.text())).resolves.toBe(childFile.content)
-        })
-        test('throws some kind of error when called on file', async () => {
-          await expect(api.copyFolder(childFile.url, childTwo.url)).rejects.toBeDefined()
-        })
-        test.todo('throws flattened errors when it fails in multiple levels')
+      test('resolves and copies empty folder', async () => {
+        await expect(api.copyFolder(emptyFolder.url, folderPlaceholder.url)).resolves.toBeDefined()
+        await expect(api.itemExists(folderPlaceholder.url)).resolves.toBe(true)
       })
+      test('resolves copying folder with depth 1', () => {
+        return expect(api.copyFolder(childOne.url, folderPlaceholder.url)).resolves.toBeDefined()
+      })
+      test('resolves with 201 and copies folder with depth 1 including its contents', async () => {
+        const responses = await api.copyFolder(childOne.url, folderPlaceholder.url)
+        expect(responses).toHaveLength(childOne.contents.length + 1)
+        expect(responses[0]).toHaveProperty('url', apiUtils.getParentUrl(folderPlaceholder.url))
+        expect(responses[0]).toHaveProperty('status', 201)
+
+        await expect(api.itemExists(folderPlaceholder.url)).resolves.toBe(true)
+        await expect(api.itemExists(`${folderPlaceholder.url}${emptyFolder.name}/`)).resolves.toBe(true)
+        await expect(api.itemExists(`${folderPlaceholder.url}${childFile.name}`)).resolves.toBe(true)
+      })
+      test('resolves copying folder with depth 2', async () => {
+        const responses = await api.copyFolder(parentFolder.url, folderPlaceholder.url)
+        expect(responses).toHaveLength(parentFolder.contents.length + 1)
+        expect(responses[0]).toHaveProperty('url', apiUtils.getParentUrl(folderPlaceholder.url))
+        expect(responses[0]).toHaveProperty('status', 201)
+
+        await expect(api.itemExists(folderPlaceholder.url)).resolves.toBe(true)
+        // Note: Could test for others to exist too
+      })
+      test('replaces existing folders per default', async () => {
+        await expect(api.copyFolder(childTwo.url, childOne.url)).resolves.toBeDefined()
+        await expect(api.itemExists(emptyFolder.url)).resolves.toBe(false) // empty folder was only in childOne
+        await expect(api.itemExists(childFile.url)).resolves.toBe(true) // childFile is in both
+      })
+      test('overwrites files from target folder with merge=KEEP_SOURCE', async () => {
+        await expect(api.copyFolder(childTwo.url, childOne.url, { merge: MERGE.KEEP_SOURCE })).resolves.toBeDefined()
+        await expect(api.itemExists(emptyFolder.url)).resolves.toBe(true)
+        await expect(api.get(childFile.url).then(res => res.text())).resolves.toBe(childFileTwo.content)
+      })
+      test('keeps files from target folder with merge=KEEP_TARGET', async () => {
+        await expect(api.copyFolder(childTwo.url, childOne.url, { merge: MERGE.KEEP_TARGET })).resolves.toBeDefined()
+        await expect(api.itemExists(emptyFolder.url)).resolves.toBe(true)
+        await expect(api.get(childFile.url).then(res => res.text())).resolves.toBe(childFile.content)
+      })
+      test.todo('rejects when trying to copy a file to a folder')
+      test.todo('throws flattened errors when it fails in multiple levels')
     })
 
     describe('move', () => {
