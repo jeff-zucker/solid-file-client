@@ -379,7 +379,7 @@ class SolidAPI {
       const addItemLinks = async item => { item.links = await this.getItemLinks(item.url, options) }
       await composedFetch([
         addItemLinks(parsedFolder),
-        ...parsedFolder.files.map(addItemLinks),
+        ...parsedFolder.files.map(addItemLinks)
       ])
     }
     // DON'T LOOK FOR SUBFOLDER LINKS ...parsedFolder.folders.map(addItemLinks)
@@ -468,17 +468,14 @@ class SolidAPI {
    * @throws {FetchError} throws when from is defined and exists, but to is undefined
    * @private
    */
-  async _linkUrlsDefined(from, to) {
+  async _linkUrlsDefined (from, to) {
     if (typeof from !== 'string') {
       return false
-    }
-    else if ( typeof to !== 'string' && await this.itemExists(from)) {
+    } else if (typeof to !== 'string' && await this.itemExists(from)) {
       throw toFetchError(new Error('Cannot copy link file because target location was not provided by the pod'))
-    }
-    else if ( typeof(to) !== 'string' ) {
+    } else if (typeof to !== 'string') {
       return false
-    }
-    else {
+    } else {
       return true
     }
   }
@@ -541,7 +538,7 @@ class SolidAPI {
     if (options.agent === AGENT.TO_TARGET) {
       content = content.replace(new RegExp('<' + getRootUrl(oldTargetFile) + 'profile/card#', 'g'), '</profile/card#')
       content = content.replace(new RegExp('<' + getRootUrl(oldTargetFile) + 'profile/card#me>', 'g'), '</profile/card#me>')
-    } 
+    }
     if (options.agent === AGENT.TO_SOURCE) {
       content = content.replace(new RegExp('</profile/card#', 'g'), '<' + getRootUrl(oldTargetFile) + 'profile/card#')
       content = content.replace(new RegExp('</profile/card#me>', 'g'), '<' + getRootUrl(oldTargetFile) + 'profile/card#me>')
