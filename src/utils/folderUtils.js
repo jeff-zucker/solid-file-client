@@ -13,6 +13,8 @@ const parseFolderResponse = async (folderResponse, folderUrl = folderResponse.ur
   const turtle = await folderResponse.text()
 
   const rdf = new RdfQuery()
+  const quads = await rdf.queryTurtle(folderUrl, turtle, { thisDoc: '' }) // await rdf.query(folderUrl, '<' + folderUrl + '>') //
+  const folderRecord = _processStatements(folderUrl, quads) // '<' + folderUrl + '>'
   const files = await rdf.queryTurtle(folderUrl, turtle, { thisDoc: '' }, { ldp: 'contains' })
 
   const folderItems = []
@@ -29,7 +31,7 @@ const parseFolderResponse = async (folderResponse, folderUrl = folderResponse.ur
     }
   }))
 
-  return _packageFolder(folderUrl, folderItems, fileItems)
+  return _packageFolder(folderRecord, folderItems, fileItems)
 }
 
 /**
@@ -80,18 +82,21 @@ function _processStatements (url, stmts) {
  */
 /**
  * @private
- * @param {string} folderUrl
+ * @param {string} folderRecord
  * @param {Item[]} folderItems
  * @param {Item[]} fileItems
  * @returns {FolderData}
  */
-function _packageFolder (folderUrl, folderItems, fileItems) {
+function _packageFolder (folderRecord, folderItems, fileItems) {
   const returnVal = {}
-  returnVal.type = 'folder' // for backwards compatability :-(
-  returnVal.itemType = 'Container'
-  returnVal.name = getItemName(folderUrl)
-  returnVal.parent = getParentUrl(folderUrl)
-  returnVal.url = folderUrl
+  returnVal.type = 'folder' // for backwards compatibility :-(
+  returnVal.modified = folderRecord.modified
+  returnVal.mtime = folderRecord.mtime
+  returnVal.size = folderRecord.size
+  returnVal.itemType = folderRecord.itemType
+  returnVal.name = folderRecord.name // getItemName(folderUrl.url)
+  returnVal.parent = folderRecord.parent // getParentUrl(folderUrl.url)
+  returnVal.url = folderRecord.url
   returnVal.folders = folderItems
   returnVal.files = fileItems
 

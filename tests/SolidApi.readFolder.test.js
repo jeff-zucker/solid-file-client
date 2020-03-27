@@ -37,6 +37,9 @@ const folderUrl = `${parentUrl}${folderName}/`
 const sampleFolderWithoutLinks = {
     type: 'folder',
     itemType: 'Container',
+    modified: '2019-11-16T11:59:29Z',
+    mtime: '1573905569.399',
+    size: '4096',
     name: folderName,
     parent: parentUrl,
     url: folderUrl,
@@ -44,8 +47,8 @@ const sampleFolderWithoutLinks = {
         {
             type: 'folder',
             itemType: 'Container',
-            modified: "2019-11-16T12:06:34Z",
-            mtime: "1573905994.593",
+            modified: '2019-11-16T12:06:34Z',
+            mtime: '1573905994.593',
             name: 'js',
             parent: folderUrl,
             size: "4096",
@@ -56,8 +59,8 @@ const sampleFolderWithoutLinks = {
         {
             type: 'text/turtle',
             itemType: 'Resource',
-            modified: "2019-11-11T20:03:03Z",
-            mtime: "1573502583.164",
+            modified: '2019-11-11T20:03:03Z',
+            mtime: '1573502583.164',
             name: 'notes.ttl',
             parent: folderUrl,
             size: "16",
