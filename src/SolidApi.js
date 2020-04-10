@@ -675,21 +675,53 @@ class SolidAPI {
   }
 
   /**
+   * Move a file and its links.
+   * Shortcut for copying and deleting file
+   * @param {string} from
+   * @param {string} to
+   * @param {WriteOptions} [options]
+   * @returns {Promise<Response[]>} Resolves with an array of creation (copy) responses.
+   */
+  async moveFile (from, to, options) {
+    const copyResponse = await this.copyFile(from, to, options)
+    await this._deleteItemWithLinks(from)
+    return copyResponse
+  }
+
+  /**
+   * Move a folder and its contents
+   * Shortcut for copying and deleting folder
+   * @param {string} from
+   * @param {string} to
+   * @param {WriteOptions} [options]
+   * @returns {Promise<Response[]>} Resolves with an array of creation (copy) responses.
+   */
+  async moveFolder (from, to, options) {
+    const copyResponse = await this.copyFolder(from, to, options)
+    await this.deleteFolderRecursively(from)
+    return copyResponse
+  }
+
+  /**
    * Move a file (url ending with file name) or folder (url ending with "/").
+   * Per default existing folders will be deleted before moving and links will be moved.
    * Shortcut for copying and deleting items
    * @param {string} from
    * @param {string} to
-   * @param {WriteOptions} [copyOptions]
-   * @returns {Promise<Response[]>} Responses of the copying
+   * @param {WriteOptions} [options]
+   * @returns {Promise<Response[]>} Resolves with an array of creation (copy) responses.
+   * The first one will be the folder specified by "to".
+   * If it is a folder, the others will be creation responses from the contents in arbitrary order.
    */
-  async move (from, to, copyOptions) {
-    const copyResponse = await this.copy(from, to, copyOptions)
-    if (areFolders(from)) {
-      await this.deleteFolderRecursively(from)
-    } else {
-      await this._deleteItemWithLinks(from)
+  move (from, to, options) {
+    // TBD: Rewrite to detect folders not by url (ie remove areFolders)
+    if (areFolders(from, to)) {
+      return this.moveFolder(from, to, options)
     }
-    return copyResponse
+    if (areFiles(from, to)) {
+      return this.moveFile(from, to, options)
+    }
+    toFetchError(new Error('Cannot copy from a folder url to a file url or vice versa'))
   }
 
   /**

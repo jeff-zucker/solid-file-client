@@ -270,25 +270,24 @@ describe('composed methods', () => {
     })
 
     describe('move', () => {
-      test('rejects with 404 on inexistent item', () => {
-        return rejectsWithStatuses(api.move(inexistentFile.url, filePlaceholder.url), [404])
-      })
-
       describe('moving file', () => {
+        test('rejects with 404 on inexistent file', () => {
+          return rejectsWithStatuses(api.move(inexistentFile.url, filePlaceholder.url), [404])
+        })
         test('resolves with 201 moving existing to inexistent file', async () => {
-          const res = await api.move(childFile.url, filePlaceholder.url)
+          const res = await api.moveFile(childFile.url, filePlaceholder.url)
           expect(res).toHaveProperty('status', 201)
           expect(res).toHaveProperty('url', filePlaceholder.url)
         })
         test('resolves moving existing to existing file', () => {
-          return expect(api.move(childFile.url, parentFile.url)).resolves.toBeDefined()
+          return expect(api.moveFile(childFile.url, parentFile.url)).resolves.toBeDefined()
         })
         test('rejects moving existing to existing file with merge=KEEP_TARGET', async () => {
-          await expect(api.move(childFile.url, parentFile.url, { merge: MERGE.KEEP_TARGET })).rejects.toThrowError('already existed')
+          await expect(api.moveFile(childFile.url, parentFile.url, { merge: MERGE.KEEP_TARGET })).rejects.toThrowError('already existed')
           await expect(api.itemExists(childFile.url)).resolves.toBe(true)
         })
         test('overwrites new location and deletes old one', async () => {
-          await expect(api.move(childFile.url, parentFile.url)).resolves.toBeDefined()
+          await expect(api.moveFile(childFile.url, parentFile.url)).resolves.toBeDefined()
 
           await expect(api.itemExists(childFile.url)).resolves.toBe(false)
           await expect(api.itemExists(parentFile.url)).resolves.toBe(true)
@@ -299,8 +298,11 @@ describe('composed methods', () => {
       })
 
       describe('moving folder', () => {
+        test('rejects with 404 on inexistent folder', () => {
+          return rejectsWithStatuses(api.move(inexistentFolder.url, folderPlaceholder.url), [404])
+        })
         test('resolves with 201 moving empty folder to placeholder', async () => {
-          const responses = await api.move(emptyFolder.url, folderPlaceholder.url)
+          const responses = await api.moveFolder(emptyFolder.url, folderPlaceholder.url)
           expect(responses).toHaveLength(1)
           expect(responses[0]).toHaveProperty('status', 201)
           expect(responses[0]).toHaveProperty('url', apiUtils.getParentUrl(folderPlaceholder.url))
@@ -308,20 +310,20 @@ describe('composed methods', () => {
         test('resolves with 201 moving a folder with depth 2 to placeholder', async () => {
           // Note: This example doesn't really makes sense because folderPlaceholder is inside parentFolder
           // Nonetheless it checks whether or not it works in principle
-          const responses = await api.move(parentFolder.url, folderPlaceholder.url)
+          const responses = await api.moveFolder(parentFolder.url, folderPlaceholder.url)
           expect(responses).toHaveLength(parentFolder.contents.length + 1)
           expect(responses[0]).toHaveProperty('status', 201)
           expect(responses[0]).toHaveProperty('url', apiUtils.getParentUrl(folderPlaceholder.url))
         })
         test('resolves moving folder with depth 1 to folder with depth 1', () => {
-          return expect(api.move(childTwo.url, childOne.url)).resolves.toBeDefined()
+          return expect(api.moveFolder(childTwo.url, childOne.url)).resolves.toBeDefined()
         })
         test('resolves moving folder to existing folder with similar contents with merge=KEEP_TARGET', async () => {
-          await expect(api.move(childTwo.url, childOne.url, { merge: MERGE.KEEP_TARGET })).resolves.toBeDefined()
+          await expect(api.moveFolder(childTwo.url, childOne.url, { merge: MERGE.KEEP_TARGET })).resolves.toBeDefined()
           await expect(api.itemExists(childTwo.url)).resolves.toBe(false)
         })
         test('overwrites new folder contents and deletes old one', async () => {
-          await expect(api.move(childOne.url, childTwo.url)).resolves.toBeDefined()
+          await expect(api.moveFolder(childOne.url, childTwo.url)).resolves.toBeDefined()
 
           await expect(api.itemExists(childOne.url)).resolves.toBe(false)
           await expect(api.itemExists(childTwo.url)).resolves.toBe(true)

@@ -293,6 +293,21 @@ const fileWithAcl = new File('child-file.txt', 'I am a child', 'text/plain', {
         })
     })
 
+    describe('moveFile', () => {
+        test('also moves acl, meta and meta.acl if existing', async () => {
+            await api.moveFile(fileWithLinks.url, filePlaceholder.url)
+            await expect(api.itemExists(filePlaceholder.acl.url)).resolves.toBe(true)
+//            await expect(api.itemExists(filePlaceholder.meta.url)).resolves.toBe(true)
+//            await expect(api.itemExists(filePlaceholder.meta.acl.url)).resolves.toBe(true)
+        })
+        test('moves no links if withMeta=false and withAcl=false', async () => {
+            await api.moveFile(fileWithLinks.url, filePlaceholder.url, { withAcl: false, withMeta: false })
+            await expect(api.itemExists(filePlaceholder.acl.url)).resolves.toBe(false)
+//            await expect(api.itemExists(filePlaceholder.meta.url)).resolves.toBe(false)
+//            await expect(api.itemExists(filePlaceholder.meta.acl.url)).resolves.toBe(false)
+        })
+    })
+
     describe('_deleteItemWithLinks', () => {
         test('deletes meta, meta.acl and acl of file', async () => {
             await api._deleteItemWithLinks(fileWithLinks.url)
@@ -359,15 +374,15 @@ describe('recursive', () => {
         })
     })
 
-    describe('move', () => {
+    describe('moveFolder', () => {
         test('moves folder with all links', async () => {
-            await api.move(source.url, target.url)
+            await api.moveFolder(source.url, target.url)
             const results = await Promise.all(target.contentsAndPlaceholders
                 .map(({ url }) => api.itemExists(url).then(exists => [url, exists])))
             results.forEach(res => expect(res).toEqual([expect.any(String), true]))
         })
         test('deletes source completely', async () => {
-            await api.move(source.url, target.url)
+            await api.moveFolder(source.url, target.url)
             const results = await Promise.all(target.contentsAndPlaceholders
                 .map(({ url }) => api.itemExists(url).then(exists => [url, exists])))
             results.forEach(res => expect(res).toEqual([expect.any(String), true]))
