@@ -163,6 +163,21 @@ describe('composed methods', () => {
     beforeEach(() => nestedFolder.reset())
 
     describe('delete', () => {
+      describe('unified remove', () => {
+        test('rejects with 404 on inexistent folder', () => rejectsWithStatuses(api.remove(inexistentFolder.url), [404]))
+        test('resolved array contains all names of the deleted items', async () => {
+          const responses = await api.remove(parentFolder.url)
+          const urls = responses.map(response => response.url)
+          const expectedUrls = [parentFolder.url, ...parentFolder.contents.map(item => item.url)]
+          expect(urls.sort()).toEqual(expectedUrls.sort())
+        })
+        test('resolves with array of length one on folder without contents', () => expect(api.remove(emptyFolder.url)).resolves.toHaveLength(1))
+        test('after deletion itemExists returns false on all contents', async () => {
+          await api.remove(parentFolder.url)
+          return Promise.all([parentFolder, ...parentFolder.contents].map(item => expect(api.itemExists(item.url)).resolves.toBe(false)))
+        })
+      })
+
       describe('deleteFolderContents', () => {
         test('rejects with 404 on inexistent folder', () => rejectsWithStatuses(api.deleteFolderContents(inexistentFolder.url), [404]))
         test.todo('throws some kind of error when called on file')

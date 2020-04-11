@@ -877,6 +877,75 @@ class SolidAPI {
   }
 
   /**
+   * Remove a file and its links
+   * @param {Response} response   response of the HEAD/GET call
+   * @returns {Promise<Response>} response of the file deletion
+   * @private
+   */
+  async _removeItemWithLinks (response) {
+    const links = await this._getItemLinks(response, { links: LINKS.INCLUDE })
+    if (links.meta) {
+      const metaHeadResponse = await this.head(links.meta)
+      await this._removeItemWithLinks(metaHeadResponse)
+    }
+    if (links.acl) {
+      await this.delete(links.acl)
+    }
+
+    // Note: Deleting item after deleting links to make it work for folders
+    //       Change this if a new spec allows to delete them together (to avoid deleting the permissions before the folder)
+    return this.delete(response.url)
+  }
+
+  /**
+   * Remove all folders and files inside a folder
+   * @param {Response} response   response of the HEAD/GET call
+   * @returns {Promise<Response[]>} Resolves with a response for each deletion request
+   * @private
+   */
+  async _removeFolderRecursively (response) {
+    const { folders, files } = await parseFolderResponse(response)
+
+    const foldersRemoval = folders.map(async ({ url }) => {
+      const folderResponse = await this.get(url, { headers: { Accept: 'text/turtle' } })
+      return this._removeFolderRecursively(folderResponse)
+    })
+    const filesRemoval = files.map(async ({ url }) => {
+      const fileResponse = await this.head(url)
+      return this._removeItemWithLinks(fileResponse)
+    })
+
+    const subResponses = await composedFetch([...foldersRemoval, ...filesRemoval])
+    subResponses.unshift(await this._removeItemWithLinks(response))
+    return subResponses
+  }
+
+  /**
+   * Remove a file or folder.
+   * @param {string} url
+   * @returns {Promise<Response[]>} Resolves with an array of deletion responses.
+   * The first one will be the folder specified by "url".
+   * The others will be the deletion responses from the contents in arbitrary order
+   */
+  async remove (url) {
+    const headResponse = await this.head(url)
+    // This check works only with a strict implementation of solid standards
+    // A bug in NSS prevents 'content-type' to be reported correctly in response to HEAD
+    // https://github.com/solid/node-solid-server/issues/454
+    // TBD: Obtain item type from the link header instead
+    const itemType = headResponse.url.endsWith('/') ? 'Container' : 'Resource'
+
+    if (itemType === 'Resource') {
+      return this._removeItemWithLinks(headResponse)
+    } else if (itemType === 'Container') {
+      const getResponse = await this.get(headResponse.url, { headers: { Accept: 'text/turtle' } })
+      return this._removeFolderRecursively(getResponse)
+    } else {
+      throw toFetchError(new Error(`Unrecognized item type ${itemType}`))
+    }
+  }
+
+  /**
    * Move a file and its links.
    * Shortcut for copying and deleting file
    * @param {string} from

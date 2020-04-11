@@ -125,4 +125,29 @@ describe('core methods', () => {
       return rejectsWithStatus(api.delete(filledFolder.url), 409)
     })
   })
+
+  describe('unified remove', () => {
+    const file = new File('turtle.ttl')
+    const emptyFolder = new Folder('empty')
+    const filledFolder = new Folder('filled', [
+      file,
+      emptyFolder
+    ])
+    const removeFolder = new BaseFolder(container, 'remove', [
+      filledFolder
+    ])
+
+    beforeEach(() => removeFolder.reset())
+
+    test('remove rejects with 404 on an inexistent file', () => rejectsWithStatus(api.remove(inexistentFile.url), 404))
+    test('remove rejects with 404 on an inexistent folder', () => rejectsWithStatus(api.remove(inexistentFolder.url), 404))
+    test('remove resolves deleting a file and it does not exist afterwards', async () => {
+      await expect(api.remove(file.url)).resolves.toBeDefined()
+      return expect(api.itemExists(file.url)).resolves.toBe(false)
+    })
+    test('remove resolves deleting an empty folder and it does not exist afterwards', async () => {
+      await expect(api.remove(emptyFolder.url)).resolves.toBeDefined()
+      return expect(api.itemExists(emptyFolder.url)).resolves.toBe(false)
+    })
+  })
 })

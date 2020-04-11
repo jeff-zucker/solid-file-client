@@ -332,6 +332,16 @@ const fileWithAcl = new File('child-file.txt', 'I am a child', 'text/plain', {
 //            await expect(api.itemExists(fileWithLinks.meta.acl.url)).resolves.toBe(false)
         })
     })
+
+    describe('unified remove', () => {
+        test('remove meta, meta.acl and acl of file', async () => {
+            await api.remove(fileWithLinks.url)
+            await expect(api.itemExists(fileWithLinks.url)).resolves.toBe(false)
+            await expect(api.itemExists(fileWithLinks.acl.url)).resolves.toBe(false)
+//            await expect(api.itemExists(fileWithLinks.meta.url)).resolves.toBe(false)
+//            await expect(api.itemExists(fileWithLinks.meta.acl.url)).resolves.toBe(false)
+        })
+    })
 })
 
 describe('recursive', () => {
@@ -409,6 +419,13 @@ describe('recursive', () => {
     describe('deleteFolderRecursively', () => {
         test('deletes folder and all links', async () => {
             await api.deleteFolderRecursively(source.url)
+            await expect(api.itemExists(source.url)).resolves.toBe(false)
+        })
+    })
+
+    describe('unified remove', () => {
+        test('removes folder and all links', async () => {
+            await api.remove(source.url)
             await expect(api.itemExists(source.url)).resolves.toBe(false)
         })
     })
