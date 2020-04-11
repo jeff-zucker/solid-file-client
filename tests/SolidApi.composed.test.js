@@ -136,6 +136,7 @@ describe('composed methods', () => {
   describe('nested methods', () => {
     const filePlaceholder = new FilePlaceholder('placeholder.ttl')
     const folderPlaceholder = new FolderPlaceholder('folder-placeholder')
+    const parentPlaceholder = new FolderPlaceholder('parent-placeholder')
     const childFile = new File('child-file.ttl', 'I am a child')
     const childFileTwo = new File('child-file.ttl', 'I am the second child')
     const parentFile = new File('parent-file.ttl', 'I am a parent')
@@ -155,7 +156,8 @@ describe('composed methods', () => {
       folderPlaceholder
     ])
     const nestedFolder = new BaseFolder(container, 'delete', [
-      parentFolder
+      parentFolder,
+      parentPlaceholder
     ])
 
     beforeEach(() => nestedFolder.reset())
@@ -199,8 +201,20 @@ describe('composed methods', () => {
 
     describe('copy', () => {
       describe ('unified copy', () => {
+      	test('rejects if source and destination are not strings', async () => {
+          const responses = api.copy(null, null)
+          await expect(responses).rejects.toThrowError('Invalid parameters: source and destination must be strings.')
+        })
         test('rejects with 404 on inexistent source', () => rejectsWithStatus(api.copy(inexistentFile.url, filePlaceholder.url), 404))
         test('rejects if no destination is specified', () => expect(api.copy(childFile.url)).rejects.toBeDefined())
+        test('rejects copying to self', async () => {
+          const responses = api.copy(parentFolder.url, parentFolder.url)
+          await expect(responses).rejects.toThrowError('Invalid parameters: cannot copy source to itself.')
+        })
+        test('rejects moving a folder to its child', async () => {
+          const responses = api.copy(parentFolder.url, folderPlaceholder.url)
+          await expect(responses).rejects.toThrowError('Invalid parameters: cannot copy source inside itself.')
+        })
         test('resolves with 201 when copying a file', () => resolvesWithStatus(api.copy(childFile.url, filePlaceholder.url), 201))
         test('resolves when copying a file and has same content and contentType afterwards', async () => {
           await resolvesWithStatus(api.copy(childFile.url, filePlaceholder.url), 201)

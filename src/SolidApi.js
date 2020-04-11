@@ -801,9 +801,8 @@ class SolidAPI {
       ...defaultWriteOptions,
       ...options
     }
-    if (typeof from !== 'string' || typeof to !== 'string') {
-      throw toFetchError(new Error(`The from and to parameters of copyFolder must be strings. Found: ${from} and ${to}`))
-    }
+
+    _checkInputs('copy', from, to)
 
     let fromItem = await this.get(from)
     // This check works only with a strict implementation of solid standards
@@ -970,6 +969,34 @@ function catchError (callback) {
   return err => {
     if (!callback(err)) { throw toFetchError(err) }
     return err
+  }
+}
+
+/**
+ * Check Input Arguments for Copy
+ * Used for error messages
+ * @param {string} op operation to tailor the message to
+ * @param {any} from
+ * @param {any} to
+ * @returns {undefined}
+ * @private
+ */
+function _checkInputs (op, from, to) {
+  const prefix = 'Invalid parameters:'
+
+  const suffix = `
+  src: ${from}
+  des: ${to}
+`
+
+  if (typeof from !== 'string' || typeof to !== 'string') {
+    throw toFetchError(new Error(`${prefix} source and destination must be strings. Found:${suffix}`))
+  }
+  if (from === to) {
+    throw toFetchError(new Error(`${prefix} cannot ${op} source to itself. Found:${suffix}`))
+  }
+  if (to.startsWith(from)) {
+    throw toFetchError(new Error(`${prefix} cannot ${op} source inside itself. Found:${suffix}`))
   }
 }
 
