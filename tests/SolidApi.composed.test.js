@@ -359,6 +359,79 @@ describe('composed methods', () => {
     })
 
     describe('move', () => {
+      describe('unified move', () => {
+      	test('rejects if source and destination are not strings', async () => {
+          const responses = api.move(null, null)
+          await expect(responses).rejects.toThrowError('Invalid parameters: source and destination must be strings.')
+        })
+        test('rejects with 404 on inexistent item', () => {
+          return rejectsWithStatuses(api.move(inexistentFile.url, filePlaceholder.url), [404])
+        })
+        test('rejects copying to self', async () => {
+          const responses = api.move(parentFolder.url, parentFolder.url)
+          await expect(responses).rejects.toThrowError('Invalid parameters: cannot move source to itself.')
+        })
+        test('rejects moving a folder to its child', async () => {
+          const responses = api.move(parentFolder.url, folderPlaceholder.url)
+          await expect(responses).rejects.toThrowError('Invalid parameters: cannot move source inside itself.')
+        })
+        test('resolves with 201 moving existing to inexistent file', async () => {
+          const res = await api.move(childFile.url, filePlaceholder.url)
+          expect(res).toHaveProperty('status', 201)
+          expect(res).toHaveProperty('url', filePlaceholder.url)
+        })
+        test('resolves with 201 moving empty folder to placeholder', async () => {
+          const responses = await api.move(emptyFolder.url, folderPlaceholder.url)
+          expect(responses).toHaveLength(1)
+          expect(responses[0]).toHaveProperty('status', 201)
+          expect(responses[0]).toHaveProperty('url', apiUtils.getParentUrl(folderPlaceholder.url))
+        })
+        test('resolves with 201 moving a folder with depth 2 to placeholder', async () => {
+          const responses = await api.move(parentFolder.url, parentPlaceholder.url)
+          expect(responses).toHaveLength(parentFolder.contents.length + 1)
+          expect(responses[0]).toHaveProperty('status', 201)
+          expect(responses[0]).toHaveProperty('url', apiUtils.getParentUrl(parentPlaceholder.url))
+        })
+        test('resolves moving existing to existing file', () => {
+          return expect(api.move(childFile.url, parentFile.url)).resolves.toBeDefined()
+        })
+        test('resolves moving folder with depth 1 to folder with depth 1', () => {
+          return expect(api.move(childTwo.url, childOne.url)).resolves.toBeDefined()
+        })
+
+        test('resolves moving folder to existing folder with similar contents with merge=KEEP_TARGET', async () => {
+          await expect(api.move(childTwo.url, childOne.url, { merge: MERGE.KEEP_TARGET })).resolves.toBeDefined()
+          await expect(api.itemExists(childTwo.url)).resolves.toBe(false)
+        })
+
+        test('rejects moving existing to existing file with merge=KEEP_TARGET', async () => {
+          await expect(api.move(childFile.url, parentFile.url, { merge: MERGE.KEEP_TARGET })).rejects.toThrowError('already existed')
+          await expect(api.itemExists(childFile.url)).resolves.toBe(true)
+        })
+        test('overwrites new location and deletes old one', async () => {
+          await expect(api.move(childFile.url, parentFile.url)).resolves.toBeDefined()
+
+          await expect(api.itemExists(childFile.url)).resolves.toBe(false)
+          await expect(api.itemExists(parentFile.url)).resolves.toBe(true)
+          const res = await api.get(parentFile.url)
+          const content = await res.text()
+          await expect(content).toEqual(childFile.content)
+        })
+
+        test('overwrites new folder contents and deletes old one', async () => {
+          await expect(api.move(childOne.url, childTwo.url)).resolves.toBeDefined()
+
+          await expect(api.itemExists(childOne.url)).resolves.toBe(false)
+          await expect(api.itemExists(childTwo.url)).resolves.toBe(true)
+          await expect(api.itemExists(childFileTwo.url)).resolves.toBe(true)
+          await expect(api.itemExists(`${childTwo.url}${emptyFolder.name}/`)).resolves.toBe(true)
+
+          const fileResponse = await api.get(childFileTwo.url)
+          const content = await fileResponse.text()
+          expect(content).toEqual(childFile.content)
+        })
+      })
+
       describe('moving file', () => {
         test('rejects with 404 on inexistent file', () => {
           return rejectsWithStatuses(api.move(inexistentFile.url, filePlaceholder.url), [404])

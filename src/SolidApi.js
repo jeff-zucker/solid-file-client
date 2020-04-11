@@ -6,7 +6,7 @@ import errorUtils from './utils/errorUtils'
 import linksUtils from './utils/linksUtils'
 
 const fetchLog = debug('solid-file-client:fetch')
-const { getRootUrl, getParentUrl, getItemName, areFolders, areFiles, LINK } = apiUtils
+const { getRootUrl, getParentUrl, getItemName, areFolders, /* areFiles, */ LINK } = apiUtils
 const { FetchError, assertResponseOk, composedFetch, toFetchError } = errorUtils
 const { getLinksFromResponse } = linksUtils
 const { parseFolderResponse } = folderUtils
@@ -974,25 +974,94 @@ class SolidAPI {
   }
 
   /**
-   * Move a file (url ending with file name) or folder (url ending with "/").
-   * Per default existing folders will be deleted before moving and links will be moved.
-   * Shortcut for copying and deleting items
-   * @param {string} from
+   * Moves Folder contents.
+   * @param {Promise<Response>} getResoponse
    * @param {string} to
    * @param {WriteOptions} [options]
-   * @returns {Promise<Response[]>} Resolves with an array of creation (copy) responses.
+   * @returns {Promise<Response[]>} Resolves to an array of responses to copy further or paste.
+   * @private
+   */
+  async _moveFolderContents (getResponse, to, options) {
+    const from = getResponse.url
+
+    const { folders, files } = await parseFolderResponse(getResponse)
+    const folderResponse = await this.createFolder(to, options)
+
+    await this._copyLinksForItem(getResponse, folderResponse, options)
+
+    const foldersCreation = folders.map(async ({ name }) => {
+      const folderResp = await this.get(`${from}${name}/`, { headers: { Accept: 'text/turtle' } })
+      return this._moveFolderContents(folderResp, `${to}${name}/`, options)
+    })
+
+    const filesCreation = files.map(async ({ name }) => {
+      let fileResp
+      let copyResponse
+      try {
+        fileResp = await this.get(`${from}${name}`)
+        copyResponse = await this._pasteFile(fileResp, `${to}${name}`, options)
+      } catch (error) {
+        if (error.message.includes('already existed')) {
+          copyResponse = error // Don't throw when merge=KEEP_TARGET and it tried to overwrite a file
+        } else {
+          throw toFetchError(error)
+        }
+      }
+      await this._removeItemWithLinks(fileResp)
+      return copyResponse
+    })
+
+    const creationResults = await composedFetch([
+      ...foldersCreation,
+      ...filesCreation
+    ]).then(responses => responses.filter(item => !(item instanceof FetchError)))
+
+    await this._removeItemWithLinks(getResponse)
+
+    return [folderResponse, ...creationResults] // Alternative to Array.prototype.flat
+  }
+
+  /**
+   * Move a file or folder.
+   * @param {string} from source
+   * @param {string} to   destination
+   * @param {WriteOptions} [options]
+   * @returns {Promise<Response[]>} Resolves with an array of creation responses.
    * The first one will be the folder specified by "to".
    * If it is a folder, the others will be creation responses from the contents in arbitrary order.
    */
-  move (from, to, options) {
-    // TBD: Rewrite to detect folders not by url (ie remove areFolders)
-    if (areFolders(from, to)) {
-      return this.moveFolder(from, to, options)
+  async move (from, to, options) {
+    const moveOptions = {
+      ...defaultWriteOptions,
+      ...options
     }
-    if (areFiles(from, to)) {
-      return this.moveFile(from, to, options)
+    _checkInputs('move', from, to)
+
+    let fromItem = await this.get(from)
+    // This check works only with a strict implementation of solid standards
+    // A bug in NSS prevents 'content-type' to be reported correctly in response to HEAD
+    // https://github.com/solid/node-solid-server/issues/454
+    // TBD: Obtain item type from the link header instead
+    const fromItemType = fromItem.url.endsWith('/') ? 'Container' : 'Resource'
+
+    if (fromItemType === 'Resource') {
+      if (to.endsWith('/')) {
+        throw toFetchError(new Error('May not move file to a folder'))
+      }
+      const copyResponse = await this._pasteFile(fromItem, to, moveOptions)
+      await this._removeItemWithLinks(fromItem)
+      return copyResponse
+    } else if (fromItemType === 'Container') {
+      // TBD: Add additional check to see if response can be converted to turtle
+      //      and avoid this additional fetch.
+      if (fromItem.headers.get('content-type') !== 'text/turtle') {
+        fromItem = await this.get(fromItem.url, { headers: { Accept: 'text/turtle' } })
+      }
+      to = to.endsWith('/') ? to : `${to}/`
+      return this._moveFolderContents(fromItem, to, moveOptions)
+    } else {
+      throw toFetchError(new Error(`Unrecognized item type ${fromItemType}`))
     }
-    toFetchError(new Error('Cannot copy from a folder url to a file url or vice versa'))
   }
 
   /**
@@ -1042,7 +1111,7 @@ function catchError (callback) {
 }
 
 /**
- * Check Input Arguments for Copy
+ * Check Input Arguments for Copy & Move
  * Used for error messages
  * @param {string} op operation to tailor the message to
  * @param {any} from

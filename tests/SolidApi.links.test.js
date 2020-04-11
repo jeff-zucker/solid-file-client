@@ -445,4 +445,19 @@ describe('recursive', () => {
         })
     })
 
+    describe('unified move', () => {
+        test('moves folder with all links', async () => {
+            await api.move(source.url, target.url)
+            const results = await Promise.all(target.contentsAndPlaceholders
+                .map(({ url }) => api.itemExists(url).then(exists => [url, exists])))
+            results.forEach(res => expect(res).toEqual([expect.any(String), true]))
+        })
+        test('deletes source completely', async () => {
+            await api.move(source.url, target.url)
+            const results = await Promise.all(target.contentsAndPlaceholders
+                .map(({ url }) => api.itemExists(url).then(exists => [url, exists])))
+            results.forEach(res => expect(res).toEqual([expect.any(String), true]))
+        })
+    })
+
 })
