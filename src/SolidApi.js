@@ -407,6 +407,26 @@ class SolidAPI {
   }
 
   /**
+   * Get acl and meta links from a server response
+   * @param {Promise<Response>} response
+   * @param {object} [options] specify if links should be checked for existence or not
+   * @returns {Promise<Links>}
+   * @private
+   */
+  async _getItemLinks (response, options = { links: LINKS.INCLUDE_POSSIBLE }) {
+    if (options.links === LINKS.EXCLUDE) {
+      toFetchError(new Error('Invalid option LINKS.EXCLUDE for getItemLinks'))
+    }
+
+    const links = await getLinksFromResponse(response)
+    if (options.links === LINKS.INCLUDE) {
+      await this._removeInexistingLinks(links)
+    }
+
+    return links
+  }
+
+  /**
    * Remove all links which are not existing of a links object
    * @param {Links} links
    * @returns {Promise<void>}
@@ -606,6 +626,105 @@ class SolidAPI {
   }
 
   /**
+   * Copy a meta file
+   * @param {string} metaFrom Url of source meta file
+   * @param {Object} metato   Url of destination meta file
+   * @param {WriteOptions} [options]
+   * @returns {Promise<Response|undefined>} creation response
+   * @private
+   */
+  async _copyMetaFileForItem (metaFrom, metaTo, options = {}) {
+    // TODO: Default options?
+    const metaResponse = await this.get(metaFrom)
+    return this._pasteFile(metaResponse, metaTo, { withAcl: options.withAcl, withMeta: false })
+  }
+
+  /**
+   * Copy an ACL file
+   * @param {string} oldTargetFile Url of the ACL file targets (e.g. file.ttl for file.ttl.acl)
+   * @param {string} newTargetFile Url of new file targeted (e.g. new-file.ttl for new-file.ttl.acl)
+   * @param {string} aclFrom       Url of source ACL file
+   * @param {string} aclTo         Url of destination ACL file
+   * @param {WriteOptions} [options]
+   * @returns {Promise<Response>} creation response
+   * @private
+   */
+  async _copyAclFileForItem (oldTargetFile, newTargetFile, aclFrom, aclTo, options) {
+    options = {
+      ...defaultWriteOptions,
+      ...({ agent: AGENT.NO_MODIFY }),
+      ...options
+    }
+
+    const aclResponse = await this.get(aclFrom)
+    const contentType = aclResponse.headers.get('Content-Type')
+    let content = await aclResponse.text()
+
+    // TODO: Use nodejs url module, make URL and use its host/base/origin/... instead of getRootUrl
+    // Make absolute paths to the same directory relative
+    // Update relative paths to the new location
+    const fromName = getItemName(oldTargetFile)
+    const toName = areFolders(newTargetFile) ? '' : getItemName(newTargetFile)
+    if (content.includes(oldTargetFile)) {
+      // if object values are absolute URI's make them relative to the destination
+      content = content.replace(new RegExp('<' + oldTargetFile + '>', 'g'), '<./' + toName + '>')
+    }
+    if (toName !== fromName) {
+      // if relative replace file destination
+      content = content.replace(new RegExp(fromName + '>', 'g'), toName + '>')
+    }
+    if (options.agent === AGENT.TO_TARGET) {
+      content = content.replace(new RegExp('<' + getRootUrl(oldTargetFile) + 'profile/card#', 'g'), '</profile/card#')
+      content = content.replace(new RegExp('<' + getRootUrl(oldTargetFile) + 'profile/card#me>', 'g'), '</profile/card#me>')
+    }
+    if (options.agent === AGENT.TO_SOURCE) {
+      content = content.replace(new RegExp('</profile/card#', 'g'), '<' + getRootUrl(oldTargetFile) + 'profile/card#')
+      content = content.replace(new RegExp('</profile/card#me>', 'g'), '<' + getRootUrl(oldTargetFile) + 'profile/card#me>')
+    }
+
+    return this.putFile(aclTo, content, contentType, options)
+  }
+
+  /**
+   * Optimized Copy links for an item (for unified copy used by pasteFile and copyFolderContents).
+   * Use withAcl and withMeta options to specify which links to copy
+   * Does not throw if the links don't exist.
+   * @param {Promise<Response>} getResponse Response from the get call to a source item
+   * @param {Promise<Response>} putResponse Response from the put call to a destination item
+   * @param {WriteOptions} [options]
+   * @returns {Promise<Response[]>} creation responses
+   * @private
+   */
+  async _copyLinksForItem (getResponse, putResponse, options) {
+    // TODO: Default options?
+    const responses = []
+
+    // Don't extract links if nothing is to run ahead
+    if (options.withMeta || options.withAcl) {
+      const {
+        acl: aclFrom,
+        meta: metaFrom
+      } = await this._getItemLinks(getResponse).catch(() => {})
+
+      const {
+        acl: aclTo,
+        meta: metaTo
+      } = await this._getItemLinks(putResponse).catch(() => {})
+
+      if (options.withMeta && await this._linkUrlsDefined(metaFrom, metaTo)) {
+        responses.push(await this._copyMetaFileForItem(metaFrom, metaTo, options)
+          .catch(assertResponseStatus(404)))
+      }
+      if (options.withAcl && await this._linkUrlsDefined(aclFrom, aclTo)) {
+        responses.push(await this._copyAclFileForItem(getResponse.url, putResponse.url, aclFrom, aclTo, options)
+          .catch(assertResponseStatus(404)))
+      }
+    }
+
+    return responses.filter(res => res && !(res instanceof Error))
+  }
+
+  /**
    * Paste file contents.
    * @param {Promise<Response>} getResoponse
    * @param {string} to
@@ -614,7 +733,6 @@ class SolidAPI {
    * @private
    */
   async _pasteFile (getResponse, to, options) {
-    const from = getResponse.url
     const content = await getResponse.blob()
     const contentType = getResponse.headers.get('content-type')
     const putResponse = await this.putFile(to, content, contentType, options)
@@ -622,7 +740,7 @@ class SolidAPI {
     // Optionally copy ACL and Meta Files
     // TODO: What do we want to do when the source has no acl, but the target has one?
     //       Currently it keeps the old acl.
-    await this.copyLinksForItem(from, to, options, getResponse, putResponse)
+    await this._copyLinksForItem(getResponse, putResponse, options)
 
     return putResponse
   }
@@ -640,7 +758,7 @@ class SolidAPI {
     const { folders, files } = await parseFolderResponse(getResponse)
     const folderResponse = await this.createFolder(to, options)
 
-    await this.copyLinksForItem(from, to, options, undefined, folderResponse)
+    await this._copyLinksForItem(getResponse, folderResponse, options)
 
     const foldersCreation = folders.map(async ({ name }) => {
       const folderResp = await this.get(`${from}${name}/`, { headers: { Accept: 'text/turtle' } })
