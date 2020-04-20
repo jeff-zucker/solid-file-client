@@ -1,6 +1,10 @@
 language: node_js
 node_js:
   - 12
+os:
+  - linux
+  - osx
+  - windows
 script:
   - npm run test:ls
   - npm run test:file
