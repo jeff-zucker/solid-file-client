@@ -25,7 +25,7 @@ export const MERGE = {
  * @private
  */
 export const LINKS = {
-  EXCLUDE: 'exlude',
+  EXCLUDE: 'exclude',
   INCLUDE: 'include',
   INCLUDE_POSSIBLE: 'include_possible'
 }
