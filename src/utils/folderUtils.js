@@ -13,6 +13,8 @@ const parseFolderResponse = async (folderResponse, folderUrl = folderResponse.ur
   const turtle = await folderResponse.text()
 
   const rdf = new RdfQuery()
+  const quads = await rdf.queryTurtle(folderUrl, turtle, { thisDoc: '' }) // await rdf.query(folderUrl, '<' + folderUrl + '>') //
+  const folderRecord = _processStatements(folderUrl, quads) // '<' + folderUrl + '>'
   const files = await rdf.queryTurtle(folderUrl, turtle, { thisDoc: '' }, { ldp: 'contains' })
 
   const folderItems = []
@@ -29,7 +31,7 @@ const parseFolderResponse = async (folderResponse, folderUrl = folderResponse.ur
     }
   }))
 
-  return _packageFolder(folderUrl, folderItems, fileItems)
+  return _packageFolder(folderRecord, folderItems, fileItems)
 }
 
 /**
@@ -55,7 +57,7 @@ function _processStatements (url, stmts) {
     const predicate = stm.predicate.value.replace(/.*\//, '').replace(/.*#/, '')
     let object = stm.object.value.match(ianaMediaType) ? stm.object.value.replace(ianaMediaType, '') : stm.object.value.replace(/.*\//, '')
     if (!predicate.match('type')) object = object.replace(/.*#/, '')
-    else if (object !== 'ldp#Resource' && object !== 'ldp#Container') {
+    if (object !== 'ldp#Resource' && object !== 'ldp#Container') {
       processed[predicate] = [...(processed[predicate] || []), object.replace('#Resource', '')] // keep only contentType and ldp#BasicContainer
     }
   })
@@ -80,18 +82,21 @@ function _processStatements (url, stmts) {
  */
 /**
  * @private
- * @param {string} folderUrl
+ * @param {string} folderRecord
  * @param {Item[]} folderItems
  * @param {Item[]} fileItems
  * @returns {FolderData}
  */
-function _packageFolder (folderUrl, folderItems, fileItems) {
+function _packageFolder (folderRecord, folderItems, fileItems) {
   const returnVal = {}
-  returnVal.type = 'folder' // for backwards compatability :-(
-  returnVal.itemType = 'Container'
-  returnVal.name = getItemName(folderUrl)
-  returnVal.parent = getParentUrl(folderUrl)
-  returnVal.url = folderUrl
+  returnVal.type = 'folder' // for backwards compatibility :-(
+  returnVal.modified = folderRecord.modified
+  returnVal.mtime = folderRecord.mtime
+  returnVal.size = folderRecord.size
+  returnVal.itemType = folderRecord.itemType
+  returnVal.name = folderRecord.name // getItemName(folderUrl.url)
+  returnVal.parent = folderRecord.parent // getParentUrl(folderUrl.url)
+  returnVal.url = folderRecord.url
   returnVal.folders = folderItems
   returnVal.files = fileItems
 

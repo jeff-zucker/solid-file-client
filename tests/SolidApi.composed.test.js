@@ -213,7 +213,9 @@ describe('composed methods', () => {
         test('rejects when copying to existent file with merge=KEEP_TARGET', () => {
           return expect(api.copyFile(childFile.url, childFileTwo.url, { merge: MERGE.KEEP_TARGET })).rejects.toThrowError('already existed')
         })
-        test.todo('throws some kind of error when called on folder')
+        test('rejects when copying from folder', () => {
+          return expect(api.copyFile(childOne.url, childFileTwo.url)).rejects.toBeDefined()
+        })
       })
 
       describe('copyFolder', () => {
@@ -260,7 +262,9 @@ describe('composed methods', () => {
           await expect(api.itemExists(emptyFolder.url)).resolves.toBe(true)
           await expect(api.get(childFile.url).then(res => res.text())).resolves.toBe(childFile.content)
         })
-        test.todo('throws some kind of error when called on file')
+        test('throws some kind of error when called on file', async () => {
+          await expect(api.copyFolder(childFile.url, childTwo.url)).rejects.toBeDefined()
+        })
         test.todo('throws flattened errors when it fails in multiple levels')
       })
     })
