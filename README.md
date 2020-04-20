@@ -137,6 +137,7 @@ description of errors for recursive methods like copyFolder().
 ## <a name="high-level-methods">High-level Methods</a>
 
 ### createFile( fileURL, content, contentType, options )
+### postFile( fileURL, content, contentType, options )
 
 Creates a new file at the specified URL.  Content is required, even if only a blank string.  ContentType should be something like "text/turtle" or "image/png" and is required. 
 
@@ -149,7 +150,7 @@ See [Overwriting](#overwriting) and [Creating Paths](#creating-paths) if you nee
 Note for all: Previous versions of of Solid Server tried to guess the content-type from the file extension but you should not depend on this behavior.  Previous versions would sometimes add an extension e.g. if you created a file named "foo" with type "text/turtle", it would be renamed "foo.ttl".  This is no longer the case, the file will be named "foo" and will still have the type "text/turtle".
 
 Note for advanced users : This method uses PUT, if you prefer the behavior of 
-POST (for example creating alternate versions of a resource rather than replacing it) use the post() method, see [Low-level Methods](#low-level-methods).
+POST (for example creating alternate versions of a resource rather than replacing it) use the **postFile()** method, which takes the same parameters as createFile().
 
 
 ### <a name="createFolder">createFolder( folderURL, options )</a>

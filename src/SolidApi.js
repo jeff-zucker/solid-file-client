@@ -351,7 +351,6 @@ class SolidAPI {
     const requestOptions = {
       headers: {
         link: LINK.RESOURCE,
-        slug: getItemName(url),
         'Content-Type': contentType
       },
       body: content
