@@ -5,6 +5,8 @@ os:
   - linux
   - osx
   - windows
+env:
+  - TEST_PREFIX=app://ls/
+  - TEST_PREFIX=file://
 script:
-  - npm run test:ls
-  - npm run test:file
+  - npm run test:travis

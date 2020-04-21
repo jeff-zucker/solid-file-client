@@ -9,7 +9,9 @@ async function setup () {
     throw e
   }
 
-  if (getPrefix() !== prefixes.memory) {
+  const prefix = getPrefix()
+  console.log(`Running tests with prefix: ${prefix}`)
+  if (prefix !== prefixes.memory) {
     // Note: app://ls/ is not persistent and shared across multiple test files
     // Therefore it needs to be initialized before each test somewhere else
     try {
