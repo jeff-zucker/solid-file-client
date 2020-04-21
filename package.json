@@ -58,8 +58,8 @@
     "jest": "^25.4.0",
     "jsdoc-to-markdown": "^5.0.3",
     "regenerator-runtime": "^0.13.3",
-    "solid-auth-cli": "^1.0.10",
-    "solid-rest": "^1.1.6",
+    "solid-auth-cli": "^1.0.13",
+    "solid-rest": "^1.1.7",
     "standard": "^14.3.3",
     "webpack": "^4.42.1",
     "webpack-cli": "^3.3.11"
