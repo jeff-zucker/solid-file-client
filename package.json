@@ -16,6 +16,7 @@
     "test:https": "TEST_PREFIX=https:// jest",
     "test:watch": "npm run test:ls -- --watch",
     "test:all": "npm run test:ls && npm run test:file && npm run test:https",
+    "test:travis": "jest",
     "prepublishOnly": "npm run build && npm run test:ls && npm run test:file",
     "build": "webpack",
     "build:dev": "webpack --mode development --watch",
