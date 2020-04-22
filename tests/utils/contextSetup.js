@@ -1,5 +1,6 @@
 import auth from 'solid-auth-cli'
 import TestFolderGenerator from './TestFolderGenerator'
+// cxRes
 import libUrl from 'url'
 
 const prefixes = {
@@ -70,7 +71,7 @@ async function getBaseUrl (prefix) {
   switch (prefix) {
     case prefixes.file:
       // cxRes
-      return libUrl.fileURLToPath(url)
+      return libUrl.fileURLToPath(baseUrl)
       // baseUrl = `${prefix}${process.cwd()}/`
       break
 
