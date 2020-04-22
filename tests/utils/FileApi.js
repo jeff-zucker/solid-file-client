@@ -1,4 +1,5 @@
 import fs from 'fs-extra'
+import libUrl from 'url'
 
 // Note: Errors here should be thrown in a way that they work for TestFolderGenerator
 //       For instance, TestFolderGenerator._removeFile checks if the response status is 404, so delete has to return 404 if it didn't exist
@@ -12,7 +13,9 @@ class FileApi {
             console.error('Invalid url', url, this._prefix)
             throw new Error()
         }
-        return url.substr(this._prefix.length)
+        // cxRes
+        //return url.substr(this._prefix.length)
+        return libUrl.fileURLToPath(url)
     }
 
     deleteFolderRecursively(url) {
