@@ -15,8 +15,8 @@ class FileApi {
             throw new Error()
         }
         // cxRes
-        //return url.substr(this._prefix.length)
-        return libUrl.fileURLToPath(url)
+        return url.substr(this._prefix.length)
+        // return libUrl.fileURLToPath(url)
     }
 
     deleteFolderRecursively(url) {
