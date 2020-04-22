@@ -10,18 +10,6 @@ const { Folder, File, FolderPlaceholder, FilePlaceholder, BaseFolder } = TestFol
 const libPath = require('path')
 
 const getRootUrl = url => {
-  const base = url.split(libPath.sep)
-  let rootUrl = base[0]
-  let j = 0
-  for (let i = 1; i < base.length - 1; i++) {
-    j = i
-    if (base[i] === '') { rootUrl += libPath.sep }
-    break
-  }
-  rootUrl = rootUrl + libPath.sep + base[j + 1] // + ('/')
-  return rootUrl
-}
-const getRootUrlOld = url => {
   const base = url.split('/')
   let rootUrl = base[0]
   let j = 0
