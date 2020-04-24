@@ -70,9 +70,7 @@ async function getBaseUrl (prefix) {
   let baseUrl
   switch (prefix) {
     case prefixes.file:
-      // cxRes
-      // return libUrl.fileURLToPath(`${prefix}${process.cwd()}/`)
-      baseUrl = `${prefix}${process.cwd()}/`
+      baseUrl = String(libUrl.pathToFileURL(process.cwd()))
       break
 
     case prefixes.memory:
