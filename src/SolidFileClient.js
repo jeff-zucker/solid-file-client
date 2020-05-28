@@ -1,4 +1,7 @@
 import SolidApi from './SolidApi'
+import isValidUtils from './utils/isValidUtils'
+
+const { isValidTtl } = isValidUtils
 
 /**
  * @typedef {object} SolidFileClientOptions
@@ -17,6 +20,7 @@ class SolidFileClient extends SolidApi {
   constructor (auth, options) {
     super(auth.fetch.bind(auth), options)
     this._auth = auth
+    this.isValidTtl = isValidTtl
   }
 
   /**
@@ -45,6 +49,7 @@ class SolidFileClient extends SolidApi {
   async deleteFile (url) { return super._deleteItemWithLinks(url) }
 
   async deleteFolder (url, options) { return super.deleteFolderRecursively(url) }
+
 }
 
 export default SolidFileClient
