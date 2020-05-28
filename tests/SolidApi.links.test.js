@@ -66,8 +66,13 @@ describe('getItemLinks', () => {
         expect(links).toHaveProperty('acl', folder.acl.url)
         expect(links).not.toHaveProperty('meta')
     })
-    test('throws if links=EXCLUDE', () => {
-        return expect(api.getItemLinks(folder.url, { links: LINKS.EXCLUDE })).rejects.toThrow(/Invalid option/)
+    test('returns {} links for a folder with links=INCLUDE & withAcl=false', async () => {
+        const links = await api.getItemLinks(folder.url, { links: LINKS.INCLUDE, withAcl: false })
+        expect(links).toEqual({})
+    })
+    test('returns {} for a folder with links=EXCLUDE', async () => {
+        const links = await api.getItemLinks(folder.url, { links: LINKS.EXCLUDE })
+        expect(links).toEqual({})
     })
 })
 
