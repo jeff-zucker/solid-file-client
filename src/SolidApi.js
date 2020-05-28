@@ -21,7 +21,7 @@ export const MERGE = {
   KEEP_TARGET: 'keep_target'
 }
 /**
- * @typedef {"exclude"|"include"|"includePossible"} LINKS
+ * @typedef {"exclude"|"include"|"include_possible"} LINKS
  * @private
  */
 export const LINKS = {
@@ -393,12 +393,12 @@ class SolidAPI {
    * @returns {Promise<Links>}
    */
   async getItemLinks (url, options = { links: LINKS.INCLUDE_POSSIBLE }) {
-    if (options.links === LINKS.EXCLUDE) {
-      toFetchError(new Error('Invalid option LINKS.EXCLUDE for getItemLinks'))
-    }
+    if (options.links === LINKS.EXCLUDE) return {}
 
     const links = await this.head(url).then(getLinksFromResponse)
     if (options.links === LINKS.INCLUDE) {
+      if (options.withAcl === false) delete links.acl
+      if (options.withMeta === false) delete links.meta
       await this._removeInexistingLinks(links)
     }
 
