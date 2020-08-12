@@ -92,13 +92,12 @@ describe('core methods', () => {
     test('post resolves with 400 creating a new folder with invalid slug', () => rejectsWithStatus(api.post(postFolder.url, invalidSlugOptions), 400))
     test('post resolves with 201 creating a new file', () => resolvesWithStatus(api.post(postFolder.url, getPostOptions(newFilePlaceholder.name)), 201))
     test('post resolves with 201 creating the same file', () => resolvesWithStatus(api.post(postFolder.url, getPostOptions(newFilePlaceholder.name)), 201))
-    test('post resolves with 201 creating the same file check slug', async () => {
-    resolvesWithHeader(api.post(postFolder.url, getPostOptions(newFilePlaceholder.name)), 'slug', 'slug')
-    /*  const response = await api.post(postFolder.url, getPostOptions(newFilePlaceholder.name))
+    /*test('post resolves with 201 creating the same file check slug', async () => {
+    // resolvesWithHeader(api.post(postFolder.url, getPostOptions(newFilePlaceholder.name)), 'slug', 'slug')
+      const response = await api.post(postFolder.url, getPostOptions(newFilePlaceholder.name))
       const header = response.headers.get('slug')
       expect(header).toEqual([])
-    */
-    })
+    })*/
     test('post rejects with 404 on inexistent container', () => rejectsWithStatus(api.post(nestedFolderPlaceholder.url, getPostOptions(nestedFilePlaceholder.name)), 404))
     test('post resolves with 201 writing to the location of an existing folder', () => resolvesWithStatus(api.post(postFolder.url, getPostOptions(usedFolder.name)), 201))
     test('post resolves with 201 writing to the location of an existing file', () => resolvesWithStatus(api.post(postFolder.url, getPostOptions(usedFile.name)), 201))
