@@ -4,12 +4,15 @@ import folderUtils from './utils/folderUtils'
 import RdfQuery from './utils/rdf-query'
 import errorUtils from './utils/errorUtils'
 import linksUtils from './utils/linksUtils'
-
+import isValidUtils from './utils/isValidUtils'
+import AclParser from './utils/aclParser'
+ 
 const fetchLog = debug('solid-file-client:fetch')
 const { getRootUrl, getParentUrl, getItemName, areFolders, areFiles, LINK } = apiUtils
 const { FetchError, assertResponseOk, composedFetch, toFetchError } = errorUtils
 const { getLinksFromResponse } = linksUtils
 const { parseFolderResponse } = folderUtils
+const { isValidAcl,  isValidRDF } = isValidUtils
 
 /**
  * @typedef {"replace"|"keep_source"|"keep_target"} MERGE
@@ -114,7 +117,10 @@ class SolidAPI {
     options = { ...defaultSolidApiOptions, ...options }
     this._fetch = fetch
     this.rdf = new RdfQuery(this.fetch.bind(this))
-
+    //this.isValidTtl = isValidTtl
+    this.isValidAcl = isValidAcl
+    this.isValidRDF = isValidRDF
+    this.acl = new AclParser()
     if (options.enableLogging) {
       if (typeof options.enableLogging === 'string') {
         debug.enable(options.enableLogging)
@@ -389,16 +395,26 @@ class SolidAPI {
   /**
    * Get acl and meta links of an item
    * @param {string} url
-   * @param {object} [options] specify if links should be checked for existence or not
+   * @param {object} [options]
+   * - specify if links should be checked for existence or not
+   * - may select acl or meta only
    * @returns {Promise<Links>}
    */
-  async getItemLinks (url, options = { links: LINKS.INCLUDE_POSSIBLE }) {
+  async getItemLinks (url, options) {
+    options = {
+      links: LINKS.INCLUDE.POSSIBLE,
+      withAcl: true,
+      withMeta: true,
+      ...options
+    }
     if (options.links === LINKS.EXCLUDE) {
       toFetchError(new Error('Invalid option LINKS.EXCLUDE for getItemLinks'))
     }
 
     const links = await this.head(url).then(getLinksFromResponse)
     if (options.links === LINKS.INCLUDE) {
+      if (!options.withAcl) delete links.acl
+      if (!options.withMeta) delete links.meta
       await this._removeInexistingLinks(links)
     }
 
@@ -522,26 +538,8 @@ class SolidAPI {
     let content = await aclResponse.text()
 
     // TODO: Use nodejs url module, make URL and use its host/base/origin/... instead of getRootUrl
-    // Make absolute paths to the same directory relative
-    // Update relative paths to the new location
-    const fromName = getItemName(oldTargetFile)
     const toName = areFolders(newTargetFile) ? '' : getItemName(newTargetFile)
-    if (content.includes(oldTargetFile)) {
-      // if object values are absolute URI's make them relative to the destination
-      content = content.replace(new RegExp('<' + oldTargetFile + '>', 'g'), '<./' + toName + '>')
-    }
-    if (toName !== fromName) {
-      // if relative replace file destination
-      content = content.replace(new RegExp(fromName + '>', 'g'), toName + '>')
-    }
-    if (options.agent === AGENT.TO_TARGET) {
-      content = content.replace(new RegExp('<' + getRootUrl(oldTargetFile) + 'profile/card#', 'g'), '</profile/card#')
-      content = content.replace(new RegExp('<' + getRootUrl(oldTargetFile) + 'profile/card#me>', 'g'), '</profile/card#me>')
-    }
-    if (options.agent === AGENT.TO_SOURCE) {
-      content = content.replace(new RegExp('</profile/card#', 'g'), '<' + getRootUrl(oldTargetFile) + 'profile/card#')
-      content = content.replace(new RegExp('</profile/card#me>', 'g'), '<' + getRootUrl(oldTargetFile) + 'profile/card#me>')
-    }
+    content = this.acl.makeContentRelative(content, oldTargetFile, toName, options)
 
     return this.putFile(aclTo, content, contentType, options)
   }
