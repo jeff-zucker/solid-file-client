@@ -217,27 +217,9 @@ Deletes the specified file and all linked filed (.acl,.meta)
 
 Recursively deletes a folder and all of its contents including all linked files (.acl, .meta).
 
-### moveFile( sourceURL, targetURL, options ), copyFile( sourceURL, targetURL, options )
+### move ( sourceURL, targetURL, options )
 
-Copies or moves the specified source to the target.
-
-Defaults :
-  * If a file already exists at that target, it will be overwritten.
-  * If the target URL's parent path does not exist, it will be created.
-  * Linked files (.acl and .meta) will be copied if they exist.
-
-See [Advanced Options](#advanced-options) to modify these default behaviors.
-
-### moveFolder(sourceURL,targetURL,options), copyFolder(sourceURL,targetURL,options)
-
-Recursively copies or moves a folder and all of its contents.
-
-Defaults :
-  * If the target exists, it is replaced by the source.
-  * If the top target folder's parent path does not exist, it will be created.
-  * Linked files (.acl and .meta) will be copied/moved if they exist.
-
-These default behaviors may all be modified.  For example, you can choose from several ways to merge the source and target folders.  See [Advanced Options](#advanced-options) for more details.
+Move a file (url ending with file name) or folder (url ending with "/"). Shortcut for copying and deleting items
 
 
 ## <a name="advanced-options">Advanced Options</a>
