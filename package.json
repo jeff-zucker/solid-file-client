@@ -20,7 +20,9 @@
     "prepublishOnly": "npm run build && npm run test:ls && npm run test:file",
     "build": "webpack",
     "build:dev": "webpack --mode development --watch",
-    "build:docs": "jsdoc2md src/*.js > docs/JSdoc/api.md",
+    "build:doc-api": "jsdoc2md src/*.js > docs/JSdoc/api.md",
+    "build:doc-aclparser": "jsdoc2md src/utils/aclParser.js > docs/JSdoc/aclParser.md",
+    "build:docs": "npm run build:doc-api && npm run build:doc-aclparser",
     "lint": "standard \"src/**/*.js\" \"test/**/*.js\"",
     "lint:fix": "npm run lint -- --fix"
   },

@@ -4,7 +4,6 @@ import folderUtils from './utils/folderUtils'
 import RdfQuery from './utils/rdf-query'
 import errorUtils from './utils/errorUtils'
 import linksUtils from './utils/linksUtils'
-import isValidUtils from './utils/isValidUtils'
 import AclParser from './utils/aclParser'
  
 const fetchLog = debug('solid-file-client:fetch')
@@ -12,7 +11,6 @@ const { getRootUrl, getParentUrl, getItemName, areFolders, areFiles, LINK } = ap
 const { FetchError, assertResponseOk, composedFetch, toFetchError } = errorUtils
 const { getLinksFromResponse } = linksUtils
 const { parseFolderResponse } = folderUtils
-const { isValidAcl,  isValidRDF } = isValidUtils
 
 /**
  * @typedef {"replace"|"keep_source"|"keep_target"} MERGE
@@ -24,7 +22,7 @@ export const MERGE = {
   KEEP_TARGET: 'keep_target'
 }
 /**
- * @typedef {"exclude"|"include"|"includePossible"} LINKS
+ * @typedef {"exclude"|"include"|"include_possible"} LINKS
  * @private
  */
 export const LINKS = {
@@ -110,6 +108,9 @@ const defaultSolidApiOptions = {
 class SolidAPI {
   /**
    * Provide API methods which use the passed fetch method
+   * constructor adds :
+   * - this.rdf methods from RdfQuery
+   * - this.acl methods from AclParser
    * @param {fetch} fetch
    * @param {SolidApiOptions} [options]
    */
@@ -117,10 +118,9 @@ class SolidAPI {
     options = { ...defaultSolidApiOptions, ...options }
     this._fetch = fetch
     this.rdf = new RdfQuery(this.fetch.bind(this))
-    //this.isValidTtl = isValidTtl
-    this.isValidAcl = isValidAcl
-    this.isValidRDF = isValidRDF
     this.acl = new AclParser()
+    this.isValidAcl = this.acl.isValidAcl
+    this.isValidRDF = this.acl.isValidRDF
     if (options.enableLogging) {
       if (typeof options.enableLogging === 'string') {
         debug.enable(options.enableLogging)

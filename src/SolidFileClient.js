@@ -4,21 +4,6 @@ import errorUtils from './utils/errorUtils'
 
 const { getRootUrl, getParentUrl, getItemName } = apiUtils
 const { FetchError, assertResponseOk, composedFetch, toFetchError } = errorUtils
-// const { isValidTtl } = isValidUtils
-
-/**
- * default options for 'extractZipArchive'
- */
-const defaultUploadOptions = {
-  links: 'include', // SolidFileClient.LINKS.INCLUDE,
-  withAcl: true,
-  withMeta: true,
-  merge: 'keep_target', // SolidFileClient.MERGE.KEEP_TARGET,
-  createPath: true,
-  aclMode: 'Control',
-  aclAuth: 'may',
-  aclDefault: 'must'
-}
 
 /**
  * @typedef {object} SolidFileClientOptions
