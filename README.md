@@ -346,6 +346,78 @@ Solid-File-Client provides a number of low-level methods which either support ad
 
 See the [JSdoc for the API](docs/JSdoc/api.md) for more details of these methods.
 
+## <a name="ACL management">ACL management</a>
+
+ACL management functions have been implemented to support creation of ACL files. (with createFile() or putFile())
+It allows to create/edit programmatically the ACL content using an intermediate ACL object : 
+
+```javascript
+-let aclObject = await fc.aclUrlParser(url) // returns an acl object from the acl inheritance algorithm for the url.
+- let aclObject = await fc.acl.contentParser(url, aclContent) // returns an aclObject from an acl file Content
+- let aclContent = await fc.acl.createContent(url, aclObject) /// build acl content from an aclObject for url
+- let aclObject = await fc.acl.addUserMode(aclObject, userAgent, userMode) // add user and mode to an aclObject
+- let aclObject = await fc.acl.deleteUserMode(aclobject, userAgent, userMode) // delete user and/or mode from an aclObject
+```
+
+example 1 :
+```javascript
+// create aclContent with the inheritance algorithm (url is not the link url)
+let content = await fc.aclUrlParser(url)
+  .then(agents => fc.acl.createContent(url, agents))
+```
+example 2 :
+```javascript
+// create a rule
+let aclUsers = await fc.acl.addUserMode({}, [{ agentClass: 'Agent' }], ['Read'])
+// add an other rule
+aclUsers = await fc.acl.addUserMode(aclUsers, [{ agent: 'https://example.solid.community/profile/card#me' }], ['Read', 'Write', 'Control'])
+
+// build the aclContent
+const aclContent = await fc.acl.createContent('https://example.solid.community/public/text.txt', aclUsers)
+console.log('build an aclContent ' + aclContent)
+
+
+@prefix : <#>.
+@prefix n0: <http://www.w3.org/ns/auth/acl#>.
+@prefix n1: <http://xmlns.com/foaf/0.1/>.
+@prefix target: <text.txt>.
+
+:Read
+    a n0:Authorization;
+    n0:accessTo target:;
+    n0:agentClass n1:Agent;
+    n0:mode n0:Read.
+
+:ReadWriteControl
+    a n0:Authorization;
+    n0:accessTo target:;
+    n0:agent </profile/card#me>;
+    n0:mode n0:Read, n0:Write, n0:Control.
+
+```
+to create an acl resource for a resource url :
+```javascript
+    const { acl: aclUrl } = await fc.getItemLinks(url, { links: 'include_possible'})
+    return await fc.putFile(aclUrl, aclContent, 'text/turtle')
+
+```
+**Nota** :
+
+const aclModes = ['Read', 'Append', 'Write', 'Control']
+
+const aclPredicates = ['agent', 'agentClass', 'agentGroup', 'origin', 'default']
+
+- userAgent : an array of objects (predicate: object) [{ agent: 'https://example.com/profile/card#me'}, { agentClass: 'agent' }, { origin: 'https://solid.community' }, { default: '' }]
+- userMode : an array of acl modes ['Read', 'Write']. To be applied to each element of userAgent
+
+Default is usually implicit. It is used in the container acl. Only needed if a subset of rules are inherited.
+
+**Remark** :  among other functions, are available
+- an ACL check function : await acl.isValidAcl (itemUrl, aclContent, URI, options)
+- and an ACL make relative : acl.makeContentRelative (aclcontent, itemUrl, toName, options)
+
+See the [JSdoc for the aclParser](docs/JSdoc/aclParser.md) for more details of these methods.
+
 ## <a name="terminology">Note on terminology</a>
 
 Solid servers can store data directly in a physical file system,  or use a database or other storage.  Instead of talking about "Files" and "Folders", it is more correct to talk about "Containers" and "Resources" - logical terms independent of the storage mechanism.  In this documentation, for simplicity, we've used the file/folder terminology with no implication that it represents a physical file system.

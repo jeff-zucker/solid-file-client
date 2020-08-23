@@ -54,7 +54,7 @@
     * [.readFolder(url, [options])](#SolidAPI+readFolder) ⇒ [<code>Promise.&lt;FolderData&gt;</code>](#FolderData)
     * [.getItemLinks(url, [options])](#SolidAPI+getItemLinks) ⇒ [<code>Promise.&lt;Links&gt;</code>](#Links)
     * [.copyFile(from, to, [options])](#SolidAPI+copyFile) ⇒ <code>Promise.&lt;Response&gt;</code>
-    * [.copyMetaFileForItem(oldTargetFile, newTargetFile, [options])](#SolidAPI+copyMetaFileForItem) ⇒ <code>Promise.&lt;Response&gt;</code>
+    * [.copyMetaFileForItem(oldTargetFile, newTargetFile, [options])](#SolidAPI+copyMetaFileForItem) ⇒ <code>Promise.&lt;(Response\|undefined)&gt;</code>
     * [.copyAclFileForItem(oldTargetFile, newTargetFile, [options])](#SolidAPI+copyAclFileForItem) ⇒ <code>Promise.&lt;Response&gt;</code>
     * [.copyLinksForItem(oldTargetFile, newTargetFile, [options])](#SolidAPI+copyLinksForItem) ⇒ <code>Promise.&lt;Array.&lt;Response&gt;&gt;</code>
     * [.copyFolder(from, to, [options])](#SolidAPI+copyFolder) ⇒ <code>Promise.&lt;Array.&lt;Response&gt;&gt;</code>
@@ -68,6 +68,9 @@
 
 ### new SolidAPI(fetch, [options])
 Provide API methods which use the passed fetch method
+constructor adds :
+- this.rdf methods from RdfQuery
+- this.acl methods from AclParser
 
 
 | Param | Type |
@@ -277,7 +280,7 @@ Get acl and meta links of an item
 | Param | Type | Description |
 | --- | --- | --- |
 | url | <code>string</code> |  |
-| [options] | <code>object</code> | specify if links should be checked for existence or not |
+| [options] | <code>object</code> | - specify if links should be checked for existence or not - may select acl or meta only |
 
 <a name="SolidAPI+copyFile"></a>
 
@@ -296,11 +299,11 @@ Per default overwrite existing files and copy links too.
 
 <a name="SolidAPI+copyMetaFileForItem"></a>
 
-### solidAPI.copyMetaFileForItem(oldTargetFile, newTargetFile, [options]) ⇒ <code>Promise.&lt;Response&gt;</code>
+### solidAPI.copyMetaFileForItem(oldTargetFile, newTargetFile, [options]) ⇒ <code>Promise.&lt;(Response\|undefined)&gt;</code>
 Copy a meta file
 
 **Kind**: instance method of [<code>SolidAPI</code>](#SolidAPI)  
-**Returns**: <code>Promise.&lt;Response&gt;</code> - creation response  
+**Returns**: <code>Promise.&lt;(Response\|undefined)&gt;</code> - creation response  
 
 | Param | Type |
 | --- | --- |
@@ -438,6 +441,7 @@ Class for working with files on Solid Pods
 * [SolidFileClient](#SolidFileClient) ⇐ <code>SolidApi</code>
     * [new SolidFileClient(auth, [options])](#new_SolidFileClient_new)
     * [.readFile(url, [request])](#SolidFileClient+readFile) ⇒ <code>Promise.&lt;(string\|Blob\|Response)&gt;</code>
+    * [.aclUrlParser(url)](#SolidFileClient+aclUrlParser) ⇒ <code>object</code>
 
 <a name="new_SolidFileClient_new"></a>
 
@@ -460,6 +464,18 @@ Fetch an item and return content as text,json,or blob as needed
 | url | <code>string</code> | 
 | [request] | <code>RequestInit</code> | 
 
+<a name="SolidFileClient+aclUrlParser"></a>
+
+### solidFileClient.aclUrlParser(url) ⇒ <code>object</code>
+ACL content url parser
+
+**Kind**: instance method of [<code>SolidFileClient</code>](#SolidFileClient)  
+**Returns**: <code>object</code> - an acl object from url.aclurl.acl  
+
+| Param | Type |
+| --- | --- |
+| url | <code>string</code> | 
+
 <a name="WriteOptions"></a>
 
 ## WriteOptions : <code>object</code>
@@ -470,6 +486,7 @@ Fetch an item and return content as text,json,or blob as needed
 | --- | --- | --- | --- |
 | [createPath] | <code>boolean</code> | <code>true</code> | create parent containers if they don't exist |
 | [withAcl] | <code>boolean</code> | <code>true</code> | also copy acl files |
+| [agent] | <code>AGENT</code> | <code>&quot;no_modify&quot;</code> | specify how to handle existing .acl |
 | [withMeta] | <code>boolean</code> | <code>true</code> | also copy meta files |
 | [merge] | <code>MERGE</code> | <code>&quot;replace&quot;</code> | specify how to handle existing files/folders |
 

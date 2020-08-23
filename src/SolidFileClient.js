@@ -1,4 +1,9 @@
 import SolidApi from './SolidApi'
+import apiUtils from './utils/apiUtils'
+import errorUtils from './utils/errorUtils'
+
+const { getRootUrl, getParentUrl, getItemName } = apiUtils
+const { FetchError, assertResponseOk, composedFetch, toFetchError } = errorUtils
 
 /**
  * @typedef {object} SolidFileClientOptions
@@ -45,6 +50,26 @@ class SolidFileClient extends SolidApi {
   async deleteFile (url) { return super._deleteItemWithLinks(url) }
 
   async deleteFolder (url, options) { return super.deleteFolderRecursively(url) }
+
+  /**
+   * ACL content url parser
+   * @param {string} url
+   * @returns {object} an acl object from url.aclurl.acl
+   */
+  async aclUrlParser (url) {
+    const target = getItemName(url)
+    const max = url.substring(getRootUrl(url).length - 2).split('/').length
+    for (let i = 1; i < max; i++) {
+      url = getParentUrl(url)
+      const links = await this.getItemLinks(url, { links: 'include' })
+      if (links.acl) {
+        let aclContent = await this.readFile(links.acl)
+        aclContent = this.acl.makeContentRelative(aclContent, url, target, { agent: 'no_modify' })
+        if (target) aclContent = aclContent.replace(new RegExp('<./>', 'g'), '<./' + target + '>')
+        return this.acl.contentParser(url, aclContent)
+      }
+    }
+  }
 }
 
 export default SolidFileClient

@@ -1,5 +1,7 @@
 import contextSetup from './contextSetup'
-import SolidApi from '../../src/SolidApi'
+// import SolidApi from '../../src/SolidApi'
+import SolidFileClient from '../../src/SolidFileClient'
+// import auth from 'solid-auth-cli' // alain
 import FileApi from './FileApi'
 
 let _api
@@ -23,7 +25,9 @@ const getApi = () => {
     if (!_api && !contextSetup.isReady()) {
       throw new Error('Tried to access api before the testing environment has been initialized')
     }
-    _api = new SolidApi(contextSetup.getFetch())
+    // _api = new SolidApi(contextSetup.getFetch())
+      let _auth = contextSetup.getAuth()
+      _api = new SolidFileClient(_auth)
   }
   return _api
 }
@@ -53,6 +57,7 @@ class TestFolderGenerator {
     this.content = content
     this.contentType = contentType
     this.children = children
+    //this.childrenWithoutLinks = children
     this._cloneLinks = { ...links }
     this._links = _makeLinkFiles(name, links, this instanceof Folder)
     this.children.unshift(...Object.values(this._links))
@@ -86,6 +91,7 @@ class TestFolderGenerator {
     } catch (e) {
       console.error('Error within TestFolderGenerator.remove')
       console.error(`remove was called with: ${this.url}`)
+      console.error('children '+JSON.stringify(this.children))
       if (e && (e.url || (e.headers && e.headers.get))) {
         console.error(`error occurred for: ${e.url || e.headers.get('location')}`)
       }

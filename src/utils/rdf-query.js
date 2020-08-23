@@ -12,6 +12,11 @@ const ns = solidNS();
 const { DataFactory } = N3
 const { namedNode, literal } = DataFactory
 
+/**
+ * minimal class that uses N3 to query rdf files
+ * using solid-namespace to query namedNode, literal
+ * @alias 'solidAPI.rdf'
+ */
 class RdfQuery {
   constructor (fetch) {
     this._fetch = fetch
