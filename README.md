@@ -13,6 +13,7 @@ previous version : <a href="https://www.npmjs.com/package/solid-file-client/v/0.
 <a href="#high-level-methods">High Level Methods</a> |
 <a href="#advanced-options">Advanced Options</a> |
 <a href="#low-level-methods">Low-level Methods</a> |
+<a href="#ACL management">ACL management</a> |
 <a href="#terminology">Note on Terminology</a> |
 <a href="#acknowledgements">Acknowledgements</a>
 
@@ -240,6 +241,21 @@ Defaults :
 These default behaviors may all be modified.  For example, you can choose from several ways to merge the source and target folders.  See [Advanced Options](#advanced-options) for more details.
 
 
+### createZipArchive(sourceURL, archiveURL, options), extractZipArchive(archiveURL, targetFolderURL, options)
+
+Zip folder/file and Unzip file.
+
+Defaults :
+
+  * zip/unzip : Linked files (.acl and .meta) will be ziped/unziped if they exist.
+  * unzip
+
+        * TargetFolderURL is where the archive file is unzipped
+        * if unzipped root file or root folder exist they shall be overwritten
+        * .acl are checked for validity (notably for acl:Control against the relative webId "/profile/card#me")
+
+These default behaviors may all be modified.  For example, you can choose from several ways to unzip the archiveURL, or check for .acl validity.  See [Advanced Options](#advanced-options) for more details.
+
 ## <a name="advanced-options">Advanced Options</a>
 
 ### <a name="overwriting">Overwriting</a>
@@ -407,8 +423,8 @@ const aclModes = ['Read', 'Append', 'Write', 'Control']
 
 const aclPredicates = ['agent', 'agentClass', 'agentGroup', 'origin', 'default']
 
-- userAgent : an array of objects (predicate: object) [{ agent: 'https://example.com/profile/card#me'}, { agentClass: 'agent' }, { origin: 'https://solid.community' }, { default: '' }]
-- userMode : an array of acl modes ['Read', 'Write']. To be applied to each element of userAgent
+- userAgent : an array of objects (predicate: object). example: [{ agent: 'https://example.com/profile/card#me'}, { agentClass: 'Agent' }, { origin: 'https://solid.community' }, { default: '' }]
+- userMode : an array of acl modes. example: ['Read', 'Write']. To be applied to each element of userAgent
 
 Default is usually implicit. It is used in the container acl. Only needed if a subset of rules are inherited.
 

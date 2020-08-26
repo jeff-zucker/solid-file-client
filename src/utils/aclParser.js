@@ -16,7 +16,7 @@ const aclModes = ['Read', 'Append', 'Write', 'Control']
  *
  * aclObject is a string, aclPredicates related :
  * - agent: webId, bot, application, ...
- * - agentClass: 'agent'
+ * - agentClass: 'Agent'
  * - agentGroup: URI
  * - origin: origin url
  * - default: '' (blank string)

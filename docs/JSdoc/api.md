@@ -26,6 +26,16 @@
 <dt><a href="#fetch">fetch</a> ⇒ <code>Promise.&lt;Response&gt;</code></dt>
 <dd><p>(optionally authenticated) fetch method similar to window.fetch</p>
 </dd>
+<dt><a href="#zipOptions">zipOptions</a> : <code>object</code></dt>
+<dd><ul>
+<li>.acl write parameters</li>
+</ul>
+</dd>
+<dt><a href="#unzipOptions">unzipOptions</a> : <code>object</code></dt>
+<dd><ul>
+<li>.acl write parameters</li>
+</ul>
+</dd>
 <dt><a href="#SolidFileClientOptions">SolidFileClientOptions</a> : <code>object</code></dt>
 <dd></dd>
 </dl>
@@ -441,7 +451,18 @@ Class for working with files on Solid Pods
 * [SolidFileClient](#SolidFileClient) ⇐ <code>SolidApi</code>
     * [new SolidFileClient(auth, [options])](#new_SolidFileClient_new)
     * [.readFile(url, [request])](#SolidFileClient+readFile) ⇒ <code>Promise.&lt;(string\|Blob\|Response)&gt;</code>
+    * [.readHead(url, options)](#SolidFileClient+readHead) ⇒ <code>string</code>
+    * [.deleteFile(url)](#SolidFileClient+deleteFile) ⇒ <code>Promise.&lt;Response&gt;</code>
+    * [.deleteFolder(url)](#SolidFileClient+deleteFolder) ⇒ <code>Promise.&lt;Array.&lt;Response&gt;&gt;</code>
     * [.aclUrlParser(url)](#SolidFileClient+aclUrlParser) ⇒ <code>object</code>
+    * [.getFolderItemList(path)](#SolidFileClient+getFolderItemList) ⇒ <code>Promise.&lt;Array.&lt;Item&gt;&gt;</code>
+    * [.createZipArchive(resource, archiveUrl, options)](#SolidFileClient+createZipArchive) ⇒ <code>promise.&lt;response&gt;</code>
+    * [.getAsZip()](#SolidFileClient+getAsZip)
+    * [.addItemsToZip()](#SolidFileClient+addItemsToZip)
+    * [.zipItemLinks(zip, itemLinks, itemName)](#SolidFileClient+zipItemLinks)
+    * [.extractZipArchive(zip, destination, webId, options)](#SolidFileClient+extractZipArchive) ⇒
+    * [.uploadExtractedZipArchive(zip, destination, curFolder, webId, responses, options)](#SolidFileClient+uploadExtractedZipArchive) ⇒ <code>promise</code>
+    * [._uploadLinkFile()](#SolidFileClient+_uploadLinkFile)
 
 <a name="new_SolidFileClient_new"></a>
 
@@ -464,18 +485,146 @@ Fetch an item and return content as text,json,or blob as needed
 | url | <code>string</code> | 
 | [request] | <code>RequestInit</code> | 
 
+<a name="SolidFileClient+readHead"></a>
+
+### solidFileClient.readHead(url, options) ⇒ <code>string</code>
+read Head as string
+
+**Kind**: instance method of [<code>SolidFileClient</code>](#SolidFileClient)  
+**Returns**: <code>string</code> - headStr  
+
+| Param | Type |
+| --- | --- |
+| url | <code>string</code> | 
+| options | <code>object</code> | 
+
+<a name="SolidFileClient+deleteFile"></a>
+
+### solidFileClient.deleteFile(url) ⇒ <code>Promise.&lt;Response&gt;</code>
+delete file
+
+**Kind**: instance method of [<code>SolidFileClient</code>](#SolidFileClient)  
+**Returns**: <code>Promise.&lt;Response&gt;</code> - response of the file deletion  
+
+| Param | Type |
+| --- | --- |
+| url | <code>string</code> | 
+
+<a name="SolidFileClient+deleteFolder"></a>
+
+### solidFileClient.deleteFolder(url) ⇒ <code>Promise.&lt;Array.&lt;Response&gt;&gt;</code>
+Delete a folder, its contents and links recursively
+
+**Kind**: instance method of [<code>SolidFileClient</code>](#SolidFileClient)  
+**Returns**: <code>Promise.&lt;Array.&lt;Response&gt;&gt;</code> - Resolves with an array of deletion responses.
+The first one will be the folder specified by "url".
+The others will be the deletion responses from the contents in arbitrary order  
+
+| Param | Type |
+| --- | --- |
+| url | <code>string</code> | 
+
 <a name="SolidFileClient+aclUrlParser"></a>
 
 ### solidFileClient.aclUrlParser(url) ⇒ <code>object</code>
 ACL content url parser
 
 **Kind**: instance method of [<code>SolidFileClient</code>](#SolidFileClient)  
-**Returns**: <code>object</code> - an acl object from url.aclurl.acl  
+**Returns**: <code>object</code> - an acl object from url.acl  
 
 | Param | Type |
 | --- | --- |
 | url | <code>string</code> | 
 
+<a name="SolidFileClient+getFolderItemList"></a>
+
+### solidFileClient.getFolderItemList(path) ⇒ <code>Promise.&lt;Array.&lt;Item&gt;&gt;</code>
+Wrap API response for retrieving folder item list
+
+**Kind**: instance method of [<code>SolidFileClient</code>](#SolidFileClient)  
+
+| Param | Type |
+| --- | --- |
+| path | <code>String</code> | 
+
+<a name="SolidFileClient+createZipArchive"></a>
+
+### solidFileClient.createZipArchive(resource, archiveUrl, options) ⇒ <code>promise.&lt;response&gt;</code>
+Request API to upload the items as zip archive
+zip file contains a blob (or a string if async blob is not supported like in jest tests)
+
+**Kind**: instance method of [<code>SolidFileClient</code>](#SolidFileClient)  
+**Returns**: <code>promise.&lt;response&gt;</code> - res => { const success = await res.text() })>}  
+
+| Param | Type | Description |
+| --- | --- | --- |
+| resource | <code>string</code> | path (file or folder) |
+| archiveUrl | <code>string</code> | .zip file url |
+| options | <code>object</code> |  |
+
+<a name="SolidFileClient+getAsZip"></a>
+
+### solidFileClient.getAsZip()
+Wrap API response for zipping multiple items
+
+**Kind**: instance method of [<code>SolidFileClient</code>](#SolidFileClient)  
+<a name="SolidFileClient+addItemsToZip"></a>
+
+### solidFileClient.addItemsToZip()
+Add items with links to a zip object recursively
+
+**Kind**: instance method of [<code>SolidFileClient</code>](#SolidFileClient)  
+<a name="SolidFileClient+zipItemLinks"></a>
+
+### solidFileClient.zipItemLinks(zip, itemLinks, itemName)
+Add item links to a zip object
+
+**Kind**: instance method of [<code>SolidFileClient</code>](#SolidFileClient)  
+
+| Param | Type |
+| --- | --- |
+| zip | <code>object</code> | 
+| itemLinks | <code>Array</code> | 
+| itemName | <code>string</code> | 
+
+<a name="SolidFileClient+extractZipArchive"></a>
+
+### solidFileClient.extractZipArchive(zip, destination, webId, options) ⇒
+Wrap API response for extracting a zip archive
+unzip file is expecting a blob content (except if async blob is not supported like in jest tests)
+
+**Kind**: instance method of [<code>SolidFileClient</code>](#SolidFileClient)  
+**Returns**: {promise<{ err: [], info: []}>)  
+
+| Param | Type | Description |
+| --- | --- | --- |
+| zip | <code>string</code> | file |
+| destination | <code>string</code> | folder |
+| webId | <code>string</code> | (to validate .acl extracted) |
+| options | <code>object</code> |  |
+
+<a name="SolidFileClient+uploadExtractedZipArchive"></a>
+
+### solidFileClient.uploadExtractedZipArchive(zip, destination, curFolder, webId, responses, options) ⇒ <code>promise</code>
+Recursively upload all files and folders with links from an extracted zip archive
+
+**Kind**: instance method of [<code>SolidFileClient</code>](#SolidFileClient)  
+
+| Param | Type | Description |
+| --- | --- | --- |
+| zip | <code>object</code> |  |
+| destination | <code>string</code> | url |
+| curFolder | <code>string</code> |  |
+| webId | <code>string</code> |  |
+| responses | <code>Array</code> |  |
+| options | <code>object</code> |  |
+
+<a name="SolidFileClient+_uploadLinkFile"></a>
+
+### solidFileClient.\_uploadLinkFile()
+Check that link content is valid and create link
+
+**Kind**: instance method of [<code>SolidFileClient</code>](#SolidFileClient)  
 <a name="WriteOptions"></a>
 
 ## WriteOptions : <code>object</code>
@@ -562,6 +711,42 @@ ACL content url parser
 | --- | --- |
 | url | <code>string</code> | 
 | [options] | <code>RequestInit</code> | 
+
+<a name="zipOptions"></a>
+
+## zipOptions : <code>object</code>
+- .acl write parameters
+
+**Kind**: global typedef  
+**Properties**
+
+| Name | Type | Default | Description |
+| --- | --- | --- | --- |
+| [createPath] | <code>boolean</code> | <code>true</code> | create parent containers if they don't exist |
+| [links] | <code>LINKS</code> | <code>&quot;include&quot;</code> |  |
+| [withAcl] | <code>boolean</code> | <code>true</code> | also copy acl files |
+| [withMeta] | <code>boolean</code> | <code>true</code> | also copy meta files |
+| [agent] | <code>AGENT</code> | <code>&quot;to_target&quot;</code> | specify how to handle existing agent webId |
+
+<a name="unzipOptions"></a>
+
+## unzipOptions : <code>object</code>
+- .acl write parameters
+
+**Kind**: global typedef  
+**Properties**
+
+| Name | Type | Default | Description |
+| --- | --- | --- | --- |
+| [createPath] | <code>boolean</code> | <code>true</code> | create parent containers if they don't exist |
+| [links] | <code>LINKS</code> | <code>&quot;include&quot;</code> |  |
+| [withAcl] | <code>boolean</code> | <code>true</code> | also copy acl files |
+| [withMeta] | <code>boolean</code> | <code>true</code> | also copy meta files |
+| [merge] | <code>MERGE</code> | <code>&quot;replace&quot;</code> | specify how to handle existing files/folders - .acl content validation parameters |
+| [webId] | <code>webId</code> | <code>&quot;/profile/card#me&quot;</code> | webId for which aclMode is needed |
+| [aclMode] | <code>aclMode</code> | <code>&quot;Control&quot;</code> | specify the minimal existing mode to validate ACL document |
+| [aclAuth] | <code>aclAuth</code> | <code>&quot;must&quot;</code> | should be "must" (actually NSS accepts "may" = absence of acl:Authorization) |
+| [aclDefault] | <code>aclDefault</code> | <code>&quot;must&quot;</code> | specify if acl:default is needed to validate ACL document |
 
 <a name="SolidFileClientOptions"></a>
 
