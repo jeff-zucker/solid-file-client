@@ -18,7 +18,7 @@ using an aclAgents object</p>
 <p>aclObject is a string, aclPredicates related :</p>
 <ul>
 <li>agent: webId, bot, application, ...</li>
-<li>agentClass: &#39;agent&#39;</li>
+<li>agentClass: &#39;Agent&#39;</li>
 <li>agentGroup: URI</li>
 <li>origin: origin url</li>
 <li>default: &#39;&#39; (blank string)</li>
@@ -168,7 +168,7 @@ const aclPredicates = ['agent', 'agentClass', 'agentGroup', 'origin', 'default']
 
 aclObject is a string, aclPredicates related :
 - agent: webId, bot, application, ...
-- agentClass: 'agent'
+- agentClass: 'Agent'
 - agentGroup: URI
 - origin: origin url
 - default: '' (blank string)
