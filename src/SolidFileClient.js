@@ -3,7 +3,7 @@ import apiUtils from './utils/apiUtils'
 import errorUtils from './utils/errorUtils'
 import JSZip from 'jszip'
 import * as mime from 'mime'
-import { Blob } from 'node-fetch'
+import { Blob } from 'cross-fetch'
 
 const { getRootUrl, getParentUrl, getItemName } = apiUtils
 const { FetchError, assertResponseOk, composedFetch, toFetchError } = errorUtils
@@ -32,7 +32,7 @@ const zipOptions = {
  * @property {LINKS} [links="include"]
  * @property {boolean} [withAcl=true] also copy acl files
  * @property {boolean} [withMeta=true] also copy meta files
- * @property {MERGE} [merge="keep_target"] specify how to handle existing files/folders
+ * @property {MERGE} [merge="replace"] specify how to handle existing files/folders
  * - .acl content validation parameters
  * @property {webId} [webId="/profile/card#me"] webId for which aclMode is needed
  * @property {aclMode} [aclMode="Control"] specify the minimal existing mode to validate ACL document

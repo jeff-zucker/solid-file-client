@@ -96,10 +96,9 @@ const nestedChildFile = new File('nested-child-file.txt', 'I am a child', 'text/
 const nestedFolderAcl = new Folder('nestedAcl', [nestedChildFile], { acl: true })
 const otherNestedFolderAcl = new Folder('otherNestedAcl', [], { acl: true })
 
-// nearly all tests need to mock JSZip with "options.test=true"
-// jest do not allow async blob
+// jest do not allow async blob, it uses JSZip string
 describe('createZip', () => {
-  const folder = new BaseFolder(container, 'createZip', [
+  const folder = new BaseFolder(container, 'createZip1', [
     childFile,
     otherChildFile,
     nestedFolder,
@@ -108,10 +107,7 @@ describe('createZip', () => {
     ], { meta: true } //placeholder: { meta: true } },
     //filePlaceholder
   )
-  beforeAll(() => {
-    folder.reset()
-    //childFile.acl.content = createPseudoAcl('child-File.txt')
-  })
+  beforeEach(() => folder.reset())
 
   describe('createZipArchive', () => {
       // zip/unzip uses blob or string when blob is not supported (jest test do not support blob)
@@ -277,7 +273,7 @@ describe('extractZipArchive', () => {
       expect(await fc.itemExists(nestedFolderAcl.url+getItemName(childFile.url))).toBe(true)
       expect(await fc.itemExists(nestedFolderAcl.url+getItemName(childFile.acl.url))).toBe(true)
     })
-    test('extract zip : folder', async () => {
+    test('extract zip : folder, merge=keep_source', async () => {
       // check file and folder
       await expect(fc.itemExists(childFile.acl.url)).resolves.toBe(true)
       expect(await fc.itemExists(nestedFolderAcl.url+getItemName(nestedFolder.url))).toBe(false)
@@ -286,6 +282,7 @@ describe('extractZipArchive', () => {
       const zip = await fc.readFile(filePlaceholder.url)
       await expect(fc.itemExists(filePlaceholder.url)).resolves.toBe(true)
       // extract zip to destination folder
+      const options = { merge: 'keep_source' } // , links: 'exclude'}
       const result = await fc.extractZipArchive(filePlaceholder.url, nestedFolderAcl.url)
       expect(result.err).toEqual([])
       expect(result.info).toEqual([])
@@ -300,7 +297,7 @@ describe('extractZipArchive', () => {
     test('extract zip : folder, merge=replace links=exclude', async () => {
       // check file and folder
       await expect(fc.itemExists(childFile.acl.url)).resolves.toBe(true)
-      expect(await fc.itemExists(nestedFolderAcl.url+getItemName(nestedFolder.url))).toBe(false)
+      // expect(await fc.itemExists(nestedFolderAcl.url+getItemName(nestedFolder.url))).toBe(false)
       // zip folder and folder contents
       const res = await fc.createZipArchive(nestedFolder.url, filePlaceholder.url)
       const zip = await fc.readFile(filePlaceholder.url)

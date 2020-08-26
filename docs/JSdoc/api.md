@@ -742,7 +742,7 @@ Check that link content is valid and create link
 | [links] | <code>LINKS</code> | <code>&quot;include&quot;</code> |  |
 | [withAcl] | <code>boolean</code> | <code>true</code> | also copy acl files |
 | [withMeta] | <code>boolean</code> | <code>true</code> | also copy meta files |
-| [merge] | <code>MERGE</code> | <code>&quot;keep_target&quot;</code> | specify how to handle existing files/folders - .acl content validation parameters |
+| [merge] | <code>MERGE</code> | <code>&quot;replace&quot;</code> | specify how to handle existing files/folders - .acl content validation parameters |
 | [webId] | <code>webId</code> | <code>&quot;/profile/card#me&quot;</code> | webId for which aclMode is needed |
 | [aclMode] | <code>aclMode</code> | <code>&quot;Control&quot;</code> | specify the minimal existing mode to validate ACL document |
 | [aclAuth] | <code>aclAuth</code> | <code>&quot;must&quot;</code> | should be "must" (actually NSS accepts "may" = absence of acl:Authorization) |
