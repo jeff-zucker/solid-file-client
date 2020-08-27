@@ -3,7 +3,7 @@ import apiUtils from './utils/apiUtils'
 import errorUtils from './utils/errorUtils'
 import JSZip from 'jszip'
 import * as mime from 'mime'
-import { Blob } from 'cross-fetch'
+// import { Blob } from 'cross-fetch'
 
 const { getRootUrl, getParentUrl, getItemName } = apiUtils
 const { FetchError, assertResponseOk, composedFetch, toFetchError } = errorUtils
@@ -257,10 +257,12 @@ class SolidFileClient extends SolidApi {
     for (const i in itemLinks) {
       const itemLink = itemLinks[i]
       const { fileName, content } = await this.itemLinkContent(itemLink, item, options)
-      if (this.zipSupport().blob) {
+      /* if (this.zipSupport().blob) {
+        // not supported by browser ???
         const blob = new Blob([content], { type: 'text/turtle' })
         zip.file(fileName, blob, { binary: true })
-      } else zip.file(fileName, content, { binary: false })
+      } else zip.file(fileName, content, { binary: false }) */
+      zip.file(fileName, content, { binary: false })
     }
   }
 
