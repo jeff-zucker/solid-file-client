@@ -252,7 +252,7 @@ Defaults :
 
         * TargetFolderURL is where the archive file is unzipped
         * if unzipped root file or root folder exist they shall be overwritten
-        * .acl are checked for validity (notably for acl:Control against the relative webId "/profile/card#me")
+        * .acl are checked for validity (notably for acl:Control by at least one agent type (agent, agentClass, agentGroup))
 
 These default behaviors may all be modified.  For example, you can choose from several ways to unzip the archiveURL, or check for .acl validity.  See [Advanced Options](#advanced-options) for more details.
 
@@ -370,9 +370,9 @@ It allows to create/edit programmatically the ACL content using an intermediate 
 ```javascript
 -let aclObject = await fc.aclUrlParser(url) // returns an acl object from the acl inheritance algorithm for the url.
 - let aclObject = await fc.acl.contentParser(url, aclContent) // returns an aclObject from an acl file Content
-- let aclContent = await fc.acl.createContent(url, aclObject) /// build acl content from an aclObject for url
-- let aclObject = await fc.acl.addUserMode(aclObject, userAgent, userMode) // add user and mode to an aclObject
-- let aclObject = await fc.acl.deleteUserMode(aclobject, userAgent, userMode) // delete user and/or mode from an aclObject
+- let aclContent = await fc.acl.createContent(url, aclObject, options) /// build acl content from an aclObject for url
+- let aclObject = await fc.acl.addUserMode(aclObject, userAgent, userMode, userAccess) // add user, mode and access to an aclObject
+- let aclObject = await fc.acl.deleteUserMode(aclobject, userAgent, userMode, userAccess) // delete user,mode and/or access from an aclObject
 ```
 
 example 1 :
@@ -386,7 +386,7 @@ example 2 :
 // create a rule
 let aclUsers = await fc.acl.addUserMode({}, [{ agentClass: 'Agent' }], ['Read'])
 // add an other rule
-aclUsers = await fc.acl.addUserMode(aclUsers, [{ agent: 'https://example.solid.community/profile/card#me' }], ['Read', 'Write', 'Control'])
+aclUsers = await fc.acl.addUserMode(aclUsers, [{ agent: 'https://example.solid.community/profile/card#me' }], ['Read', 'Write', 'Control'], ['accessTo'])
 
 // build the aclContent
 const aclContent = await fc.acl.createContent('https://example.solid.community/public/text.txt', aclUsers)
@@ -421,15 +421,18 @@ to create an acl resource for a resource url :
 
 const aclModes = ['Read', 'Append', 'Write', 'Control']
 
-const aclPredicates = ['agent', 'agentClass', 'agentGroup', 'origin', 'default']
+const aclPredicates = ['agent', 'agentClass', 'agentGroup', 'origin']
+
+const aclAccess = ['accessTo', 'default']
 
 - userAgent : an array of objects (predicate: object). example: [{ agent: 'https://example.com/profile/card#me'}, { agentClass: 'Agent' }, { origin: 'https://solid.community' }, { default: '' }]
 - userMode : an array of acl modes. example: ['Read', 'Write']. To be applied to each element of userAgent
-
-Default is usually implicit. It is used in the container acl. Only needed if a subset of rules are inherited.
+- userAccess : an array of acl access. example : ['accessTo', 'default']
+   
+   Default is only used in the container acl. Only needed if a subset of rules are inherited.
 
 **Remark** :  among other functions, are available
-- an ACL check function : await acl.isValidAcl (itemUrl, aclContent, URI, options)
+- an ACL check function : await acl.isValidAcl (itemUrl, aclContent, options)
 - and an ACL make relative : acl.makeContentRelative (aclcontent, itemUrl, toName, options)
 
 See the [JSdoc for the aclParser](docs/JSdoc/aclParser.md) for more details of these methods.

@@ -15,14 +15,11 @@ const { FetchError, assertResponseOk, composedFetch, toFetchError } = errorUtils
  * @property {LINKS} [links="include"]
  * @property {boolean} [withAcl=true] also copy acl files
  * @property {boolean} [withMeta=true] also copy meta files
- * @property {AGENT} [agent="to_target"] specify how to handle existing agent webId
  */
 const zipOptions = {
   links: 'include',
   withAcl: true,
   withMeta: true
-  // agent: 'to_target',
-  // createPath: true
 }
 
 /**
@@ -34,7 +31,6 @@ const zipOptions = {
  * @property {boolean} [withMeta=true] also copy meta files
  * @property {MERGE} [merge="replace"] specify how to handle existing files/folders
  * - .acl content validation parameters
- * @property {webId} [webId="/profile/card#me"] webId for which aclMode is needed
  * @property {aclMode} [aclMode="Control"] specify the minimal existing mode to validate ACL document
  * @property {aclAuth} [aclAuth="must"] should be "must" (actually NSS accepts "may" = absence of acl:Authorization)
  * @property {aclDefault} [aclDefault="must"] specify if acl:default is needed to validate ACL document
@@ -45,10 +41,9 @@ const unzipOptions = {
   withMeta: true,
   merge: 'replace', // or 'keep_target'
   createPath: true,
-  webId: '/profile/card#me',
   aclMode: 'Control',
   aclAuth: 'may',
-  aclDefault: 'must'
+  aclDefault: 'must' // needed to allow acces to folder content .meta ...
 }
 
 /**
@@ -293,8 +288,8 @@ class SolidFileClient extends SolidApi {
    * unzip file is expecting a blob content (except if async blob is not supported like in jest tests)
    * @param {string} zip file
    * @param {string} destination folder
-   * @param {string} webId (to validate .acl extracted)
    * @param {object} options
+   * @property {options} ...unzipOptions
    * @returns {promise<{ err: [], info: []}>)
    */
   async extractZipArchive (file, destination, options) {
@@ -304,12 +299,11 @@ class SolidFileClient extends SolidApi {
     }
     try {
       let blob
-      const webId = options.webId
       if (this.zipSupport().blob) blob = await this.getFileBlob(file)
       else blob = await this.readFile(file) // more details to be given is it only for test ???
       const zip = await JSZip.loadAsync(blob)
       const responses = []
-      const res = await this.uploadExtractedZipArchive(zip, destination, '', webId, responses, options)
+      const res = await this.uploadExtractedZipArchive(zip, destination, '', responses, options)
       const results = this.flattenObj(res, 'link')
       return results
     } catch (err) {
@@ -344,12 +338,11 @@ class SolidFileClient extends SolidApi {
    * @param {object} zip
    * @param {string} destination url
    * @param {string} curFolder
-   * @param {string} webId
    * @param {Array} responses
    * @param {object} options
    * @returns {promise}
    */
-  async uploadExtractedZipArchive (zip, destination, curFolder = '', webId, responses, options) {
+  async uploadExtractedZipArchive (zip, destination, curFolder = '', responses, options) {
     options = {
       ...unzipOptions,
       ...options
@@ -358,10 +351,10 @@ class SolidFileClient extends SolidApi {
     const promises = zipItems.map(async item => {
       const relativePath = item.name
       if (item.dir) {
-        responses = await this.uploadFolderWithLinks(item, destination, zipItems, webId, options)
-        return this.uploadExtractedZipArchive(zip, destination, item.name, webId, responses, options)
+        responses = await this.uploadFolderWithLinks(item, destination, zipItems, options)
+        return this.uploadExtractedZipArchive(zip, destination, item.name, responses, options)
       } else if (!relativePath.endsWith('.acl') && !relativePath.endsWith('.meta')) {
-        responses = await this.uploadFileWithLinks(item, destination, zipItems, webId, options)
+        responses = await this.uploadFileWithLinks(item, destination, zipItems, options)
       }
       return [].concat(...responses)
     })
@@ -369,15 +362,15 @@ class SolidFileClient extends SolidApi {
     return Promise.all(promises)
   }
 
-  async uploadFolderWithLinks (item, destination, zipItems, webId, options) {
+  async uploadFolderWithLinks (item, destination, zipItems, options) {
     const relativePath = item.name
     try {
       await this.createFolder(`${destination}${relativePath}`, options)
-      return await this._uploadLinks(destination, relativePath, zipItems, webId, options)
+      return await this._uploadLinks(destination, relativePath, zipItems, options)
     } catch (e) { throw toFetchError(new Error('createFolder ' + e)) }
   }
 
-  async uploadFileWithLinks (item, destination, zipItems, webId, options) {
+  async uploadFileWithLinks (item, destination, zipItems, options) {
     const relativePath = item.name
     let contentType, blob
     try {
@@ -386,26 +379,26 @@ class SolidFileClient extends SolidApi {
       contentType = blob.type ? blob.type : mime.getType(relativePath)
 
       await this.createFile(`${destination}${relativePath}`, blob, contentType)
-      return await this._uploadLinks(destination, relativePath, zipItems, webId, options)
+      return await this._uploadLinks(destination, relativePath, zipItems, options)
     } catch (e) { throw toFetchError(new Error('createFile ' + e)) }
   }
 
-  async _uploadLinks (destination, relativePath, zipItems, webId, options) {
+  async _uploadLinks (destination, relativePath, zipItems, options) {
     try {
       let createResponses = []
       if (options.links === SolidFileClient.LINKS.INCLUDE) {
         if (options.withAcl) {
-          createResponses = createResponses.concat(await this._uploadItemLink(destination, relativePath, zipItems, 'acl', webId, options))
+          createResponses = createResponses.concat(await this._uploadItemLink(destination, relativePath, zipItems, 'acl', options))
         }
         if (options.withMeta) {
-          createResponses = createResponses.concat(await this._uploadItemLink(destination, relativePath, zipItems, 'meta', webId, options))
+          createResponses = createResponses.concat(await this._uploadItemLink(destination, relativePath, zipItems, 'meta', options))
         }
       }
       return createResponses
     } catch (e) { throw toFetchError(new Error('uploadLinks ' + e)) }
   }
 
-  async _uploadItemLink (destination, relativePath, zipItems, linkType, webId, options, linksResponses = []) {
+  async _uploadItemLink (destination, relativePath, zipItems, linkType, options, linksResponses = []) {
     const zipItemLink = zipItems.find(item => item.name === `${relativePath}.${linkType}`)
     try {
       if (zipItemLink) {
@@ -414,9 +407,9 @@ class SolidFileClient extends SolidApi {
           const blob = await zipItemLink.async('blob')
           content = await blob.text()
         } else content = await zipItemLink.async('string')
-        const linkResponse = await this._uploadLinkFile(destination, zipItemLink.name, content, webId, options)
+        const linkResponse = await this._uploadLinkFile(destination, zipItemLink.name, content, options)
         // check for .meta.acl
-        if (linkType === 'meta') return this._uploadItemLink(destination, `${relativePath}.meta`, zipItems, 'acl', webId, options, linksResponses)
+        if (linkType === 'meta') return this._uploadItemLink(destination, `${relativePath}.meta`, zipItems, 'acl', options, linksResponses)
         linksResponses = linksResponses.concat(...linkResponse)
       }
       return linksResponses
@@ -426,7 +419,7 @@ class SolidFileClient extends SolidApi {
   /**
    * Check that link content is valid and create link
    */
-  async _uploadLinkFile (path, fileName, content, webId, options) {
+  async _uploadLinkFile (path, fileName, content, options) {
     options = {
       ...unzipOptions,
       ...options
@@ -438,9 +431,10 @@ class SolidFileClient extends SolidApi {
       const linkExt = fileName.slice(fileName.lastIndexOf('.') + 1)
       const linkParent = linkUrl.replace(new RegExp(`.${linkExt}$`), '')
       let isValidLink
-      if (linkExt === 'acl') isValidLink = await this.isValidAcl(linkParent, content, webId, options)
+      if (linkExt === 'acl') isValidLink = await this.isValidAcl(linkParent, content, options)
       else if (linkExt === 'meta') isValidLink = await this.isValidRDF(linkParent, content)
       if (isValidLink.err.length) return [{ err: [`${fileName} : ${isValidLink.err} ${isValidLink.info}`] }]
+
       // find and create link file
       var linkRes = []
       if (isValidLink.info.length) linkRes = [{ info: [`${fileName} : ${isValidLink.info}`] }]

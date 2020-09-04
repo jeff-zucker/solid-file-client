@@ -38,129 +38,140 @@ beforeAll(async () => {
 const host = 'https://example.org/'
 const base = host + 'path/to/'
 
-const defaultTarget = '    n0:default target:;\n'    
+const defaultOnly = '    n0:default target:;\n'
+const accessOnly = '    n0:accessTo target:;\n'
+const defaultTarget = '    n0:accessTo target:;\n    n0:default target:;\n'
+const inherit = 'Default'    
 
 const prefix = test => `@prefix : <#>.
 @prefix n0: <http://www.w3.org/ns/auth/acl#>.
 @prefix n1: <http://xmlns.com/foaf/0.1/>.
 @prefix target: <${test}>.
 `
-const append = paramDefault => `:Append
+const append = (webId, access, inherit='') => `:Append${inherit}
     a n0:Authorization;
-    n0:accessTo target:;
-    n0:agentClass n1:Agent;
+${access}    n0:agent <${webId}me>;
     n0:origin <https://solid.community>;
-${paramDefault}    n0:mode n0:Append.
+    n0:mode n0:Append.
 `
-const read = paramDefault => `:Read
+const read = (webId, access, inherit='') => `:Read${inherit}
     a n0:Authorization;
-    n0:accessTo target:;
-    n0:agentClass n1:Agent;
-${paramDefault}    n0:mode n0:Read.
-`
-const readWrite = paramDefault => `:ReadWrite
-    a n0:Authorization;
-    n0:accessTo target:;
-    n0:agentClass n0:AuthenticatedAgent;
-${paramDefault}    n0:mode n0:Read, n0:Write.
-`
-
-const readWriteControl = (webId, paramDefault) => `:ReadWriteControl
-    a n0:Authorization;
-    n0:accessTo target:;
-    n0:agent <${webId}me>;
+${access}    n0:agent <${webId}me>;
     n0:agent <https://test.solid.community/profile/card#me>;
-${paramDefault}    n0:mode n0:Read, n0:Write, n0:Control.
+    n0:mode n0:Read.
 `
-const noMode = paramDefault => `:Read
+const readWrite = (access, inherit='') => `:ReadWrite${inherit}
     a n0:Authorization;
-    n0:accessTo target:;
-    n0:agentClass n1:Agent;
-${paramDefault}.
+${access}    n0:agentClass n0:AuthenticatedAgent;
+    n0:mode n0:Read, n0:Write.
 `
-const acl0 = (test, webId, paramDefault) => {
-    return prefix(test) + '\n' + read(paramDefault) +'\n'+readWrite(paramDefault)+'\n'+readWriteControl(webId, paramDefault)
+// TODO
+const readWriteControl = (access, inherit='') => `:ReadWriteControl${inherit}
+    a n0:Authorization;
+${access}    n0:agentClass n1:Agent;
+    n0:mode n0:Read, n0:Write, n0:Control.
+`
+const noMode = (access, inherit='') => `:Read${inherit}
+    a n0:Authorization;
+${access}    n0:agentClass n1:Agent.
+`
+const acl0 = (test, webId, access, inherit) => {
+    return prefix(test) + '\n' + read(webId, access, inherit) +'\n'+readWrite(access, inherit)+'\n'+readWriteControl(access, inherit)
 }
 
-const acl1 = (test, webId, paramDefault) => {
-    return prefix(test) + '\n' + readWrite(paramDefault)+'\n'+readWriteControl(webId, paramDefault)
+const acl1 = (test, webId, access, inherit) => {
+    return prefix(test) + '\n' + readWrite(access, inherit)+'\n'+readWriteControl(access, inherit)
 }
 
-const acl2 = (test, webId, paramDefault) => {
-    return prefix(test) + '\n' + append(paramDefault) +'\n'+readWrite(paramDefault)+'\n'+readWriteControl(webId, paramDefault)
+const acl2 = (test, webId, access, inherit) => {
+    return prefix(test) + '\n' + append(webId, access, inherit) +'\n'+readWrite(access, inherit)+'\n'+readWriteControl(access, inherit)
 }
 
-const acl3 = (test, webId, paramDefault) => {
-    return prefix(test) + '\n' + read(paramDefault)+'\n'+readWriteControl(webId, paramDefault)
+const acl3 = (test, webId, access, inherit) => {
+    return prefix(test) + '\n' + read(webId, access, inherit) + '\n' + readWriteControl(access, inherit)
 }
 
-const acl4 = (test, webId, paramDefault) => {
-    return prefix(test) + '\n' + read(paramDefault) + '\n' + readWriteControl(webId, '')
+const acl4 = (test, webId, access, inherit) => {
+    return prefix(test) + '\n' + read(webId, access, inherit) + '\n' + readWriteControl(access, inherit)
 }
 
-const noRule = (test, webId, paramDefault) => {
-  return prefix(test) + '\n' + noMode(paramDefault)
+const acl5 = (test, webId, access1, access2, inherit) => {
+  return prefix(test) + '\n' + readWriteControl(access2, '') + '\n' + read(webId, access1, inherit)
+}
+
+const noRule = (test, webId, access, inherit) => {
+  return prefix(test) + '\n' + noMode(access, inherit)
 }
 
 describe('aclParser', () => {
   test('users object for file', async () => {
-    const content = acl0('file.ext', '/profile/card#', '')
+    const content = acl0('file.ext', '/profile/card#', '', '')
     const users = await api.acl.contentParser(base+'file.ext', content)
-    const keysUsers = ['agentClass&Agent', 'agentClass&AuthenticatedAgent', 'agent&' + host + 'profile/card#me', 'agent&https://test.solid.community/profile/card#me']
+    const keysUsers = ['agent&' + host + 'profile/card#me', 'agent&https://test.solid.community/profile/card#me', 'agentClass&AuthenticatedAgent', 'agentClass&Agent']
     const usersKeys = Object.keys(users)
     expect(usersKeys).toEqual(keysUsers)
   })
   test('users object for folder', async () => {
-    const content = acl0('./', '/profile/card#', '')
+    const content = acl0('./', '/profile/card#', '', inherit)
     const users = await api.acl.contentParser(base, content)
-    const keysUsers = ['agentClass&Agent', 'agentClass&AuthenticatedAgent', 'agent&' + host + 'profile/card#me', 'agent&https://test.solid.community/profile/card#me']
+    const keysUsers = ['agent&' + host + 'profile/card#me', 'agent&https://test.solid.community/profile/card#me','agentClass&AuthenticatedAgent', 'agentClass&Agent']
     const usersKeys = Object.keys(users)
     expect(usersKeys).toEqual(keysUsers)
   })
   test('create aclContent for file', async () => {
-    const content = acl0('file.ext', '/profile/card#', '')
+    const content = acl0('file.ext', '/profile/card#', accessOnly, '')
     const users = await api.acl.contentParser(base+'file.ext', content)
     const aclContent = await api.acl.createContent(base+'file.ext', users)
-    expect(aclContent).toBe(content) // acl0('file.ext','/profile/card#', ''))
+   expect(aclContent).toBe(content)
   })
   test('create aclContent for folder', async () => {
-    const content = acl0('./', '/profile/card#', defaultTarget)
+    const content = acl0('./', '/profile/card#', defaultTarget, '')
     const users = await api.acl.contentParser(base, content)
     const aclContent = await api.acl.createContent(base, users)
     expect(aclContent).toBe(content)
   })
   test('remove mode Write from AuthenticatedAgent, create aclContent for folder', async () => {
-    const content = acl0('./', '/profile/card#', defaultTarget)
+    const content = acl0('./', '/profile/card#', defaultTarget, '')
     let users = await api.acl.contentParser(base, content)
     users = await api.acl.deleteUserMode(users, [{ agentClass: 'AuthenticatedAgent'}], ['Read', 'Write'])
     const aclContent = await api.acl.createContent(base, users)
-    expect(aclContent).toBe(acl3('./', '/profile/card#', defaultTarget))
+    expect(aclContent).toBe(acl3('./', '/profile/card#', defaultTarget, ''))
   })
-  test('remove "everybody", create aclContent for folder', async () => {
-    const content = acl0('./', '/profile/card#', defaultTarget)
+  test('remove "agents", create aclContent for folder', async () => {
+    const content = acl0('./', '/profile/card#', defaultTarget, inherit)
     let users = await api.acl.contentParser(base, content)
-    users = await api.acl.deleteUserMode(users, [{ agentClass: 'Agent'}])
+    users = await api.acl.deleteUserMode(users, [{ agent: host + 'profile/card#me' }, { agent: 'https://test.solid.community/profile/card#me' }]) // { agentClass: 'Agent'}])
     const aclContent = await api.acl.createContent(base, users)
-    expect(aclContent).toBe(acl1('./', '/profile/card#', defaultTarget))
+    expect(aclContent).toBe(acl1('./', '/profile/card#', defaultTarget, ''))
   })
-  test('add "Append" to "everybody" and "origin", create aclContent for folder', async () => {
-    const content = acl1('./', '/profile/card#', defaultTarget)
+  test('add "Append" to "agent" and "origin", create aclContent for folder', async () => {
+    const content = acl1('./', '/profile/card#', defaultTarget, inherit)
     let users = await api.acl.contentParser(base, content)
-    users = await api.acl.addUserMode(users, [{ agentClass: 'Agent'}, { origin: 'https://solid.community'}], ['Append'])
+    users = await api.acl.addUserMode(users, [{ agent: host + 'profile/card#me' }, { origin: 'https://solid.community'}], ['Append'], ['accessTo', 'default'])
     const aclContent = await api.acl.createContent(base, users)
-    expect(aclContent).toBe(acl2('./', '/profile/card#', defaultTarget))
+    expect(aclContent).toBe(acl2('./', '/profile/card#', defaultTarget, ''))
   })
-  test('build acl for file from void content', async () => {
-    let users = await api.acl.addUserMode({}, [{ agentClass: 'Agent'}, { default: '' }], ['Read'])
-    users = await api.acl.addUserMode(users, [{ agent: '/profile/card#me'}, { agent: 'https://test.solid.community/profile/card#me'}], ['Read', 'Write', 'Control'])
+  test('build acl for file from void content, accessTo by default', async () => {
+    let users = await api.acl.addUserMode({}, [{ agent: '/profile/card#me'}, { agent: 'https://test.solid.community/profile/card#me'}], ['Read']) // , ['accessTo'])
+    users = await api.acl.addUserMode(users, [{ agentClass: 'Agent'}], ['Read', 'Write', 'Control'])
     const aclContent = await api.acl.createContent(base + 'file.ext', users)
-    expect(aclContent).toBe(acl4('file.ext', '/profile/card#', ''))
+    expect(aclContent).toBe(acl4('file.ext', '/profile/card#', accessOnly, ''))
   })
   test('build acl for folder from void content, with "default" only to rule :Read', async () => {
-    let users = await api.acl.addUserMode({}, [{ agentClass: 'Agent'}, { default: '' }], ['Read'])
-    users = await api.acl.addUserMode(users, [{ agent: '/profile/card#me'}, { agent: 'https://test.solid.community/profile/card#me'}], ['Read', 'Write', 'Control'])
+    let users = await api.acl.addUserMode({}, [{ agent: '/profile/card#me'}, { agent: 'https://test.solid.community/profile/card#me'}], ['Read'], ['default'])
+      .then(async users => await api.acl.addUserMode(users, [{ agentClass: 'Agent'}], ['Read', 'Write', 'Control'], ['accessTo']))
     const aclContent = await api.acl.createContent(base, users)
-    expect(aclContent).toBe(acl4('./', '/profile/card#', defaultTarget))
+    expect(aclContent).toBe(acl5('./', '/profile/card#', defaultOnly, accessOnly, inherit))
+  })
+  test('bad acl for folder no acl:control', async () => {
+    let users = await api.acl.addUserMode({}, [{ agentClass: 'Agent'}], ['Read'])
+      .then(async users => await api.acl.addUserMode(users, [{ agent: '/profile/card#me'}, { agent: 'https://test.solid.community/profile/card#me'}], ['Read', 'Write'], ['accessTo']))
+    return expect(api.acl.createContent(base, users)).rejects.toThrow('no acl:Control')
+  })
+  test('bad acl for folder no agent with control and acl:accessTo', async () => {
+    let users = await api.acl.addUserMode({}, [{ agentClass: 'Agent'}], ['Read'])
+      .then(async users => await api.acl.addUserMode(users, [{ agent: '/profile/card#me'}, { agent: 'https://test.solid.community/profile/card#me'}], ['Read', 'Write', 'Control'], ['default']))
+    return expect(api.acl.createContent(base, users)).rejects.toThrow('no agent with Control and acl:accessTo')
   })
 })
 
@@ -191,13 +202,13 @@ describe('aclUrlParser', () => {
 
   test('get acl content for folder', async () => {
     const users = await api.aclUrlParser(targetFolderWithAcl.url)
-    const keysUsers = ['agentClass&Agent', 'agentClass&AuthenticatedAgent', 'agent&' + getRootUrl(folder.url) + '/profile/card#me', 'agent&https://test.solid.community/profile/card#me']
+    const keysUsers = ['agent&' + getRootUrl(folder.url) + '/profile/card#me', 'agent&https://test.solid.community/profile/card#me', 'agentClass&AuthenticatedAgent', 'agentClass&Agent']
     const usersKeys = Object.keys(users)
     expect(usersKeys).toEqual(keysUsers)
   })
   test('get acl content for file', async () => {
     const users = await api.aclUrlParser(targetWithAcl.url)
-    const keysUsers = ['agentClass&Agent', 'agentClass&AuthenticatedAgent', 'agent&' + getRootUrl(folder.url) + '/profile/card#me', 'agent&https://test.solid.community/profile/card#me']
+    const keysUsers = ['agent&' + getRootUrl(folder.url) + '/profile/card#me', 'agent&https://test.solid.community/profile/card#me', 'agentClass&AuthenticatedAgent', 'agentClass&Agent']
     const usersKeys = Object.keys(users)
     expect(usersKeys).toEqual(keysUsers)
   })
