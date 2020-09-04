@@ -98,7 +98,7 @@ const otherNestedFolderAcl = new Folder('otherNestedAcl', [], { acl: true })
 
 // jest do not allow async blob, it uses JSZip string
 describe('createZip', () => {
-  const folder = new BaseFolder(container, 'createZip1', [
+  const folder = new BaseFolder(container, 'createZip', [
     childFile,
     otherChildFile,
     nestedFolder,
@@ -122,7 +122,7 @@ describe('createZip', () => {
       })
       test('getFileBlob', async () => {
           const blob = await fc.getFileBlob(childFile.url)
-          expect(blob.type).toEqual('text/plain; charset=utf-8')
+          expect(blob.type).toContain('text/plain') // ; charset=utf-8')
       })
       test('zip file with acl', async () => {
         const res = await fc.createZipArchive(childFile.url, filePlaceholder.url)
@@ -146,7 +146,7 @@ describe('createZip', () => {
         await expect(fc.itemExists(folder.meta.url)).resolves.toBe(true)
         const expected = await recursiveFolderItems(folder.url, { links: 'exclude' })
         const zip = await fc.getAsZip(folder.url, { links: 'exclude' })
-        const res = Object.keys(zip.files)
+        // const res = Object.keys(zip.files)
         for (const i in expected) {
           await expect(zip.files[expected[i]].name).toEqual(expected[i])
           if (!zip.files[expected[i]].dir) {
@@ -160,24 +160,24 @@ describe('createZip', () => {
         await expect(fc.itemExists(nestedFolder.meta.url)).resolves.toBe(true)
         const expected = await recursiveFolderItems(folder.url, { withAcl: false })
         const zip = await fc.getAsZip(folder.url, { withAcl: false })
-        const res = Object.keys(zip.files)
+        // const res = Object.keys(zip.files)
         for (const i in expected) {
           await expect(zip.files[expected[i]].name).toEqual(expected[i])
           if (!zip.files[expected[i]].dir) {
             const content = await fc.readFile(getParentUrl(folder.url) + expected[i])
-            await expect(zip.files[expected[i]]._data).resolves.toEqual(content)
+            if (content !== '') await expect(zip.files[expected[i]]._data).resolves.toEqual(content)
           }
         }
     })
     test('getAsZip folder with meta and acl', async () => {
         const zip = await fc.getAsZip(folder.url)
         const expected = await recursiveFolderItems(folder.url)
-        const res = Object.keys(zip.files)
+        // const res = Object.keys(zip.files)
         for (const i in expected) {
           await expect(zip.files[expected[i]].name).toEqual(expected[i])
           if (!zip.files[expected[i]].dir) {
             const content = await fc.readFile(getParentUrl(folder.url) + expected[i])
-            await expect(zip.files[expected[i]]._data).resolves.toEqual(content)
+            if (content !== '') await expect(zip.files[expected[i]]._data).resolves.toEqual(content)
           }
         }
     })
@@ -227,7 +227,7 @@ describe('extractZipArchive', () => {
         const zip = await fc.getAsZip(childFile.url)
         const res = Object.keys(zip.files)
         await expect(res.length).toEqual(2)
-        const result = await fc.uploadExtractedZipArchive(zip, nestedFolder.url, '', '/profile/card#me', [])
+        const result = await fc.uploadExtractedZipArchive(zip, nestedFolder.url, '', [])
         const results = fc.flattenObj(result, 'link')
         const itemAclName = getItemName(childFile.acl.url)
         expect(results.err).toEqual([])
@@ -282,17 +282,15 @@ describe('extractZipArchive', () => {
       const zip = await fc.readFile(filePlaceholder.url)
       await expect(fc.itemExists(filePlaceholder.url)).resolves.toBe(true)
       // extract zip to destination folder
-      const options = { merge: 'keep_source' } // , links: 'exclude'}
-      const result = await fc.extractZipArchive(filePlaceholder.url, nestedFolderAcl.url)
+      const options = { merge: 'keep_source' }
+      const result = await fc.extractZipArchive(filePlaceholder.url, nestedFolderAcl.url, options)
       expect(result.err).toEqual([])
       expect(result.info).toEqual([])
       const destFolder = nestedFolderAcl.url+getItemName(nestedFolder.url)+'/'
       expect(await fc.itemExists(destFolder)).toBe(true)
-      // create zip from extracted zip
-      const res1 = await fc.createZipArchive(destFolder, otherFilePlaceholder.url)
-      const otherZip = await fc.readFile(otherFilePlaceholder.url)
-      expect(otherZip).toEqual(zip)
-      expect(await res1.text()).toEqual('')
+      const source = await recursiveFolderItems(nestedFolder.url)
+      const expected = await recursiveFolderItems(destFolder)
+      expect(expected).toEqual(source)
     })
     test('extract zip : folder, merge=replace links=exclude', async () => {
       // check file and folder
@@ -310,39 +308,43 @@ describe('extractZipArchive', () => {
       // check no .acl or .meta
       const destFolder = nestedFolderAcl.url+getItemName(nestedFolder.url)+'/'
       expect(await fc.itemExists(destFolder)).toBe(true)
-      const destItems = await recursiveFolderItems(destFolder)
+      const source = await recursiveFolderItems(nestedFolder.url, { links: 'exclude' })
+      // https recreates void .meta automatically
+      const expected = await recursiveFolderItems(destFolder, { withMeta: false })
+      expect(expected).toEqual(source)
+      const destItems = await recursiveFolderItems(destFolder, { withMeta: false })
       expect(destItems.find(item => (item.endsWith('.acl') || item.endsWith('.meta')))).toBeFalsy()
     })
   })
 
-  describe('extract zip archive with bad acl (test=true)', () => {
+  describe('extract zip archive (invalid acl not created)', () => {
     test('extract zip : file', async () => {
       // check files
-      await expect(fc.itemExists(childFile.acl.url)).resolves.toBe(true)
-      const folderAcl = createPseudoAcl(otherNestedFolderAcl.url, getRoot(otherNestedFolderAcl.url), aclDefault)
-      await fc.putFile(nestedFolderAcl.url+getItemName(nestedChildFile.acl.url), folderAcl, 'text/turtle')
+      const folderAcl = createPseudoAcl('./', '', aclDefault)
+      await fc.putFile(nestedFolderAcl.acl.url, folderAcl, 'text/turtle')
+      const fileAcl = createPseudoAcl('./nested-child-file.txt', '')
+      await fc.putFile(nestedChildFile.acl.url, fileAcl, 'text/turtle')
       // create zip
-      const res = await fc.createZipArchive(nestedFolderAcl.url+getItemName(nestedChildFile.url), filePlaceholder.url)
-      await expect(fc.itemExists(filePlaceholder.url)).resolves.toBe(true)
-      expect(await res.text()).toEqual('')
-      // extract zip file to destination folder
-      const result = await fc.extractZipArchive(filePlaceholder.url, nestedFolderAcl.url)
-      expect(result.info).toEqual([])
-      expect(result.err[0]).toMatch('as invalid acl:accessTo')
-      expect(await fc.itemExists(nestedFolderAcl.url+getItemName(nestedChildFile.url))).toBe(true)
-      expect(await fc.itemExists(nestedFolderAcl.url+getItemName(nestedChildFile.acl.url))).toBe(true)
+      const res = await fc.createZipArchive(nestedChildFile.url, filePlaceholder.url)
+      // clean destination
+      await fc.deleteFile(nestedChildFile.url)
+      // extract return acl error and check acl not created
+      const result = await fc.extractZipArchive(filePlaceholder.url, nestedFolderAcl.url, { URI: 'https://test' })
+      expect(result.err[0]).toMatch('no agent with Control')
+      expect(await fc.itemExists(nestedFolderAcl.url+getItemName(nestedChildFile.acl.url))).toBe(false)
     })
     test('extract zip : folder', async () => {
       // check files
-      const fileAcl = createPseudoAcl('./file')
-      await fc.putFile(nestedFolderAcl.acl.url, fileAcl, 'text/turtle')
+      const folderAcl = createPseudoAcl('./', '', aclDefault)
+      await fc.putFile(nestedFolderAcl.acl.url, folderAcl, 'text/turtle')
       // create zip
       const res = await fc.createZipArchive(nestedFolderAcl.url, filePlaceholder.url)
-      expect(await res.text()).toEqual('')
-      await expect(fc.itemExists(filePlaceholder.url)).resolves.toBe(true)
-      const result = await fc.extractZipArchive(filePlaceholder.url, nestedFolderAcl.url)
-      expect(result.info.length).toBeFalsy()
-      expect(result.err.length).toBeTruthy()
+      // clean destination
+      await fc.deleteFolder(nestedFolderAcl.url)
+      // extract return acl error and check acl not created
+      const result = await fc.extractZipArchive(filePlaceholder.url, nestedFolderAcl.url, { URI: 'https://test' })
+      expect(result.err[0]).toMatch('no agent with Control')
+      expect(await fc.itemExists(nestedFolderAcl.url+getItemName(nestedChildFile.acl.url))).toBe(false)
     })
   })
 })

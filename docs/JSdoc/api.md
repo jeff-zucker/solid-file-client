@@ -460,8 +460,8 @@ Class for working with files on Solid Pods
     * [.getAsZip()](#SolidFileClient+getAsZip)
     * [.addItemsToZip()](#SolidFileClient+addItemsToZip)
     * [.zipItemLinks(zip, itemLinks, itemName)](#SolidFileClient+zipItemLinks)
-    * [.extractZipArchive(zip, destination, webId, options)](#SolidFileClient+extractZipArchive) ⇒
-    * [.uploadExtractedZipArchive(zip, destination, curFolder, webId, responses, options)](#SolidFileClient+uploadExtractedZipArchive) ⇒ <code>promise</code>
+    * [.extractZipArchive(zip, destination, options)](#SolidFileClient+extractZipArchive) ⇒
+    * [.uploadExtractedZipArchive(zip, destination, curFolder, responses, options)](#SolidFileClient+uploadExtractedZipArchive) ⇒ <code>promise</code>
     * [._uploadLinkFile()](#SolidFileClient+_uploadLinkFile)
 
 <a name="new_SolidFileClient_new"></a>
@@ -589,7 +589,7 @@ Add item links to a zip object
 
 <a name="SolidFileClient+extractZipArchive"></a>
 
-### solidFileClient.extractZipArchive(zip, destination, webId, options) ⇒
+### solidFileClient.extractZipArchive(zip, destination, options) ⇒
 Wrap API response for extracting a zip archive
 unzip file is expecting a blob content (except if async blob is not supported like in jest tests)
 
@@ -600,12 +600,17 @@ unzip file is expecting a blob content (except if async blob is not supported li
 | --- | --- | --- |
 | zip | <code>string</code> | file |
 | destination | <code>string</code> | folder |
-| webId | <code>string</code> | (to validate .acl extracted) |
 | options | <code>object</code> |  |
+
+**Properties**
+
+| Name | Type |
+| --- | --- |
+| ...unzipOptions | <code>options</code> | 
 
 <a name="SolidFileClient+uploadExtractedZipArchive"></a>
 
-### solidFileClient.uploadExtractedZipArchive(zip, destination, curFolder, webId, responses, options) ⇒ <code>promise</code>
+### solidFileClient.uploadExtractedZipArchive(zip, destination, curFolder, responses, options) ⇒ <code>promise</code>
 Recursively upload all files and folders with links from an extracted zip archive
 
 **Kind**: instance method of [<code>SolidFileClient</code>](#SolidFileClient)  
@@ -615,7 +620,6 @@ Recursively upload all files and folders with links from an extracted zip archiv
 | zip | <code>object</code> |  |
 | destination | <code>string</code> | url |
 | curFolder | <code>string</code> |  |
-| webId | <code>string</code> |  |
 | responses | <code>Array</code> |  |
 | options | <code>object</code> |  |
 
@@ -726,7 +730,6 @@ Check that link content is valid and create link
 | [links] | <code>LINKS</code> | <code>&quot;include&quot;</code> |  |
 | [withAcl] | <code>boolean</code> | <code>true</code> | also copy acl files |
 | [withMeta] | <code>boolean</code> | <code>true</code> | also copy meta files |
-| [agent] | <code>AGENT</code> | <code>&quot;to_target&quot;</code> | specify how to handle existing agent webId |
 
 <a name="unzipOptions"></a>
 
@@ -743,7 +746,6 @@ Check that link content is valid and create link
 | [withAcl] | <code>boolean</code> | <code>true</code> | also copy acl files |
 | [withMeta] | <code>boolean</code> | <code>true</code> | also copy meta files |
 | [merge] | <code>MERGE</code> | <code>&quot;replace&quot;</code> | specify how to handle existing files/folders - .acl content validation parameters |
-| [webId] | <code>webId</code> | <code>&quot;/profile/card#me&quot;</code> | webId for which aclMode is needed |
 | [aclMode] | <code>aclMode</code> | <code>&quot;Control&quot;</code> | specify the minimal existing mode to validate ACL document |
 | [aclAuth] | <code>aclAuth</code> | <code>&quot;must&quot;</code> | should be "must" (actually NSS accepts "may" = absence of acl:Authorization) |
 | [aclDefault] | <code>aclDefault</code> | <code>&quot;must&quot;</code> | specify if acl:default is needed to validate ACL document |
