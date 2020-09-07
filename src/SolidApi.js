@@ -631,7 +631,8 @@ class SolidAPI {
    * @private
    */
   async _deleteItemWithLinks (itemUrl) {
-    const links = await this.getItemLinks(itemUrl, { links: LINKS.INCLUDE })
+    // atomic delete as been introduced in NSS > 5.2.4
+    /* const links = await this.getItemLinks(itemUrl, { links: LINKS.INCLUDE })
     if (links.meta) {
       await this._deleteItemWithLinks(links.meta)
     }
@@ -641,6 +642,7 @@ class SolidAPI {
 
     // Note: Deleting item after deleting links to make it work for folders
     //       Change this if a new spec allows to delete them together (to avoid deleting the permissions before the folder)
+    */
     return this.delete(itemUrl)
   }
 
