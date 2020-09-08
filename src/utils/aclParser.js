@@ -174,13 +174,13 @@ class AclParser {
       let keyValue = 0
       let keySubject = ''
       // mode
-      let keyMode = 'n0:mode'
+      let keyMode = 'acl:mode'
       for (const j in aclAgents[user].mode) {
         keyValue = keyValue + aclAgents[user].mode[j] * i
         i = i * 2
         if (aclAgents[user].mode[j]) {
           keySubject = keySubject + j
-          keyMode = keyMode + ' n0:' + j + ','
+          keyMode = keyMode + ' acl:' + j + ','
         }
       }
       // access
@@ -196,7 +196,7 @@ class AclParser {
         keyValue = keyValue + aclAgents[user].access[k] * i
         i = i * 2
         if (aclAgents[user].access[k]) {
-          keyAccess = keyAccess + '\n    n0:' + k + ' target:;'
+          keyAccess = keyAccess + '\n    acl:' + k + ' target:;'
         }
       }
       if (keyValue) {
@@ -212,8 +212,8 @@ class AclParser {
     // build prefix
     const target = url.endsWith('/') ? './' : getItemName(url)
     const aclPrefix = `@prefix : <#>.
-@prefix n0: <http://www.w3.org/ns/auth/acl#>.
-@prefix n1: <http://xmlns.com/foaf/0.1/>.
+@prefix acl: <http://www.w3.org/ns/auth/acl#>.
+@prefix foaf: <http://xmlns.com/foaf/0.1/>.
 @prefix target: <${target}>.
 `
     let aclContent = aclPrefix
@@ -221,21 +221,21 @@ class AclParser {
     for (const i in aclSubject) {
       const aclName = aclSubject[i].subject
       let aclBlock = '\n' + `:${aclName}` +
-          '\n    a n0:Authorization;' +
+          '\n    a acl:Authorization;' +
           aclSubject[i].access
       for (const j in aclAgents) {
         if (aclAgents[j].key.toString() === i) {
           // const item = j.split('&')
-          const predicate = 'n0:' + aclAgents[j].agent.predicate // item[0]
+          const predicate = 'acl:' + aclAgents[j].agent.predicate // item[0]
           let object = aclAgents[j].agent.object // item[1]
-          if (object === 'Agent') object = 'n1:' + object
-          else if (object === 'AuthenticatedAgent') object = 'n0:' + object
-          // else if (predicate === 'n0:default') object = 'target:'
+          if (object === 'Agent') object = 'foaf:' + object
+          else if (object === 'AuthenticatedAgent') object = 'acl:' + object
+          // else if (predicate === 'acl:default') object = 'target:'
           else object = '<' + object + '>'
           aclBlock = aclBlock + '\n' + `    ${predicate} ${object};`
         }
       }
-      // if (url.endsWith('/') && addAclDefault) aclBlock = aclBlock + '\n    n0:default target:;'
+      // if (url.endsWith('/') && addAclDefault) aclBlock = aclBlock + '\n    acl:default target:;'
       aclBlock = aclBlock + `\n    ${aclSubject[i].mode}` + '\n'
       aclContent = aclContent + aclBlock
     }
@@ -415,8 +415,9 @@ class AclParser {
  *
  * @param {string} itemUrl
  * @param {string} aclContent
- * @param {object} options { aclMode: 'Control' } by default
- * @property {options.URI} check for Control for a single URI : person, group, ....
+ * @param {object} options
+ * @property { options.aclMode } 'Control' by default
+ * @property {options.URI} check for 'Control' for a single URI : person, group, ....
 */
 const aclMode = async (itemUrl, aclContent, options) => {
   options = {
@@ -508,7 +509,7 @@ const checkAcl = async (itemUrl, aclContent, options) => {
         res.err = res.err.concat([`"${aclItem.split('#')[1]}" has invalid acl:accessTo URI (${aclAccessTo[0].object.value})`])
       }
 
-      // for folder check for acl: 'default'
+      // for folder check URI for acl:default
       let aclDefault = []
       if (itemUrl.endsWith('/.acl') || itemUrl.endsWith('/')) {
         aclDefault = await rdf.query(itemUrl, { aclSubj: '' }, { acl: 'default' }, null)
@@ -523,13 +524,22 @@ const checkAcl = async (itemUrl, aclContent, options) => {
       // check for acl:mode
       const aclMode = await rdf.query(itemUrl, { aclSubj: '' }, { acl: 'mode' }, null)
       if (!aclMode.length) res.err = res.err.concat([`"${aclItem.split('#')[1]}" has no acl:mode`])
+      else {
+        for (const j in aclMode) {
+          const modeValue = aclMode[j].object.value
+          if (!aclModes.find(value => modeValue === `http://www.w3.org/ns/auth/acl#${value}`)) {
+            res.err = res.err.concat([`"${aclItem.split('#')[1]}" ${modeValue.split('#')[1]} is an invalid acl:mode`])
+          }
+        }
+      }
     }
-    // for folder check for at least one acl: 'default'
+
+    // for folder check for at least one acl:default in document
     resType = options.aclDefault === 'must' ? 'err' : 'info'
     if (itemUrl.endsWith('/.acl') || itemUrl.endsWith('/')) {
       const aclDefault = await rdf.query(itemUrl, null, { acl: 'default' }, null)
       if (!aclDefault.length) {
-        res[resType] = res[resType].concat(['At least one ACl block needs acl:default'])
+        res[resType] = res[resType].concat(['To inherit at least one ACl block needs acl:default'])
       }
     }
     return res

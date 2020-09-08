@@ -38,42 +38,42 @@ beforeAll(async () => {
 const host = 'https://example.org/'
 const base = host + 'path/to/'
 
-const defaultOnly = '    n0:default target:;\n'
-const accessOnly = '    n0:accessTo target:;\n'
-const defaultTarget = '    n0:accessTo target:;\n    n0:default target:;\n'
+const defaultOnly = '    acl:default target:;\n'
+const accessOnly = '    acl:accessTo target:;\n'
+const defaultTarget = '    acl:accessTo target:;\n    acl:default target:;\n'
 const inherit = 'Default'    
 
 const prefix = test => `@prefix : <#>.
-@prefix n0: <http://www.w3.org/ns/auth/acl#>.
-@prefix n1: <http://xmlns.com/foaf/0.1/>.
+@prefix acl: <http://www.w3.org/ns/auth/acl#>.
+@prefix foaf: <http://xmlns.com/foaf/0.1/>.
 @prefix target: <${test}>.
 `
 const append = (webId, access, inherit='') => `:Append${inherit}
-    a n0:Authorization;
-${access}    n0:agent <${webId}me>;
-    n0:origin <https://solid.community>;
-    n0:mode n0:Append.
+    a acl:Authorization;
+${access}    acl:agent <${webId}me>;
+    acl:origin <https://solid.community>;
+    acl:mode acl:Append.
 `
 const read = (webId, access, inherit='') => `:Read${inherit}
-    a n0:Authorization;
-${access}    n0:agent <${webId}me>;
-    n0:agent <https://test.solid.community/profile/card#me>;
-    n0:mode n0:Read.
+    a acl:Authorization;
+${access}    acl:agent <${webId}me>;
+    acl:agent <https://test.solid.community/profile/card#me>;
+    acl:mode acl:Read.
 `
 const readWrite = (access, inherit='') => `:ReadWrite${inherit}
-    a n0:Authorization;
-${access}    n0:agentClass n0:AuthenticatedAgent;
-    n0:mode n0:Read, n0:Write.
+    a acl:Authorization;
+${access}    acl:agentClass acl:AuthenticatedAgent;
+    acl:mode acl:Read, acl:Write.
 `
 // TODO
 const readWriteControl = (access, inherit='') => `:ReadWriteControl${inherit}
-    a n0:Authorization;
-${access}    n0:agentClass n1:Agent;
-    n0:mode n0:Read, n0:Write, n0:Control.
+    a acl:Authorization;
+${access}    acl:agentClass foaf:Agent;
+    acl:mode acl:Read, acl:Write, acl:Control.
 `
 const noMode = (access, inherit='') => `:Read${inherit}
-    a n0:Authorization;
-${access}    n0:agentClass n1:Agent.
+    a acl:Authorization;
+${access}    acl:agentClass foaf:Agent.
 `
 const acl0 = (test, webId, access, inherit) => {
     return prefix(test) + '\n' + read(webId, access, inherit) +'\n'+readWrite(access, inherit)+'\n'+readWriteControl(access, inherit)

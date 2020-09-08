@@ -86,6 +86,18 @@ const invalidPseudoAcl1 = (rootUrl) => `
     n0:agent c:me;
     n0:mode n0:Read, n0:Write, n0:Control.
 `
+const invalidPseudoAcl2 = (rootUrl) => `
+@prefix : <#>.
+@prefix n0: <http://www.w3.org/ns/auth/acl#>.
+@prefix n1: <http://xmlns.com/foaf/0.1/>.
+@prefix c: <${rootUrl}/profile/card#>.
+
+:invalid
+    a n0:Authorization;
+    n0:accessTo <./>;
+    n0:agent c:me;
+    n0:mode n0:read, n0:Write, n0:Control.
+`
 const aclDefault = '\n    n0:default <./>;'
 
 const fileWithAcl = new File('child-file.txt', 'I am a child', 'text/plain', {
@@ -160,17 +172,23 @@ const fileWithAcl = new File('child-file.txt', 'I am a child', 'text/plain', {
             expect(res.err).toEqual(['"invalid" has no acl:Authorization', '"invalid" has no acl:accessTo and no acl:default', 'no acl:Control'])
             expect(res.info).toEqual([])
         })
-        test('folder acl content is not valid', async () => {
+        test('folder acl content is not valid - no acl:Authorization', async () => {
             const aclContent = invalidPseudoAcl('')
             const res = await api.isValidAcl(folderWithAcl.url, aclContent, { aclDefault: 'must' })
-            expect(res.err).toEqual(['"invalid" has no acl:Authorization', '"invalid" has no acl:accessTo and no acl:default', 'At least one ACl block needs acl:default', 'no acl:Control'])
+            expect(res.err).toEqual(['"invalid" has no acl:Authorization', '"invalid" has no acl:accessTo and no acl:default', 'To inherit at least one ACl block needs acl:default', 'no acl:Control'])
             expect(res.info).toEqual([])
         })
-        test('folder acl content is not valid 1', async () => {
+        test('folder acl content is not valid - no agent with Control', async () => {
             const aclContent = invalidPseudoAcl1('')
             const res = await api.acl.isValidAcl(folderWithAcl.url, aclContent)
             expect(res.err).toEqual(['no agent with Control and acl:accessTo'])
             expect(res.info).toEqual([])
+        })
+        test('folder acl content is not valid - invalid acl:mode read', async () => {
+            const aclContent = invalidPseudoAcl2('')
+            const res = await api.acl.isValidAcl(folderWithAcl.url, aclContent)
+            expect(res.err).toEqual(['"invalid" read is an invalid acl:mode'])
+            expect(res.info).toEqual(['To inherit at least one ACl block needs acl:default'])
         })
         test('file acl content is valid with absolute notation (against webId relative)', async () => {
             const aclContent = createPseudoAcl(fileWithAcl.url, getRootUrl(fileWithAcl.url))
