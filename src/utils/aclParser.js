@@ -398,13 +398,20 @@ class AclParser {
   }
 
   /**
-   * is valid RDF
+   * is valid RDF (parses with N3.js)
    * @param {string} itemUrl
    * @param {string} content
+   * @param {object} options
+   * @property {options.baseIRI} default to itemUrl
+   * @property {options.format} none|'text/n3'
    */
-  async isValidRDF (itemUrl, content) {
+  async isValidRDF (itemUrl, content, options) {
+    options = {
+      baseIRI: itemUrl,
+      ...options
+    }
     try {
-      const res = await rdf.queryTurtle(itemUrl, content)
+      await rdf._parse(content, options) // queryTurtle(itemUrl, content)
       return { err: [], info: [] }
     } catch (e) { return { err: ['incorrect RDF'], info: [e] } }
   }

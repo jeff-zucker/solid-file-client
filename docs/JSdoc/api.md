@@ -61,6 +61,7 @@
     * [.postFile(url, content, [options])](#SolidAPI+postFile) ⇒ <code>Promise.&lt;Response&gt;</code>
     * [.createFile(url, content, [options])](#SolidAPI+createFile) ⇒ <code>Promise.&lt;Response&gt;</code>
     * [.putFile(url, content, [options])](#SolidAPI+putFile) ⇒ <code>Promise.&lt;Response&gt;</code>
+    * [.patchFile(url, patchContent, patchContentType)](#SolidAPI+patchFile) ⇒ <code>Promise.&lt;Response&gt;</code>
     * [.readFolder(url, [options])](#SolidAPI+readFolder) ⇒ [<code>Promise.&lt;FolderData&gt;</code>](#FolderData)
     * [.getItemLinks(url, [options])](#SolidAPI+getItemLinks) ⇒ [<code>Promise.&lt;Links&gt;</code>](#Links)
     * [.copyFile(from, to, [options])](#SolidAPI+copyFile) ⇒ <code>Promise.&lt;Response&gt;</code>
@@ -267,6 +268,25 @@ Per default it will overwrite existing files
 | url | <code>string</code> | 
 | content | <code>Blob</code> \| <code>String</code> | 
 | [options] | [<code>WriteOptions</code>](#WriteOptions) | 
+
+<a name="SolidAPI+patchFile"></a>
+
+### solidAPI.patchFile(url, patchContent, patchContentType) ⇒ <code>Promise.&lt;Response&gt;</code>
+Update a file using PATCH
+
+**Kind**: instance method of [<code>SolidAPI</code>](#SolidAPI)  
+
+| Param | Type | Description |
+| --- | --- | --- |
+| url | <code>string</code> | parsable by N3.js |
+| patchContent | <code>String</code> |  |
+| patchContentType | <code>string</code> |  |
+
+**Properties**
+
+| Name | Type | Description |
+| --- | --- | --- |
+| 'text/n3' | <code>patchContentType</code> | or 'application/sparql-update' |
 
 <a name="SolidAPI+readFolder"></a>
 

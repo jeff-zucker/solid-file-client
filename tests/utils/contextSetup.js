@@ -1,4 +1,4 @@
-import auth from './solid-auth-cli/solid-auth-cli.fetch.js' // 'solid-auth-cli' // 'index.js'
+import auth from 'solid-auth-cli' // './solid-auth-cli/solid-auth-cli.fetch.js'
 import TestFolderGenerator from './TestFolderGenerator'
 // cxRes
 import libUrl from 'url'

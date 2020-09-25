@@ -116,7 +116,7 @@ All Solid-File-Client methods should throw an error if they do not succeed.
 To trap and examine errors, use try/catch:
 ```javascript
     fc.readFile(url).then((content) => {
-        console.log(content'))
+        console.log(content)
     })
     .catch(err => console.error(`Error: ${err}`))
 ```
@@ -153,6 +153,39 @@ Note for all: Previous versions of of Solid Server tried to guess the content-ty
 Note for advanced users : This method uses PUT, if you prefer the behavior of 
 POST (for example creating alternate versions of a resource rather than replacing it) use the **postFile()** method, which takes the same parameters as createFile().
 
+### patchFile( fileUrl, patchContent, patchContentType )
+
+Modifies the content of fileUrl adding or removing triples.
+
+`fileUrl` is parsed with N3.js ('text/turtle' files and others)
+
+patchContentType is either 'text/n3' or 'application/sparl-update'
+
+- 'text/n3' patchContent can use `inserts`, `deletes` and `where`. N3 notation is a turtle content with graph objects.
+```
+    @prefix solid: <http://www.w3.org/ns/solid/terms#>.
+    @prefix : <#>.
+    @prefix ex: <http://example.com#>.
+    <> solid:patches <fileUrl>;
+          solid:deletes { <> a :test. };
+          solid:inserts { <#new> ex:temp .321; ex:temp1 :200, :300. }.
+```
+if triples `<#new> ex:temp1 :250 exists`. The `solid:inserts` clause can be expressed as :
+```
+          solid:where { ?a ex:temp1 :250. };
+          solid:inserts { ?a ex:temp .321; ex:temp1 :200, :300. }.
+```
+- 'application/sparql-update' patchContent can only use sparql `INSERT` and `DELETE`. Turtle notation is used for prefix and triples.
+```
+    @prefix ex: <http://example.com#>.
+    INSERT { <#new> ex:temp :321; ex:temp1 :200, :300 .}
+    DELETE { <> a :test. }
+```
+**Nota** on needed acl auth to patch `fileUrl` : 
+
+. with insert `Append` or `Write`,
+
+. and with delete `Write`.
 
 ### <a name="createFolder">createFolder( folderURL, options )</a>
 
