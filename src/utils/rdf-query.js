@@ -4,10 +4,10 @@
  *  by Jeff Zucker with contributions from Otto_A_A and Alain Bourgeois
  *  &copy; 2019, Jeff Zucker, may be freely distributed using an MIT license
  */
-import * as N3 from 'n3';
-import solidNS from 'solid-namespace';
+import * as N3 from 'n3'
+import solidNS from 'solid-namespace'
 
-const ns = solidNS();
+const ns = solidNS()
 
 const { DataFactory } = N3
 const { namedNode, literal } = DataFactory
@@ -79,7 +79,7 @@ class RdfQuery {
    * @returns {N3.Quad[]}
    */
   async queryTurtle (url, turtle, s, p, o, g) {
-    const store = await this._parse(turtle, url)
+    const store = await this._parse(turtle, { baseIRI: url })
     this.cache[url] = store
 
     return this._queryCached(url, s, p, o, g)
@@ -121,12 +121,14 @@ class RdfQuery {
 
   /**
    * @param {string} string rdf
-   * @param {string} url url of the turtle file
+   * @param {object} options
+   * @property {options[baseIRI]} none|url of the turtle file
+   * @property {options[format]} none|'text/n3' for PATCH
    * @returns {N3.Quad[]}
    */
-  async _parse (string, url) {
+  async _parse (string, options) {
     const quadsArray = []
-    const parser = new N3.Parser({ baseIRI: url })
+    const parser = new N3.Parser(options)
     return new Promise((resolve, reject) => {
       parser.parse(string, (err, quad, prefixes) => {
         if (quad) {

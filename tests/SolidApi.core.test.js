@@ -105,6 +105,9 @@ describe('core methods', () => {
     test('put resolves with 201 creating a new file', () => resolvesWithStatus(api.put(newFilePlaceholder.url), 201))
     test('put resolves with 201 overwriting a file', () => resolvesWithStatus(api.put(usedFile.url), 201))
     test('put resolves with 201 creating a nested files', () => resolvesWithStatus(api.put(nestedFilePlaceholder.url), 201))
+
+    test(('patch resolves with 201 creating a new file'), () => rejectsWithStatus(api.patch(newFilePlaceholder.url), 405 || 415))
+    test('patch resolves with 201 patching a file', () => rejectsWithStatus(api.patch(usedFile.url), 405 || 415))
   })
 
   describe('delete', () => {

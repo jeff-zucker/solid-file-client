@@ -5,7 +5,7 @@ import RdfQuery from './utils/rdf-query'
 import errorUtils from './utils/errorUtils'
 import linksUtils from './utils/linksUtils'
 import AclParser from './utils/aclParser'
- 
+
 const fetchLog = debug('solid-file-client:fetch')
 const { getRootUrl, getParentUrl, getItemName, areFolders, areFiles, LINK } = apiUtils
 const { FetchError, assertResponseOk, composedFetch, toFetchError } = errorUtils
@@ -363,6 +363,47 @@ class SolidAPI {
     }
 
     return this.put(url, requestOptions)
+  }
+
+  /**
+   * Update a file using PATCH
+   * @param {string} url parsable by N3.js
+   * @param {String} patchContent
+   * @param {string} patchContentType
+   * @property {patchContentType} 'text/n3' or 'application/sparql-update'
+   * @returns {Promise<Response>}
+   */
+  async patchFile (url, patchContent, patchContentType) {
+    const patchErrors = {
+      400: 'Bad PATCH request',
+      409: 'Conflict cannot apply PATCH',
+      415: 'patchContentType should be "text/n3" or "application/sparql-update"',
+      500: 'Probably cannot parse resource with PATCH'
+    }
+    if (!(patchContentType === 'text/n3' || patchContentType === 'application/sparql-update')) {
+      throw toFetchError(new Error(patchErrors[415]))
+    }
+    // isValid N3 content
+    if (patchContentType === 'text/n3') {
+      try {
+        await this.rdf._parse(patchContent, { format: 'text/n3' })
+      } catch (err) { throw toFetchError(new Error('400 : ' + err)) }
+    }
+    const requestOptions = {
+      headers: {
+        link: LINK.RESOURCE,
+        'Content-Type': patchContentType
+      },
+      body: patchContent
+    }
+    try {
+      const res = await this.patch(url, requestOptions)
+      return res
+    } catch (e) {
+      e.message = e.status + ' : '
+      e.message += patchErrors[e.status] ? patchErrors[e.status] : e.statusText
+      throw toFetchError(new Error(e.message))
+    }
   }
 
   /**

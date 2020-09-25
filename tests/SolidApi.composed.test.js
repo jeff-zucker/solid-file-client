@@ -5,7 +5,7 @@ import contextSetupModule from './utils/contextSetup'
 import errorUtils from '../src/utils/errorUtils'
 import { rejectsWithStatuses, resolvesWithStatus, rejectsWithStatus } from './utils/jestUtils'
 
-const { getFetch, getTestContainer, contextSetup } = contextSetupModule
+const { getFetch, getTestContainer, contextSetup, getPrefix } = contextSetupModule
 const { Folder, File, FolderPlaceholder, FilePlaceholder, BaseFolder } = TestFolderGenerator
 
 /** @type {SolidApi} */
@@ -28,7 +28,12 @@ beforeAll(async () => {
   await container.reset()
 })
 
+const patch = (getPrefix() === 'https://') ? true : false
+let describeIf = patch ? describe : describe.skip
+
+
 describe('composed methods', () => {
+
   describe('itemExists', () => {
     test('itemExists resolves with true on existing file', () => expect(api.itemExists(turtleFile.url)).resolves.toBe(true))
     test('itemExists resolves with true on existing folder', () => expect(api.itemExists(container.url)).resolves.toBe(true))
@@ -45,6 +50,7 @@ describe('composed methods', () => {
       nestedFolderPlaceholder
     ])
     const usedFile = new File('existing.ttl')
+    const textFile = new File('textfile.txt', 'texte file', 'text/plain')
     const fileInUsedFolder = new File('some-file.ttl')
     const usedFolder = new Folder('existing-folder', [
       fileInUsedFolder
@@ -54,9 +60,9 @@ describe('composed methods', () => {
       filePlaceholder,
       folderPlaceholder,
       usedFile,
+      textFile,
       usedFolder
     ])
-
     beforeEach(() => createContainer.reset())
 
     describe('postItem', () => {
@@ -115,6 +121,7 @@ describe('composed methods', () => {
       const contentType = 'text/turtle'
 
       test('resolves with 201 on existing file and has new content', async () => {
+        console.log('createContainer'+createContainer.url)
         await resolvesWithStatus(api.putFile(usedFile.url, content, contentType), 201)
         const res = await api.fetch(usedFile.url)
         expect(await res.text()).toBe(content)
@@ -131,6 +138,145 @@ describe('composed methods', () => {
       })
       test.todo('Add tests for binary files (images, audio, ...)')
     })
+
+
+    describe('allow PATCH', () => {
+      test('', () => {
+        if (!patch) {
+            console.warn(`${getPrefix()} not https:// skipping PATCH tests`);
+        }
+      })
+    })
+
+    describeIf('patchFile', () => {
+      const insert = 'INSERT { :test :temp :245 .}'
+      const patchContentType = 'application/sparql-update'
+      test('inexistant resource', async () => {
+        await resolvesWithStatus(api.patchFile(createContainer.url+'text.txt', insert, patchContentType), 200)
+      })
+      test('cannot parse resource', async () => {
+        return expect(api.patchFile(textFile.url, insert, patchContentType)).rejects.toThrowError('Probably cannot parse resource') // ('Not a text/turtle file:')
+      })
+      test('invalid patchContentType', async () => {
+        return expect(api.patchFile(usedFile.url, insert, 'text/other')).rejects.toThrowError('patchContentType should be') // ('Not a text/turtle file:')
+      })
+      test('invalid patch syntax', async () => {
+        return expect(api.patchFile(usedFile.url, 'INSERT', patchContentType)).rejects.toThrowError('Bad PATCH request') // ('Not a text/turtle file:')
+      })
+
+      const resTtl = `@prefix : <#>.
+@prefix ex: <http://example.com#>.
+
+<> a :test; ex:temp :245 .
+
+:new ex:temp1 :245 .
+
+`
+      const resTtl1 = `@prefix : <#>.
+@prefix ex: <http://example.com#>.
+
+<> ex:temp :245 .
+
+:new ex:temp :321; ex:temp1 :200, :245, :250, :300 .
+
+`
+
+      describe('patchFile sparql-update', () => {
+        // INSERT/DELETE or INSERT DATA/DELETE DATA
+        let insert = '@prefix ex: <http://example.com#>.'
+        +'INSERT { <> ex:temp :245 . <#new> ex:temp1 :245 .}'
+        const contentType = 'application/sparql-update'
+
+        test('INSERT', async () => {
+          await resolvesWithStatus(api.patchFile(usedFile.url, insert, contentType), 200)
+          const res = await api.fetch(usedFile.url)
+          expect(await res.text()).toBe(resTtl)
+        })
+        test('INSERT & DELETE', async () => {
+         const insertData = '@prefix ex: <http://example.com#>.'
+          +'INSERT { <#new> ex:temp :321; ex:temp1 :200, :250, :300 .}'
+          +'DELETE { <> a :test. }'
+          await resolvesWithStatus(api.patchFile(usedFile.url, insert, contentType), 200)
+          await resolvesWithStatus(api.patchFile(usedFile.url, insertData, contentType), 200)
+          const res = await api.fetch(usedFile.url)
+          expect(await res.text()).toBe(resTtl1)
+        })
+        test('INSERT & inexistant DELETE triple', async () => {
+          const insertData = '@prefix ex: <http://example.com#>.'
+          +'INSERT { <#new> ex:temp :321; ex:temp1 :250, :300 .}'
+          +'DELETE { <> a :test1. }'
+          await resolvesWithStatus(api.patchFile(usedFile.url, insert, contentType), 200)
+          return expect(api.patchFile(usedFile.url, insertData, contentType)).rejects.toThrow('409 : Conflict')
+        })
+      })
+
+      describe('patchFile text/n3', () => {
+        const contentType = 'text/n3'
+        test('patchContent is valid', async () => {
+          const insert = `@prefix solid: <http://www.w3.org/ns/solid/terms#>.
+          @prefix : <#>.
+          @prefix ex: <http://example.com#>.
+          <> solid:patches <${usedFile.url}>;
+          solid:inserts { <> ex:temp :245. <#new> ex:temp1 :245. }.`
+          return expect(api.rdf._parse(insert, { baseIRI: './', format: contentType })).resolves
+        })
+        test('patchContent is not valid', async () => {
+          const insert = `#@prefix solid: <http://www.w3.org/ns/solid/terms#>.
+          @prefix : <#>.
+          @prefix ex: <http://example.com#>.
+          <> solid:patches <${usedFile.url}>;
+          solid:inserts { <> ex:temp :245. <#new> ex:temp1 :245. }.`
+          return expect(api.rdf._parse(insert, { baseIRI: './', format: contentType })).rejects.toThrowError('Undefined prefix "solid:" on line 4.')
+        })
+        test('solid:inserts', async () => {
+          const insert = `@prefix solid: <http://www.w3.org/ns/solid/terms#>.
+          @prefix : <#>.
+          @prefix ex: <http://example.com#>.
+          <> solid:patches <${usedFile.url}>;
+          solid:inserts { <> ex:temp :245. <#new> ex:temp1 :245. }.`
+  
+          await resolvesWithStatus(api.patchFile(usedFile.url, insert, contentType), 200)
+          const res = await api.fetch(usedFile.url)
+          expect(await res.text()).toBe(resTtl)
+        })
+        test('solid: inserts and deletes', async () => {
+          const insert = `@prefix solid: <http://www.w3.org/ns/solid/terms#>.
+          @prefix : <#>.
+          @prefix ex: <http://example.com#>.
+          <> solid:patches <${usedFile.url}>;
+          solid:inserts { <> ex:temp :245. <#new> ex:temp1 :245, :250. }.`
+          const insertData = `@prefix solid: <http://www.w3.org/ns/solid/terms#>.
+          @prefix : <#>.
+          @prefix ex: <http://example.com#>.
+          <> solid:patches <${usedFile.url}>;
+          solid:inserts { <#new> ex:temp :321; ex:temp1 :200, :300 .};
+          solid:deletes { <> a :test. }.`
+          await resolvesWithStatus(api.patchFile(usedFile.url, insert, contentType), 200)
+          await resolvesWithStatus(api.patchFile(usedFile.url, insertData, contentType), 200)
+          const res = await api.fetch(usedFile.url)
+          expect(await res.text()).toBe(resTtl1)
+        })
+        test('solid: inserts, deletes and where', async () => {
+          const insert = `@prefix solid: <http://www.w3.org/ns/solid/terms#>.
+          @prefix : <#>.
+          @prefix ex: <http://example.com#>.
+          <> solid:patches <${usedFile.url}>;
+          solid:inserts { <> ex:temp :245. <#new> ex:temp1 :245. <#new> ex:temp1 :250 .}.`
+          const insertData = `@prefix solid: <http://www.w3.org/ns/solid/terms#>.
+          @prefix : <#>.
+          @prefix ex: <http://example.com#>.
+          <> solid:patches <${usedFile.url}>;
+          solid:deletes { <> a :test. };
+          solid:where { ?a ex:temp1 :250. };
+          solid:inserts { ?a ex:temp :321; ex:temp1 :200, :300. }.`
+          await resolvesWithStatus(api.patchFile(usedFile.url, insert, contentType), 200)
+          await resolvesWithStatus(api.patchFile(usedFile.url, insertData, contentType), 200)
+          const res = await api.fetch(usedFile.url)
+          expect(await res.text()).toBe(resTtl1)
+        })
+      })
+    })
+  })
   })
 
   describe('nested methods', () => {
@@ -361,6 +507,5 @@ describe('composed methods', () => {
       })
     })
   })
-})
 
 test.todo('Add tests with different settings of createPath=false')

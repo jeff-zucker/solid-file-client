@@ -54,7 +54,7 @@ using an aclAgents object
     * [.deleteUserMode(aclAgents, userAgent, userMode, userAccess)](#solidAPI.acl+deleteUserMode) ⇒ <code>object</code>
     * [.makeContentRelative(aclcontent, itemUrl, toName, options)](#solidAPI.acl+makeContentRelative)
     * [.isValidAcl(itemUrl, content, options)](#solidAPI.acl+isValidAcl)
-    * [.isValidRDF(itemUrl, content)](#solidAPI.acl+isValidRDF)
+    * [.isValidRDF(itemUrl, content, options)](#solidAPI.acl+isValidRDF)
 
 <a name="solidAPI.acl+contentParser"></a>
 
@@ -171,8 +171,8 @@ aclAuth 'must' : spec compliant acl: Authorization is mandatory
 
 <a name="solidAPI.acl+isValidRDF"></a>
 
-### solidAPI.acl.isValidRDF(itemUrl, content)
-is valid RDF
+### solidAPI.acl.isValidRDF(itemUrl, content, options)
+is valid RDF (parses with N3.js)
 
 **Kind**: instance method of [<code>solidAPI.acl</code>](#solidAPI.acl)  
 
@@ -180,6 +180,14 @@ is valid RDF
 | --- | --- |
 | itemUrl | <code>string</code> | 
 | content | <code>string</code> | 
+| options | <code>object</code> | 
+
+**Properties**
+
+| Name | Type | Description |
+| --- | --- | --- |
+| default | <code>options.baseIRI</code> | to itemUrl |
+| none|'text/n3' | <code>options.format</code> |  |
 
 <a name="aclModes"></a>
 
@@ -213,17 +221,18 @@ Check if a user or everybody has an auth
 
 **Kind**: global function  
 
-| Param | Type | Description |
-| --- | --- | --- |
-| itemUrl | <code>string</code> |  |
-| aclContent | <code>string</code> |  |
-| options | <code>object</code> | { aclMode: 'Control' } by default |
+| Param | Type |
+| --- | --- |
+| itemUrl | <code>string</code> | 
+| aclContent | <code>string</code> | 
+| options | <code>object</code> | 
 
 **Properties**
 
 | Name | Type | Description |
 | --- | --- | --- |
-| check | <code>options.URI</code> | for Control for a single URI : person, group, .... |
+| 'Control' | <code>options.aclMode</code> | by default |
+| check | <code>options.URI</code> | for 'Control' for a single URI : person, group, .... |
 
 <a name="checkAcl"></a>
 
