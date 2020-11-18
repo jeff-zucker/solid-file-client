@@ -15,10 +15,12 @@ let api
 const inexistentFolder = new FolderPlaceholder('inexistent')
 const inexistentFile = new FilePlaceholder('inexistent.abc')
 const turtleFile = new File('turtle.ttl', '<> a <#test>.', 'text/turtle')
+const textFile = new File('text.txt', 'this is a test', 'text/plain')
 const container = new BaseFolder(getTestContainer(), 'SolidApi-core', [
   inexistentFile,
   inexistentFolder,
-  turtleFile
+  turtleFile,
+  textFile
 ])
 
 jest.setTimeout(20 * 1000)
@@ -43,6 +45,7 @@ describe('core methods', () => {
       test(`${name} resolves with 200 for file`, () => resolvesWithStatus(method(turtleFile.url), 200))
       test(`${name} resolves with Content-Type text/turtle for folder`, () => resolvesWithHeader(method(container.url), 'Content-Type', 'text/turtle'))
       test(`${name} resolves with Content-Type text/turtle for file`, () => resolvesWithHeader(method(turtleFile.url), 'Content-Type', 'text/turtle'))
+      test(`${name} resolves with Content-Type text/plain for file`, () => resolvesWithHeader(method(textFile.url), 'Content-Type', 'text/plain'))
       test(`${name} rejects with 404 for inexistent folder`, () => rejectsWithStatus(method(inexistentFolder.url), 404))
       test(`${name} rejects with 404 for inexistent file`, () => rejectsWithStatus(method(inexistentFile.url), 404))
     }
@@ -105,9 +108,6 @@ describe('core methods', () => {
     test('put resolves with 201 creating a new file', () => resolvesWithStatus(api.put(newFilePlaceholder.url), 201))
     test('put resolves with 201 overwriting a file', () => resolvesWithStatus(api.put(usedFile.url), 201))
     test('put resolves with 201 creating a nested files', () => resolvesWithStatus(api.put(nestedFilePlaceholder.url), 201))
-
-    test(('patch resolves with 201 creating a new file'), () => rejectsWithStatus(api.patch(newFilePlaceholder.url), 405 || 415))
-    test('patch resolves with 201 patching a file', () => rejectsWithStatus(api.patch(usedFile.url), 405 || 415))
   })
 
   describe('delete', () => {

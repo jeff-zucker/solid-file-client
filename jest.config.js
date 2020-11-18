@@ -3,6 +3,9 @@
 
 module.exports = {
 
+// added by Alain
+  setupFiles: ['./jest.globals.js'],
+
 // added by Jeff
   testEnvironment: "node",
   // collectCoverageFrom: ["src/**/*.js"],

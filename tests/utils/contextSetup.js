@@ -1,7 +1,12 @@
-import auth from 'solid-auth-cli' // './solid-auth-cli/solid-auth-cli.fetch.js'
+//import auth from 'solid-auth-cli' // './solid-auth-cli/solid-auth-cli.fetch.js'
+import { SolidNodeClient } from 'solid-node-client'
+//import $rdf from 'rdflib'
+const auth = new SolidNodeClient() //{ parser:$rdf }) not working with jest, global.$rdf needed
+
 import TestFolderGenerator from './TestFolderGenerator'
 // cxRes
 import libUrl from 'url'
+import SolidFileClient from '../../src'
 
 const prefixes = {
   file: 'file://',
@@ -70,7 +75,7 @@ async function getBaseUrl (prefix) {
   let baseUrl
   switch (prefix) {
     case prefixes.file:
-      baseUrl = String(libUrl.pathToFileURL(process.cwd()))
+      baseUrl = String(libUrl.pathToFileURL(process.cwd()))+'/' // alain
       break
 
     case prefixes.memory:
