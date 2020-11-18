@@ -413,7 +413,7 @@ class AclParser {
     try {
       await rdf._parse(content, options) // queryTurtle(itemUrl, content)
       return { err: [], info: [] }
-    } catch (e) { return { err: ['incorrect RDF'], info: [e] } }
+    } catch (e) { return { err: ['incorrect RDF'], info: [e.message] } }
   }
 }
 
@@ -458,7 +458,7 @@ const aclMode = async (itemUrl, aclContent, options) => {
       res.err = (aclAgent.length && aclAccessTo.length) ? [] : [`no agent with ${options.aclMode} and acl:accessTo`]
     }
   } catch (err) {
-    return { err: ['incorrect RDF'], info: [err] }
+    return { err: ['incorrect RDF'], info: [err.message] }
   }
   return res
 }
@@ -551,7 +551,7 @@ const checkAcl = async (itemUrl, aclContent, options) => {
     }
     return res
   } catch (err) {
-    return { err: ['incorrect RDF'], info: [err] }
+    return { err: ['incorrect RDF'], info: [err.message] }
   }
 }
 

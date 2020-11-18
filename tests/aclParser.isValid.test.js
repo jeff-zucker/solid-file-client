@@ -147,8 +147,7 @@ const fileWithAcl = new File('child-file.txt', 'I am a child', 'text/plain', {
             const content = '<#> a <test>'
             const res = await api.isValidAcl(fileWithAcl.url, content)
             expect(res.err[0]).toEqual('incorrect RDF')
-            const rdfError = new Error('Expected entity but got eof on line 1.')
-            expect(res.info[0]).toEqual(rdfError)
+            expect(res.info[0]).toMatch('on line 1.')
         })
         test('url must not end with .acl', async () => {
             return expect(api.isValidAcl(fileWithAcl.acl.url, 'aclContent'))
@@ -255,9 +254,7 @@ const fileWithAcl = new File('child-file.txt', 'I am a child', 'text/plain', {
         test('content is not a valid RDF', async () => {
             const content = '<#> a <test>'
             const res = await api.isValidRDF(fileWithAcl.url, content)
-            const rdfError = new Error('Expected entity but got eof on line 1.')
-            expect(res.info).toEqual([rdfError])
+            expect(res.info[0]).toEqual('Expected entity but got eof on line 1.')
         })
-
     })
 })

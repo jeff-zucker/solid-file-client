@@ -10,7 +10,7 @@ const common = {
         libraryExport: 'default',
     },
     externals: {
-        'solid-auth-cli': 'null',
+        'solid-node-client': 'null',
         'rdflib': {
             commonjs: 'rdflib',
             commonjs2: 'rdflib',

@@ -2,7 +2,6 @@ import SolidApi, { MERGE } from '../src/SolidApi'
 import apiUtils from '../src/utils/apiUtils'
 import TestFolderGenerator from './utils/TestFolderGenerator'
 import contextSetupModule from './utils/contextSetup'
-import errorUtils from '../src/utils/errorUtils'
 import { rejectsWithStatuses, resolvesWithStatus, rejectsWithStatus } from './utils/jestUtils'
 
 const { getFetch, getTestContainer, contextSetup, getPrefix } = contextSetupModule
@@ -27,10 +26,6 @@ beforeAll(async () => {
   api = new SolidApi(getFetch())
   await container.reset()
 })
-
-const patch = (getPrefix() === 'https://') ? true : false
-let describeIf = patch ? describe : describe.skip
-
 
 describe('composed methods', () => {
 
@@ -139,20 +134,11 @@ describe('composed methods', () => {
       test.todo('Add tests for binary files (images, audio, ...)')
     })
 
-
-    describe('allow PATCH', () => {
-      test('', () => {
-        if (!patch) {
-            console.warn(`${getPrefix()} not https:// skipping PATCH tests`);
-        }
-      })
-    })
-
-    describeIf('patchFile', () => {
+    describe('patchFile', () => {
       const insert = 'INSERT { :test :temp :245 .}'
       const patchContentType = 'application/sparql-update'
-      test('inexistant resource', async () => {
-        await resolvesWithStatus(api.patchFile(createContainer.url+'text.txt', insert, patchContentType), 200)
+      test('patch in inexistent resource', async () => {
+        await resolvesWithStatus(api.patchFile(createContainer.url+'inexistentFolder/text.ttl', insert, patchContentType), 200)
       })
       test('cannot parse resource', async () => {
         return expect(api.patchFile(textFile.url, insert, patchContentType)).rejects.toThrowError('Probably cannot parse resource') // ('Not a text/turtle file:')
@@ -164,42 +150,49 @@ describe('composed methods', () => {
         return expect(api.patchFile(usedFile.url, 'INSERT', patchContentType)).rejects.toThrowError('Bad PATCH request') // ('Not a text/turtle file:')
       })
 
-      const resTtl = `@prefix : <#>.
-@prefix ex: <http://example.com#>.
+      // result is checked againt N-Triples, 
+      // because https with rdflib and rest.js with N3 do not give exactly the same compact turtle.
+      const N_TriplesQuads = async (url) => {
+        const res = await api.fetch(url)
+        const content = await res.text()
+        let quads = await api.rdf.queryTurtle(url, content)
+        return (await api.rdf.writeQuads(quads, { format: 'N-Triples'})).split('\n').sort()
 
-<> a :test; ex:temp :245 .
+      }
 
-:new ex:temp1 :245 .
+      const resQuads = (url) => ["",
+      `<${url}#new> <http://example.com#temp1> <${url}#200> .`, 
+      `<${url}#new> <http://schema.org/temp1> <${url}#245> .`, 
+      `<${url}> <http://example.com#temp> <${url}#245> .`, 
+      `<${url}> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <${url}#test> .`]
 
-`
-      const resTtl1 = `@prefix : <#>.
-@prefix ex: <http://example.com#>.
-
-<> ex:temp :245 .
-
-:new ex:temp :321; ex:temp1 :200, :245, :250, :300 .
-
-`
-
+      const resQuads1 = (url) => ["",
+      `<${url}#new> <http://example.com#temp1> <${url}#200> .`,
+      `<${url}#new> <http://example.com#temp1> <${url}#250> .`,
+      `<${url}#new> <http://example.com#temp1> <${url}#300> .`,
+      `<${url}#new> <http://example.com#temp> <${url}#321> .`,
+      `<${url}#new> <http://schema.org/temp1> <${url}#245> .`,
+      `<${url}> <http://example.com#temp> <${url}#245> .`]
+      
       describe('patchFile sparql-update', () => {
         // INSERT/DELETE or INSERT DATA/DELETE DATA
-        let insert = '@prefix ex: <http://example.com#>.'
-        +'INSERT { <> ex:temp :245 . <#new> ex:temp1 :245 .}'
+        let insert = '@prefix ex: <http://example.com#>.\n@prefix schem: <http://schema.org/>.'
+        +'INSERT { <> ex:temp :245 . <#new> schem:temp1 :245; ex:temp1 :200 .}'
         const contentType = 'application/sparql-update'
 
         test('INSERT', async () => {
           await resolvesWithStatus(api.patchFile(usedFile.url, insert, contentType), 200)
-          const res = await api.fetch(usedFile.url)
-          expect(await res.text()).toBe(resTtl)
+          const quads = await N_TriplesQuads(usedFile.url)
+          expect(JSON.stringify(quads)).toBe(JSON.stringify(resQuads(usedFile.url)))
         })
         test('INSERT & DELETE', async () => {
          const insertData = '@prefix ex: <http://example.com#>.'
-          +'INSERT { <#new> ex:temp :321; ex:temp1 :200, :250, :300 .}'
+          +'INSERT { <#new> ex:temp :321; ex:temp1 :250, :300 .}'
           +'DELETE { <> a :test. }'
           await resolvesWithStatus(api.patchFile(usedFile.url, insert, contentType), 200)
           await resolvesWithStatus(api.patchFile(usedFile.url, insertData, contentType), 200)
-          const res = await api.fetch(usedFile.url)
-          expect(await res.text()).toBe(resTtl1)
+          const quads = await N_TriplesQuads(usedFile.url)
+          expect(JSON.stringify(quads)).toBe(JSON.stringify(resQuads1(usedFile.url)))
         })
         test('INSERT & inexistant DELETE triple', async () => {
           const insertData = '@prefix ex: <http://example.com#>.'
@@ -217,7 +210,7 @@ describe('composed methods', () => {
           @prefix : <#>.
           @prefix ex: <http://example.com#>.
           <> solid:patches <${usedFile.url}>;
-          solid:inserts { <> ex:temp :245. <#new> ex:temp1 :245. }.`
+          solid:inserts { <> ex:temp :245. <#new> ex:temp1 :245; ex:temp1 :200. }.`
           return expect(api.rdf._parse(insert, { baseIRI: './', format: contentType })).resolves
         })
         test('patchContent is not valid', async () => {
@@ -225,59 +218,78 @@ describe('composed methods', () => {
           @prefix : <#>.
           @prefix ex: <http://example.com#>.
           <> solid:patches <${usedFile.url}>;
-          solid:inserts { <> ex:temp :245. <#new> ex:temp1 :245. }.`
+          solid:inserts { <> ex:temp :245. <#new> ex:temp1 :245; ex:temp1 :200. }.`
           return expect(api.rdf._parse(insert, { baseIRI: './', format: contentType })).rejects.toThrowError('Undefined prefix "solid:" on line 4.')
         })
-        test('solid:inserts', async () => {
+        test('solid: deletes', async () => {
           const insert = `@prefix solid: <http://www.w3.org/ns/solid/terms#>.
+          @prefix schem: <http://schema.org/>.
           @prefix : <#>.
           @prefix ex: <http://example.com#>.
           <> solid:patches <${usedFile.url}>;
-          solid:inserts { <> ex:temp :245. <#new> ex:temp1 :245. }.`
-  
+          solid:deletes { <> a :test. }.`
           await resolvesWithStatus(api.patchFile(usedFile.url, insert, contentType), 200)
-          const res = await api.fetch(usedFile.url)
-          expect(await res.text()).toBe(resTtl)
+          const quads = await N_TriplesQuads(usedFile.url)
+          expect(JSON.stringify(quads)).toBe(JSON.stringify([""]))
+        })
+        test('solid: inserts', async () => {
+          let res = ''
+          res = await api.fetch(usedFile.url)
+          expect(await res.text()).toBe('<> a <#test>.')
+          const insert = `@prefix solid: <http://www.w3.org/ns/solid/terms#>.
+          @prefix schem: <http://schema.org/>.
+          @prefix : <#>.
+          @prefix ex: <http://example.com#>.
+          <> solid:patches <${usedFile.url}>;
+          solid:inserts { <> ex:temp :245. <#new> schem:temp1 :245; ex:temp1 :200. }.`
+          await resolvesWithStatus(api.patchFile(usedFile.url, insert, contentType), 200)
+          res = await api.fetch(usedFile.url)
+          //expect(await res.text()).toBe('')
+          const quads = await N_TriplesQuads(usedFile.url)
+          expect(JSON.stringify(quads)).toBe(JSON.stringify(resQuads(usedFile.url)))
         })
         test('solid: inserts and deletes', async () => {
           const insert = `@prefix solid: <http://www.w3.org/ns/solid/terms#>.
+          @prefix schem: <http://schema.org/>.
           @prefix : <#>.
           @prefix ex: <http://example.com#>.
           <> solid:patches <${usedFile.url}>;
-          solid:inserts { <> ex:temp :245. <#new> ex:temp1 :245, :250. }.`
+          solid:inserts { <> ex:temp :245. <#new> schem:temp1 :245; ex:temp1 :200. }.`
           const insertData = `@prefix solid: <http://www.w3.org/ns/solid/terms#>.
           @prefix : <#>.
           @prefix ex: <http://example.com#>.
           <> solid:patches <${usedFile.url}>;
-          solid:inserts { <#new> ex:temp :321; ex:temp1 :200, :300 .};
+          solid:inserts { <#new> ex:temp :321; ex:temp1 :250, :300 .};
           solid:deletes { <> a :test. }.`
           await resolvesWithStatus(api.patchFile(usedFile.url, insert, contentType), 200)
           await resolvesWithStatus(api.patchFile(usedFile.url, insertData, contentType), 200)
-          const res = await api.fetch(usedFile.url)
-          expect(await res.text()).toBe(resTtl1)
+          const quads = await N_TriplesQuads(usedFile.url)
+          expect(JSON.stringify(quads)).toBe(JSON.stringify(resQuads1(usedFile.url)))
         })
         test('solid: inserts, deletes and where', async () => {
           const insert = `@prefix solid: <http://www.w3.org/ns/solid/terms#>.
+          @prefix schem: <http://schema.org/>.
           @prefix : <#>.
           @prefix ex: <http://example.com#>.
           <> solid:patches <${usedFile.url}>;
-          solid:inserts { <> ex:temp :245. <#new> ex:temp1 :245. <#new> ex:temp1 :250 .}.`
+          solid:inserts { <> ex:temp :245. <#new> schem:temp1 :245. <#new> ex:temp1 :200 .}.`
           const insertData = `@prefix solid: <http://www.w3.org/ns/solid/terms#>.
           @prefix : <#>.
           @prefix ex: <http://example.com#>.
           <> solid:patches <${usedFile.url}>;
           solid:deletes { <> a :test. };
-          solid:where { ?a ex:temp1 :250. };
-          solid:inserts { ?a ex:temp :321; ex:temp1 :200, :300. }.`
+          solid:where { ?a ex:temp1 :200. };
+          solid:inserts { ?a ex:temp :321; ex:temp1 :250, :300. }.`
           await resolvesWithStatus(api.patchFile(usedFile.url, insert, contentType), 200)
           await resolvesWithStatus(api.patchFile(usedFile.url, insertData, contentType), 200)
-          const res = await api.fetch(usedFile.url)
-          expect(await res.text()).toBe(resTtl1)
+          const quads = await N_TriplesQuads(usedFile.url)
+          expect(JSON.stringify(quads)).toBe(JSON.stringify(resQuads1(usedFile.url)))
         })
       })
     })
   })
   })
+
 
   describe('nested methods', () => {
     const filePlaceholder = new FilePlaceholder('placeholder.ttl')

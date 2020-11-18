@@ -401,7 +401,7 @@ class SolidAPI {
       return res
     } catch (e) {
       e.message = e.status + ' : '
-      e.message += patchErrors[e.status] ? patchErrors[e.status] : e.statusText
+      e.message += patchErrors[e.status] ? patchErrors[e.status] : '' //e.statusText
       throw toFetchError(new Error(e.message))
     }
   }
