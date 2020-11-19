@@ -475,7 +475,7 @@ See the [JSdoc for the aclParser](docs/JSdoc/aclParser.md) for more details on t
 
 A minimal class to query, edit and write rdf files content in/from N3 store using solid-namespace.
 
-query(url, s, p, o, graph)
+`query(url, s, p, o, g)`
    * loads a Turtle file, parses it, returns an array of quads
    * expects URL of a source file, if empty, uses previously loaded file
    * expects Turtle strings or null for subject, predicate, object, & optional graph
@@ -486,7 +486,12 @@ query(url, s, p, o, graph)
      - N3 quad subject, predicate, object and optional graph
 
 
-Example : let quads = query(url, null, { acl: 'mode'}, { acl: 'Control' })
+Examples :
+
+ write store relative to baseIRI : `const content = write(url, { baseIRI: url })`
+
+ get quads from ttlContent : `const quads = queryTurtle(url, ttlContent, null, { acl: 'mode'}, { acl: 'Control' })`
+
 
 See the [JSdoc for the rdf-query](docs/JSdoc/rdf-query.md) for more details on these methods.
 
