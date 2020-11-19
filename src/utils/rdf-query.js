@@ -13,7 +13,7 @@ const ns = solidNS()
 
 const solidPrefixes = Object.keys(ns)
 const termType = ['subject', 'predicate', 'object', 'graph']
-  
+
 /**
  * minimal class to query, edit and write rdf files content in N3 store
  * using solid-namespace to access namedNode, literal
@@ -72,7 +72,7 @@ class RdfQuery {
       if (useCache && source in this.cache) { return this._queryCached(source, s, p, o, g) }
       await this.parseUrl(source)
       return this._queryCached(source, s, p, o, g)
-    } catch(e) { throw new Error(e.message) }
+    } catch (e) { throw new Error(e.message) }
   }
 
   /**
@@ -88,7 +88,7 @@ class RdfQuery {
     try {
       await this.parse(url, turtle, { baseIRI: url })
       return this._queryCached(url, s, p, o, g)
-    } catch(e) { throw new Error(e.message) }
+    } catch (e) { throw new Error(e.message) }
   }
 
   /***
@@ -108,7 +108,7 @@ class RdfQuery {
   }
 
   _solidNsToQuad (url, s, p, o, g) {
-    if ( g === 'undefined' || g === undefined) g = null // return all graphs, g cannot be undefined
+    if (g === 'undefined' || g === undefined) g = null // return all graphs, g cannot be undefined
     return [s, p, o, g] = [s, p, o, g].map(term => {
       if (typeof term === 'object' && term) {
         if (term.id) return term // already a namedNode
@@ -123,7 +123,7 @@ class RdfQuery {
         return namedNode(prefix + value)
       }
       if (term && typeof term !== 'undefined') {
-        if (term.startsWith('<') && term.endsWith('>')) return namedNode(term.substring(1,term.length-1))
+        if (term.startsWith('<') && term.endsWith('>')) return namedNode(term.substring(1, term.length - 1))
         else return literal(term) // literal
       }
       return term // undefined or null
@@ -147,7 +147,7 @@ class RdfQuery {
         format: contentType
       }
       return await this.parse(url, turtle, options)
-  } catch(e) { throw new Error(e.message) }
+    } catch (e) { throw new Error(e.message) }
   }
 
   /**
@@ -207,7 +207,7 @@ class RdfQuery {
   }
 
   /**
-   * remove matching quads from cache[url] store using special solid syntax 
+   * remove matching quads from cache[url] store using special solid syntax
    * @param {string} url of cache[url]
    * @param {null|string|object} s subject
    * @param {null|string|object} p predicate
@@ -224,26 +224,26 @@ class RdfQuery {
   /**
    * Write RDF content from cache[url] store with N3.writer
    * using relative notation to baseIRI
-   * 
+   *
    * @param {string} url : to access cache[url]
    * @param {object} [options]
    * @property {options.format.<string>} N3.witer allowed rdf contentType default 'text/turtle'
-   * @property {options.prefixes.<object>} N3.writer prefixes 
+   * @property {options.prefixes.<object>} N3.writer prefixes
    * @property {options.prefix.<string>} one of termType used to build automatic prefixes default 'predicate'
    * @property {options.baseIRI.<string>} document baseIRI to use relative notation with 'text/turtle'
    * @returns {document.<string>} RDF document
    */
-  async write(url, options) {
+  async write (url, options) {
     options = {
       format: 'text/turtle',
-      //baseIRI: url,
+      // baseIRI: url,
       prefix: 'predicate',
       ...options
     }
     const quadsArray = await this._queryCached(url)
-    const prefixes = await this._getPrefixes(url, options);
+    const prefixes = await this._getPrefixes(url, options)
     const prefix = { ...prefixes, ...options.prefixes }
-    options = { ...options, prefixes: prefix}
+    options = { ...options, prefixes: prefix }
     let turtle = await this.writeQuads(quadsArray, options)
     if (options.baseIRI && options.format === 'text/turtle') turtle = this._makeRelativeUrl(turtle, options.baseIRI) //, options.prefix)
     return turtle
@@ -251,7 +251,7 @@ class RdfQuery {
 
   /**
    * Write RDF content from regular array of quads
-   * @param {array} quadsArray 
+   * @param {array} quadsArray
    * @param {object} options for N3.Writer
    * @property {options.format}
    * @property {options.prefixes}
@@ -283,23 +283,23 @@ class RdfQuery {
   /**
    * get the list of NamedNode prefixes using solidNames for an url or cache[url] store
    * example : list of NamedNode predicates
-   * @param {string} url  
+   * @param {string} url
    * @param {object} options
    * @property {options.prefix} 'subject'|'predicate'|'object'
    * @property {options.baseIRI} excludes baseIRI from prefixes to allow make relative in write
    * @returns {object} prefixes
    */
-  async _getPrefixes(url, options) {
+  async _getPrefixes (url, options) {
     const type = options.prefix
     const quads = await this.query(url)
     let typeList = await this._getTermList(type, quads)
-    let pred = new Set()
+    const pred = new Set()
     const prefixes = {}
     const baseIRI = options.baseIRI ? options.baseIRI.substring(0, options.baseIRI.lastIndexOf('/') + 1) : ''
 
     typeList = typeList.map(item => {
       // if baseIRI do not include as prefix
-      if (!(baseIRI && item.includes(baseIRI))) {     
+      if (!(baseIRI && item.includes(baseIRI))) {
         let test = ''
         // find solid NamedNode terms
         for (const i in solidPrefixes) {
@@ -316,7 +316,7 @@ class RdfQuery {
             const i = item.lastIndexOf(string)
             if (i !== -1) return item.substring(0, i + 1)
           }
-          let res = itemSplit('#') ? itemSplit('#') : (itemSplit('/') ? itemSplit('/') : '')
+          const res = itemSplit('#') ? itemSplit('#') : (itemSplit('/') ? itemSplit('/') : '')
           if (res) {
             pred.add(res)
           }
@@ -325,9 +325,9 @@ class RdfQuery {
     })
 
     const types = [...pred]
-    //const t = type.substring(0, 1)
+    // const t = type.substring(0, 1)
     for (const i in types) {
-        prefixes['n' + i] = types[i]
+      prefixes['n' + i] = types[i]
     }
     return prefixes
   }
@@ -343,12 +343,12 @@ class RdfQuery {
     const getList = {}
     for (const i in quadsArray) {
       const term = quadsArray[i][type].value
-      if (quadsArray[i][type].termType === 'NamedNode') getList[term] = '' //quadsArray[i][type].termType
+      if (quadsArray[i][type].termType === 'NamedNode') getList[term] = '' // quadsArray[i][type].termType
     }
     return Object.keys(getList)
   }
 
-/**
+  /**
    * Make turtle content relative to an url resource
    * - make absolute paths relative to document
    * @param {string} turtle
@@ -356,21 +356,21 @@ class RdfQuery {
    * @returns {string} turtle
    */
   _makeRelativeUrl (turtle, url) {
-    const folder = url.substring(0, url.lastIndexOf('/')+1)
+    const folder = url.substring(0, url.lastIndexOf('/') + 1)
     if (turtle.includes(url)) {
-      if (turtle.includes(url+'#')) turtle = '@prefix : <#>.\n' + turtle
+      if (turtle.includes(url + '#')) turtle = '@prefix : <#>.\n' + turtle
       turtle = turtle.replace(new RegExp(`<${url}#(.*?)>`, 'g'), ':$1') // ':$1') // replace url with fragment
       turtle = turtle.replace(new RegExp(`<${url}>`, 'g'), '<>') // ':$1') // replace url
     }
-    if (turtle.includes(folder)){
+    if (turtle.includes(folder)) {
       turtle = turtle.replace(new RegExp(`<${folder}(.*?)>`, 'g'), '<./$1>')
       // or the 2 lines
-      //turtle = '@prefix c: <./>.\n' + turtle
-      //turtle = turtle.replace(new RegExp(`<${folder}(.*?)>`, 'g'), 'c:$1') // ':$1') // replace folder
+      // turtle = '@prefix c: <./>.\n' + turtle
+      // turtle = turtle.replace(new RegExp(`<${folder}(.*?)>`, 'g'), 'c:$1') // ':$1') // replace folder
     }
-  return turtle
+    return turtle
   }
 }
 
 module.exports = exports = RdfQuery
-//module.exports = RdfQuery  // how do I make this work in nodejs???
+// module.exports = RdfQuery  // how do I make this work in nodejs???
