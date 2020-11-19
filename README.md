@@ -14,6 +14,7 @@ previous version : <a href="https://www.npmjs.com/package/solid-file-client/v/0.
 <a href="#advanced-options">Advanced Options</a> |
 <a href="#low-level-methods">Low-level Methods</a> |
 <a href="#ACL management">ACL management</a> |
+<a href="#Solid RDF utilities">Solid RDF utilities</a> |
 <a href="#terminology">Note on Terminology</a> |
 <a href="#acknowledgements">Acknowledgements</a>
 
@@ -468,7 +469,26 @@ const aclAccess = ['accessTo', 'default']
 - an ACL check function : await acl.isValidAcl (itemUrl, aclContent, options)
 - and an ACL make relative : acl.makeContentRelative (aclcontent, itemUrl, toName, options)
 
-See the [JSdoc for the aclParser](docs/JSdoc/aclParser.md) for more details of these methods.
+See the [JSdoc for the aclParser](docs/JSdoc/aclParser.md) for more details on these methods.
+
+## <a name="Solid RDF utilities">Solid RDF utilities</a>
+
+A minimal class to query, edit and write rdf files content in/from N3 store using solid-namespace.
+
+query(url, s, p, o, graph)
+   * loads a Turtle file, parses it, returns an array of quads
+   * expects URL of a source file, if empty, uses previously loaded file
+   * expects Turtle strings or null for subject, predicate, object, & optional graph
+   * supports this non-standard syntax for Turtle strings -
+     - {somePrefix:someTerm}
+       somePrefix is then replaced using URLs from solid-namespace
+       the special prefix thisDoc {thisDoc:me} uses current doc as namespace
+     - N3 quad subject, predicate, object and optional graph
+
+
+Example : let quads = query(url, null, { acl: 'mode'}, { acl: 'Control' })
+
+See the [JSdoc for the rdf-query](docs/JSdoc/rdf-query.md) for more details on these methods.
 
 ## <a name="terminology">Note on terminology</a>
 

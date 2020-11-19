@@ -24,12 +24,13 @@ class RdfQuery {
     this._fetch = fetch
     this.parser = new N3.Parser()
     this.store = new N3.Store()
-    /** 
+    /**
      * cache of N3.store : cache[url] is the store of url
-     * example : 
+     * example :
      *  - to add a quadsArray to the store : cache[url].addQuads(quadsArray)
      *  - all N3 store functions can be used
-     * @type {Object.<string, N3.N3Store>} */
+     * @type {Object.<string, N3.N3Store>}
+     */
     this.cache = {}
     this.prefix = {}
   }
@@ -334,7 +335,7 @@ class RdfQuery {
   /**
    * List of 'namedNode' values for a type of termType
    * @param {"subject"|"predicate"|"object"} type
-   * @param {array} quadsArray 
+   * @param {array} quadsArray
    */
   async _getTermList (type, quadsArray) {
     const res = termType.find(term => term === type)
