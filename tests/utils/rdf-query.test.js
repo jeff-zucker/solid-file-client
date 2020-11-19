@@ -154,7 +154,9 @@ describe('rdf-query', () => {
         @prefix ex: <http://example.com#>.
         <> solid:patches <./>;
         solid:inserts { <#new0> ex:temp :246. <#new> ex:temp1 :246. }.`
-        let graph = (await api.rdf.parse(n3File.url, insert, { format: 'text/n3' })).getGraphs()
+        //let graph = (await api.rdf.parse(n3File.url, insert, { format: 'text/n3' })).getGraphs()
+        await api.rdf.parse(n3File.url, insert, { format: 'text/n3' })
+        let graph = api.rdf.cache[n3File.url].getGraphs()
         expect(graph.length).toEqual(2)
         expect(graph[0].termType).toEqual('DefaultGraph')
         expect(graph[1].termType).toEqual('BlankNode')

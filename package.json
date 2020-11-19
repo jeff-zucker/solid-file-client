@@ -23,7 +23,8 @@
     "build:dev": "webpack --mode development --watch",
     "build:doc-api": "jsdoc2md src/*.js > docs/JSdoc/api.md",
     "build:doc-aclparser": "jsdoc2md src/utils/aclParser.js > docs/JSdoc/aclParser.md",
-    "build:docs": "npm run build:doc-api && npm run build:doc-aclparser",
+    "build:doc-rdf-query": "jsdoc2md src/utils/rdf-query.js > docs/JSdoc/rdf-query.md",
+    "build:docs": "npm run build:doc-api && npm run build:doc-aclparser && npm run build:doc-rdf-query",
     "lint": "standard \"src/**/*.js\" \"test/**/*.js\"",
     "lint:fix": "npm run lint -- --fix"
   },
