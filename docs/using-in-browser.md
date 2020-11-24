@@ -17,7 +17,7 @@
 
 // DEFINE A URI THAT CONTAINS A POPUP LOGIN SCREEN
 //
-    const popUri = 'https://solid.community/common/popup.html'
+    const popUri = 'https://solidcommunity.net/common/popup.html'
 
 // USE THE AUTH OBJECT TO LOGIN AND CHECK THE SESSION
 // USE THE FILE-CLIENT OBJECT TO READ AND WRITE
