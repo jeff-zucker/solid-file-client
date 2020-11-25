@@ -15,6 +15,10 @@ const removeSlashesAtEnd = url => {
   return url
 }
 
+/**
+ * Return root of url ending with '/'
+ * @param {string} url
+ */
 const getRootUrl = url => {
   const base = url.split('/')
   let rootUrl = base[0]
