@@ -630,7 +630,7 @@ class SolidAPI {
     }
     const { folders, files } = await this.readFolder(from)
     // "to" cannot be a parent of "from" with options.merge replace
-    if (options.merge === MERGE.REPLACE && from.includes(to)) {
+    if (options.merge === MERGE.REPLACE && from.startsWith(to)) {
       throw toFetchError(new Error(`Destination cannot be a parent folder with "options.merge = replace". Found: ${from} and ${to}`))
     }
     const folderResponse = await this.createFolder(to, options)
