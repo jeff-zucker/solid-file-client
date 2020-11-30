@@ -401,7 +401,7 @@ class SolidAPI {
       return res
     } catch (e) {
       e.message = e.status + ' : '
-      e.message += patchErrors[e.status] ? patchErrors[e.status] : '' //e.statusText
+      e.message += patchErrors[e.status] ? patchErrors[e.status] : '' // e.statusText
       throw toFetchError(new Error(e.message))
     }
   }
@@ -628,8 +628,11 @@ class SolidAPI {
     if (!from.endsWith('/') || !to.endsWith('/')) {
       throw toFetchError(new Error(`Files are not allowed with copyFolder. Found: ${from} and ${to}`))
     }
-
     const { folders, files } = await this.readFolder(from)
+    // "to" cannot be a parent of "from" with options.merge replace
+    if (options.merge === MERGE.REPLACE && from.startsWith(to)) {
+      throw toFetchError(new Error(`Destination cannot be a parent folder with "options.merge = replace". Found: ${from} and ${to}`))
+    }
     const folderResponse = await this.createFolder(to, options)
 
     await this.copyLinksForItem(from, to, options, undefined, folderResponse)
@@ -693,6 +696,8 @@ class SolidAPI {
    * @returns {Promise<Response[]>} Resolves with a response for each deletion request
    */
   async deleteFolderContents (url) {
+    // pod root cannot be deleted recursively
+    if (url === getRootUrl(url)) { throw toFetchError(new Error('405 Pod cannot be deleted')) }
     const { folders, files } = await this.readFolder(url)
     return composedFetch([
       ...folders.map(({ url }) => this.deleteFolderRecursively(url)),

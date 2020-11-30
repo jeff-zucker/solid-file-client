@@ -320,6 +320,9 @@ describe('composed methods', () => {
 
     describe('delete', () => {
       describe('deleteFolderContents', () => {
+        test('rejects with 405 on root folder', () => {
+          return expect(api.deleteFolderContents(apiUtils.getRootUrl(container.url))).rejects.toThrowError('405')
+        })
         test('rejects with 404 on inexistent folder', () => rejectsWithStatuses(api.deleteFolderContents(inexistentFolder.url), [404]))
         test.todo('throws some kind of error when called on file')
         test('resolved array contains all names of the deleted items', async () => {
@@ -336,6 +339,9 @@ describe('composed methods', () => {
       })
 
       describe('deleteFolderRecursively', () => {
+        test('rejects with 405 on root folder', () => {
+          return expect(api.deleteFolderRecursively(apiUtils.getRootUrl(container.url))).rejects.toThrowError('405')
+        })
         test('rejects with 404 on inexistent folder', () => rejectsWithStatuses(api.deleteFolderRecursively(inexistentFolder.url), [404]))
         test.todo('throws some kind of error when called on file')
         test('resolved array contains all names of the delete items', async () => {
@@ -379,6 +385,9 @@ describe('composed methods', () => {
       describe('copyFolder', () => {
         test('rejects with 404 on inexistent folder', async () => rejectsWithStatus(api.copyFolder(inexistentFolder.url, inexistentFolder.url), 404))
         test('rejects if no second url is specified', () => expect(api.copyFolder(emptyFolder.url)).rejects.toBeDefined())
+        test('rejects on copy to a parent folder', () => {
+          return expect(api.copyFolder(childOne.url, apiUtils.getParentUrl(childOne.url))).rejects.toThrowError('options.merge = replace')
+        })
         test('resolves and copies empty folder', async () => {
           await expect(api.copyFolder(emptyFolder.url, folderPlaceholder.url)).resolves.toBeDefined()
           await expect(api.itemExists(folderPlaceholder.url)).resolves.toBe(true)
@@ -470,6 +479,9 @@ describe('composed methods', () => {
           expect(responses).toHaveLength(parentFolder.contents.length + 1)
           expect(responses[0]).toHaveProperty('status', 201)
           expect(responses[0]).toHaveProperty('url', apiUtils.getParentUrl(folderPlaceholder.url))
+        })
+        test('rejects on moving to a parent folder', () => {
+          return expect(api.move(childTwo.url, apiUtils.getRootUrl(container.url))).rejects.toThrowError('options.merge = replace')
         })
         test('resolves moving folder with depth 1 to folder with depth 1', () => {
           return expect(api.move(childTwo.url, childOne.url)).resolves.toBeDefined()
