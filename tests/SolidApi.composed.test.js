@@ -89,24 +89,26 @@ describe('composed methods', () => {
       })
     })
 
-    describe('createFile', () => {
+    describe('postFile', () => {
       const content = '<> a <#newContent>.'
       const contentType = 'text/turtle'
 
       test('resolves with 201 on existing file and has new content', async () => {
-        await resolvesWithStatus(api.createFile(usedFile.url, content, contentType), 201)
-        const res = await api.fetch(usedFile.url)
+        const resPost = await api.postFile(usedFile.url, content, contentType)
+        expect(resPost.status).toEqual(201)
+        const createdFile = createContainer.url + resPost.headers.get('location').split('/').pop()
+        const res = await api.fetch(createdFile)
         expect(await res.text()).toBe(content)
         expect(await res.headers.get('content-type')).toMatch(contentType)
       })
-      test('rejects on existing file if merge=KEEP_TARGET', () => {
-        return expect(api.createFile(usedFile.url, content, contentType, { merge: MERGE.KEEP_TARGET })).rejects.toBeDefined()
-      })
       test('resolves with 201 on inexistent file', () => {
-        return resolvesWithStatus(api.createFile(filePlaceholder.url, content, contentType), 201)
+        return resolvesWithStatus(api.postFile(filePlaceholder.url, content, contentType), 201)
+      })
+      test('rejects on inexistent nested file if createPath=false', () => {
+        return expect(api.postFile(nestedFilePlaceholder.url, content, contentType, { createPath: false })).rejects.toBeDefined()
       })
       test('resolves with 201 on inexistent nested file', () => {
-        return resolvesWithStatus(api.createFile(nestedFilePlaceholder.url, content, contentType), 201)
+        return resolvesWithStatus(api.postFile(nestedFilePlaceholder.url, content, contentType), 201)
       })
       test.todo('Add tests for binary files (images, audio, ...)')
     })

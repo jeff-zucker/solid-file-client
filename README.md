@@ -488,9 +488,9 @@ A minimal class to query, edit and write rdf files content in/from N3 store usin
 
 Examples :
 
- write store relative to baseIRI : `const content = write(url, { baseIRI: url })`
+ write store relative to baseIRI : `const content = fc.$rdf.write(url, { baseIRI: url })`
 
- get quads from ttlContent : `const quads = queryTurtle(url, ttlContent, null, { acl: 'mode'}, { acl: 'Control' })`
+ get quads from ttlContent : `const quads = fc.$rdf.queryTurtle(url, ttlContent, null, { acl: 'mode'}, { acl: 'Control' })`
 
 
 See the [JSdoc for the rdf-query](docs/JSdoc/rdf-query.md) for more details on these methods.

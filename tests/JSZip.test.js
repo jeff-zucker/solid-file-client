@@ -104,8 +104,8 @@ describe('createZip', () => {
     nestedFolder,
     nestedFolderAcl,
     otherNestedFolderAcl,
-    ], { meta: true } //placeholder: { meta: true } },
-    //filePlaceholder
+    ], { meta: true },
+    filePlaceholder
   )
   beforeEach(() => folder.reset())
 
