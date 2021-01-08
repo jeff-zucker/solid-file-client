@@ -1,19 +1,22 @@
 <a href="../README.md">back to README</a>
 
 # Using solid-file-client in a browser
-```html
+```
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
 <!-- IMPORT SOLID-AUTH-CLIENT AND SOLID-FILE-CLIENT LIBRARIES
 -->
 <script src="https://cdn.jsdelivr.net/npm/solid-auth-client@2.3.0/dist-lib/solid-auth-client.bundle.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/solid-file-client@1.0.0/dist/window/solid-file-client.bundle.js"></script>
 
 <script>
-```
-```javascript
 // INSTANTIATE AUTH AND FILE-CLIENT OBJECTS
 //
     const auth = solid.auth
     const fc   = new SolidFileClient(auth)
+    const someUrl = 'https://[url_you_want_to_read]'
 
 // DEFINE A URI THAT CONTAINS A POPUP LOGIN SCREEN
 //
@@ -30,6 +33,14 @@
         console.log(content)
     }
 
-    ...
+    run()
+</script>
+</head>
+<body>
+Take a look in the console
+</body>
+</html>
+
 ```
+
 
