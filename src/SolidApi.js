@@ -296,6 +296,9 @@ class SolidAPI {
       ...({ createPath: true, merge: MERGE.KEEP_TARGET }),
       ...options
     }
+    if (!url.endsWith('/')) {
+      throw toFetchError(new Error(`File is not allowed, url: ${url}`))
+    }
 
     try {
       // Test if item exists
@@ -319,6 +322,9 @@ class SolidAPI {
    * @returns {Promise<Response>}
    */
   postFile (url, content, contentType, options) {
+    if (url.endsWith('/')) {
+      throw toFetchError(new Error(`Folder is not allowed, url: ${url}`))
+    }
     return this.postItem(url, content, contentType, LINK.RESOURCE, options)
   }
 
@@ -346,6 +352,9 @@ class SolidAPI {
     options = {
       ...defaultWriteOptions,
       ...options
+    }
+    if (url.endsWith('/')) {
+      throw toFetchError(new Error(`Folder is not allowed, url: ${url}`))
     }
 
     // Options which are not like the default PUT behaviour
