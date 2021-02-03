@@ -296,6 +296,9 @@ class SolidAPI {
       ...({ createPath: true, merge: MERGE.KEEP_TARGET }),
       ...options
     }
+    if (!url.endsWith('/')) {
+      throw toFetchError(new Error(`Cannot use createFolder to create a file : ${url}`))
+    }
 
     try {
       // Test if item exists
@@ -319,6 +322,9 @@ class SolidAPI {
    * @returns {Promise<Response>}
    */
   postFile (url, content, contentType, options) {
+    if (url.endsWith('/')) {
+      throw toFetchError(new Error(`Cannot use postFile to create a folder : ${url}`))
+    }
     return this.postItem(url, content, contentType, LINK.RESOURCE, options)
   }
 
@@ -346,6 +352,9 @@ class SolidAPI {
     options = {
       ...defaultWriteOptions,
       ...options
+    }
+    if (url.endsWith('/')) {
+      throw toFetchError(new Error(`Cannot use putFile to create a folder : ${url}`))
     }
 
     // Options which are not like the default PUT behaviour
