@@ -297,7 +297,7 @@ class SolidAPI {
       ...options
     }
     if (!url.endsWith('/')) {
-      throw toFetchError(new Error(`File is not allowed, url: ${url}`))
+      throw toFetchError(new Error(`Cannot use createFolder to create a file : ${url}`))
     }
 
     try {
@@ -323,7 +323,7 @@ class SolidAPI {
    */
   postFile (url, content, contentType, options) {
     if (url.endsWith('/')) {
-      throw toFetchError(new Error(`Folder is not allowed, url: ${url}`))
+      throw toFetchError(new Error(`Cannot use postFile to create a folder : ${url}`))
     }
     return this.postItem(url, content, contentType, LINK.RESOURCE, options)
   }
@@ -354,7 +354,7 @@ class SolidAPI {
       ...options
     }
     if (url.endsWith('/')) {
-      throw toFetchError(new Error(`Folder is not allowed, url: ${url}`))
+      throw toFetchError(new Error(`Cannot use putFile to create a folder : ${url}`))
     }
 
     // Options which are not like the default PUT behaviour
