@@ -169,12 +169,12 @@ patchContentType is either 'text/n3' or 'application/sparl-update'
     @prefix ex: <http://example.com#>.
     <> solid:patches <fileUrl>;
           solid:deletes { <> a :test. };
-          solid:inserts { <#new> ex:temp .321; ex:temp1 :200, :300. }.
+          solid:inserts { <#new> ex:temp :321; ex:temp1 :200, :300. }.
 ```
 if triples `<#new> ex:temp1 :250 exists`. The `solid:inserts` clause can be expressed as :
 ```
           solid:where { ?a ex:temp1 :250. };
-          solid:inserts { ?a ex:temp .321; ex:temp1 :200, :300. }.
+          solid:inserts { ?a ex:temp :321; ex:temp1 :200, :300. }.
 ```
 - 'application/sparql-update' patchContent can only use sparql `INSERT` and `DELETE`. Turtle notation is used for prefix and triples.
 ```
