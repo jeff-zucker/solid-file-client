@@ -417,13 +417,14 @@ let content = await fc.aclUrlParser(url)
 ```
 example 2 :
 ```javascript
-// create a rule
+// create a block rule
 let aclUsers = await fc.acl.addUserMode({}, [{ agentClass: 'Agent' }], ['Read'])
-// add an other rule
+// add an other rule in the block rule
 aclUsers = await fc.acl.addUserMode(aclUsers, [{ agent: 'https://example.solid.community/profile/card#me' }], ['Read', 'Write', 'Control'], ['accessTo'])
 
 // build the aclContent
-const aclContent = await fc.acl.createContent('https://example.solid.community/public/text.txt', aclUsers)
+const aclBloks = [aclUsers] // array of block rules
+const aclContent = await fc.acl.createContent('https://example.solid.community/public/text.txt', aclBloks)
 console.log('build an aclContent ' + aclContent)
 
 

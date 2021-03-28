@@ -26,7 +26,7 @@ using solid-namespace to access namedNode, literal
 
 ### solidAPI.rdf.cache : <code>Object.&lt;string, N3.N3Store&gt;</code>
 cache of N3.store : cache[url] is the store of url
-example : 
+example :
  - to add a quadsArray to the store : cache[url].addQuads(quadsArray)
  - all N3 store functions can be used
 

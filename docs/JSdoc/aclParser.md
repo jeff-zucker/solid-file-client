@@ -48,7 +48,7 @@ using an aclAgents object
 **Kind**: global class  
 
 * [solidAPI.acl](#solidAPI.acl)
-    * [.contentParser(url, aclcontent)](#solidAPI.acl+contentParser) ⇒ <code>object</code>
+    * [.contentParser(url, aclcontent)](#solidAPI.acl+contentParser) ⇒ <code>object</code> \| <code>array</code>
     * [.createContent(url, aclAgents, options)](#solidAPI.acl+createContent) ⇒ <code>string</code>
     * [.addUserMode(aclAgents, userAgent, userMode, userAccess)](#solidAPI.acl+addUserMode) ⇒ <code>object</code>
     * [.deleteUserMode(aclAgents, userAgent, userMode, userAccess)](#solidAPI.acl+deleteUserMode) ⇒ <code>object</code>
@@ -58,11 +58,11 @@ using an aclAgents object
 
 <a name="solidAPI.acl+contentParser"></a>
 
-### solidAPI.acl.contentParser(url, aclcontent) ⇒ <code>object</code>
+### solidAPI.acl.contentParser(url, aclcontent) ⇒ <code>object</code> \| <code>array</code>
 aclcontent parser
 
 **Kind**: instance method of [<code>solidAPI.acl</code>](#solidAPI.acl)  
-**Returns**: <code>object</code> - aclAgents  
+**Returns**: <code>object</code> \| <code>array</code> - aclAgents Object or Array of Objects  
 
 | Param | Type | Description |
 | --- | --- | --- |
@@ -80,7 +80,7 @@ create turtle aclcontent for url resource from aclAgents object
 | Param | Type | Description |
 | --- | --- | --- |
 | url | <code>string</code> | ressource (not url.acl) |
-| aclAgents | <code>object</code> |  |
+| aclAgents | <code>object</code> \| <code>array</code> | object or Array of objects |
 | options | <code>object</code> | for isValidAcl() |
 
 **Properties**
