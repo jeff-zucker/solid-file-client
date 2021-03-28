@@ -53,6 +53,7 @@ beforeEach(() => folder.reset())
 describe('rdf-query', () => {
     const turtle = (url) => `<${url}#new> a <${url}>.\n`
     const turtle1 = `@prefix : <#>.\n:new a <>.\n`
+    const turtle2 = '<#new> a <>.\n'
 
     test('solidNS to quad 1', () => {
         const s = { thisDoc: ''}
@@ -129,7 +130,7 @@ describe('rdf-query', () => {
     })
     test('write ttl', async () => {
         let res1 = await api.rdf.write(ttlFile.url, { baseIRI: ttlFile.url })
-        return expect(res1).toEqual(turtle1)
+        return expect(res1).toEqual(turtle2)
     })
     test('writeQuads ttl', async () => {
         let res = await api.rdf.query(ttlFile.url)

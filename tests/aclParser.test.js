@@ -54,6 +54,11 @@ ${access}    acl:agent <${webId}me>;
     acl:origin <https://solid.community>;
     acl:mode acl:Append.
 `
+const appendDefault = (access) => `:AppendDefault
+    a acl:Authorization;
+${access}    acl:agentClass foaf:Agent;
+    acl:mode acl:Append.
+`
 const read = (webId, access, inherit='') => `:Read${inherit}
     a acl:Authorization;
 ${access}    acl:agent <${webId}me>;
@@ -96,7 +101,7 @@ const acl4 = (test, webId, access, inherit) => {
 }
 
 const acl5 = (test, webId, access1, access2, inherit) => {
-  return prefix(test) + '\n' + readWriteControl(access2, '') + '\n' + read(webId, access1, inherit)
+  return prefix(test) + '\n' + readWriteControl(access2, '') + '\n' + read(webId, access1, inherit) + '\n' + appendDefault(access1)
 }
 
 const noRule = (test, webId, access, inherit) => {
@@ -124,8 +129,8 @@ describe('aclParser', () => {
     const aclContent = await api.acl.createContent(base+'file.ext', users)
    expect(aclContent).toBe(content)
   })
-  test('create aclContent for folder', async () => {
-    const content = acl0('./', '/profile/card#', defaultTarget, '')
+  test('create aclContent for folder with an agent being in 2 authorization rules', async () => {
+    const content = acl5('./', '/profile/card#', defaultOnly, accessOnly, inherit) // acl0('./', '/profile/card#', defaultTarget, '')
     const users = await api.acl.contentParser(base, content)
     const aclContent = await api.acl.createContent(base, users)
     expect(aclContent).toBe(content)
@@ -154,13 +159,14 @@ describe('aclParser', () => {
   test('build acl for file from void content, accessTo by default', async () => {
     let users = await api.acl.addUserMode({}, [{ agent: '/profile/card#me'}, { agent: 'https://test.solid.community/profile/card#me'}], ['Read']) // , ['accessTo'])
     users = await api.acl.addUserMode(users, [{ agentClass: 'Agent'}], ['Read', 'Write', 'Control'])
-    const aclContent = await api.acl.createContent(base + 'file.ext', users)
+    const aclContent = await api.acl.createContent(base + 'file.ext', [users])
     expect(aclContent).toBe(acl4('file.ext', '/profile/card#', accessOnly, ''))
   })
   test('build acl for folder from void content, with "default" only to rule :Read', async () => {
     let users = await api.acl.addUserMode({}, [{ agent: '/profile/card#me'}, { agent: 'https://test.solid.community/profile/card#me'}], ['Read'], ['default'])
       .then(async users => await api.acl.addUserMode(users, [{ agentClass: 'Agent'}], ['Read', 'Write', 'Control'], ['accessTo']))
-    const aclContent = await api.acl.createContent(base, users)
+    let users1 = await api.acl.addUserMode({}, [{ agentClass: 'Agent' }], ['Append'], ['default'])
+    const aclContent = await api.acl.createContent(base, [users, users1])
     expect(aclContent).toBe(acl5('./', '/profile/card#', defaultOnly, accessOnly, inherit))
   })
   test('bad acl for folder no acl:control', async () => {

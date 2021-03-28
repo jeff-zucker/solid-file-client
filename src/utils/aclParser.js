@@ -71,7 +71,7 @@ class AclParser {
    * aclcontent parser
    * @param {string} url resource
    * @param {string} aclcontent of url.acl
-   * @returns {object} aclAgents
+   * @returns {object|array} aclAgents Object or Array of Objects
    */
   async contentParser (url, aclcontent) {
     if (!url) throw toFetchError(new Error('an url is needed'))
@@ -85,6 +85,7 @@ class AclParser {
     }
 
     // build aclagents predicate list
+    const aclAgents = []
     const aclList = {}
     for (const i in resAcl) {
       const aclItem = resAcl[i].predicate.value
@@ -98,20 +99,24 @@ class AclParser {
     }
 
     // forEach predicate acl:
-    const aclagents = {}
     for (const i in aclPred) {
+      let aclBlock = 0
       const user = await rdf.query(url, null, { acl: aclPred[i] })
       for (const j in user) {
         let object = user[j].object.value
         if (object.includes(acl)) object = object.split(acl)[1]
         if (object.includes(foaf)) object = object.split(foaf)[1]
         const key = aclPred[i] + '&' + object
-        if (!aclagents[key]) {
-          aclagents[key] = {
-            mode: { Read: 0, Append: 0, Write: 0, Control: 0 }, // accessTo: 0, default: 0 },
-            agent: { predicate: aclPred[i], object: object },
-            access: { accessTo: 0, default: 0 }
-          }
+        // unique key in each aclAgents[aclBlock]
+        for (let block = 0; ; block++) {
+          aclBlock = block
+          if (!aclAgents[aclBlock] || !aclAgents[aclBlock][key]) break
+        }
+        if (!aclAgents[aclBlock]) aclAgents[aclBlock] = {}
+        aclAgents[aclBlock][key] = {
+          mode: { Read: 0, Append: 0, Write: 0, Control: 0 }, // accessTo: 0, default: 0 },
+          agent: { predicate: aclPred[i], object: object },
+          access: { accessTo: 0, default: 0 }
         }
 
         // forEach object mode acl: xxx
@@ -121,7 +126,7 @@ class AclParser {
           const aclMode = mode[k].object.value.split('#')[1]
           testMode[aclMode] = 1
         } // end k
-        aclagents[key].mode = Object.assign(aclagents[key].mode, testMode)
+        aclAgents[aclBlock][key].mode = Object.assign(aclAgents[aclBlock][key].mode, testMode)
 
         // forEach object acl:accessTo or acl:default
         const accessType = ['accessTo', 'default'] // defaultForNew
@@ -131,18 +136,18 @@ class AclParser {
           access = await rdf.query(url, user[j].subject, { acl: accessType[l] })
           if (access.length) {
             accessValue[accessType[l]] = 1
-            aclagents[key].access = Object.assign(aclagents[key].access, accessValue)
+            aclAgents[aclBlock][key].access = Object.assign(aclAgents[aclBlock][key].access, accessValue)
           }
         } // end l
       } // end j
     } // end i
-    return aclagents
+    return (aclAgents.length > 1) ? aclAgents : aclAgents[0]
   }
 
   /**
    * create turtle aclcontent for url resource from aclAgents object
    * @param {string} url ressource (not url.acl)
-   * @param {object} aclAgents
+   * @param {object|array} aclAgents object or Array of objects
    * @param {object} options for isValidAcl()
    * @property {options.aclDefault} 'may' ('must' is more prudent)
    * @property {options.aclMode} 'Control'
@@ -155,59 +160,6 @@ class AclParser {
       aclMode: 'Control',
       ...options
     }
-    if (!Object.keys(aclAgents).length) {
-      throw toFetchError(new Error('Cannot create acl document : there are no agents'))
-    }
-    const aclSubject = {}
-    // TODO review completely
-    // check if acl:default has already been managed
-    // there is at least one rule with acl:default in a folder document acl
-    /* let addAclDefault = true
-    if (aclAgents['default&']) {
-      if (url.endsWith('/')) addAclDefault = false
-      else { delete aclAgents['default&'] }
-    } */
-
-    // build sort key and key values
-    for (const user in aclAgents) {
-      let i = 1
-      let keyValue = 0
-      let keySubject = ''
-      // mode
-      let keyMode = 'acl:mode'
-      for (const j in aclAgents[user].mode) {
-        keyValue = keyValue + aclAgents[user].mode[j] * i
-        i = i * 2
-        if (aclAgents[user].mode[j]) {
-          keySubject = keySubject + j
-          keyMode = keyMode + ' acl:' + j + ','
-        }
-      }
-      // access
-      let keyAccess = ''
-      // for folder : subject name ends with Default, only when there is no acl:accessTo
-      if (url.endsWith('/')) {
-        if (aclAgents[user].access.default && !aclAgents[user].access.accessTo) keySubject = keySubject + 'Default'
-        // no default for file
-      } else {
-        aclAgents[user].access = Object.assign(aclAgents[user].access, { accessTo: 1, default: 0 })
-      }
-      for (const k in aclAgents[user].access) {
-        keyValue = keyValue + aclAgents[user].access[k] * i
-        i = i * 2
-        if (aclAgents[user].access[k]) {
-          keyAccess = keyAccess + '\n    acl:' + k + ' target:;'
-        }
-      }
-      if (keyValue) {
-        aclAgents[user].key = keyValue
-        keyMode = keyMode.substring(0, keyMode.length - 1) + '.'
-        aclSubject[keyValue] = { subject: keySubject, mode: keyMode, access: keyAccess }
-      }
-    } // end user
-    if (!Object.keys(aclSubject).length) {
-      throw toFetchError(new Error('Cannot create the acl document : there are no rules'))
-    }
 
     // build prefix
     const target = url.endsWith('/') ? './' : getItemName(url)
@@ -217,28 +169,89 @@ class AclParser {
 @prefix target: <${target}>.
 `
     let aclContent = aclPrefix
-    // forEach key.value build an acl block
-    for (const i in aclSubject) {
-      const aclName = aclSubject[i].subject
-      let aclBlock = '\n' + `:${aclName}` +
-          '\n    a acl:Authorization;' +
-          aclSubject[i].access
-      for (const j in aclAgents) {
-        if (aclAgents[j].key.toString() === i) {
-          // const item = j.split('&')
-          const predicate = 'acl:' + aclAgents[j].agent.predicate // item[0]
-          let object = aclAgents[j].agent.object // item[1]
-          if (object === 'Agent') object = 'foaf:' + object
-          else if (object === 'AuthenticatedAgent') object = 'acl:' + object
-          // else if (predicate === 'acl:default') object = 'target:'
-          else object = '<' + object + '>'
-          aclBlock = aclBlock + '\n' + `    ${predicate} ${object};`
-        }
+
+    const agentsArray = Array.isArray(aclAgents) ? aclAgents : [aclAgents]
+
+    for (const i in agentsArray) {
+      const aclAgent = agentsArray[i]
+      if (!Object.keys(aclAgent).length) {
+        throw toFetchError(new Error('Cannot create acl document : there are no agents'))
       }
-      // if (url.endsWith('/') && addAclDefault) aclBlock = aclBlock + '\n    acl:default target:;'
-      aclBlock = aclBlock + `\n    ${aclSubject[i].mode}` + '\n'
-      aclContent = aclContent + aclBlock
-    }
+      const aclSubject = {}
+      // TODO review completely
+      // check if acl:default has already been managed
+      // there is at least one rule with acl:default in a folder document acl
+      /* let addAclDefault = true
+      if (aclAgents['default&']) {
+        if (url.endsWith('/')) addAclDefault = false
+        else { delete aclAgents['default&'] }
+      } */
+
+      // build sort key and key values
+      for (const user in aclAgent) {
+        let i = 1
+        let keyValue = 0
+        let keySubject = ''
+        // mode
+        let keyMode = 'acl:mode'
+        for (const j in aclAgent[user].mode) {
+          keyValue = keyValue + aclAgent[user].mode[j] * i
+          i = i * 2
+          if (aclAgent[user].mode[j]) {
+            keySubject = keySubject + j
+            keyMode = keyMode + ' acl:' + j + ','
+          }
+        }
+        // access
+        let keyAccess = ''
+        // for folder : subject name ends with Default, only when there is no acl:accessTo
+        if (url.endsWith('/')) {
+          if (aclAgent[user].access.default && !aclAgent[user].access.accessTo) keySubject = keySubject + 'Default'
+          // no default for file
+        } else {
+          aclAgent[user].access = Object.assign(aclAgent[user].access, { accessTo: 1, default: 0 })
+        }
+        for (const k in aclAgent[user].access) {
+          keyValue = keyValue + aclAgent[user].access[k] * i
+          i = i * 2
+          if (aclAgent[user].access[k]) {
+            keyAccess = keyAccess + '\n    acl:' + k + ' target:;'
+          }
+        }
+        if (keyValue) {
+          aclAgent[user].key = keyValue
+          keyMode = keyMode.substring(0, keyMode.length - 1) + '.'
+          aclSubject[keyValue] = { subject: keySubject, mode: keyMode, access: keyAccess }
+        }
+      } // end user
+      if (!Object.keys(aclSubject).length) {
+        throw toFetchError(new Error('Cannot create the acl document : there are no rules'))
+      }
+
+      // forEach key.value build an acl block
+      for (const i in aclSubject) {
+        const aclName = aclSubject[i].subject
+        let aclBlock = '\n' + `:${aclName}` +
+            '\n    a acl:Authorization;' +
+            aclSubject[i].access
+        for (const j in aclAgent) {
+          if (aclAgent[j].key.toString() === i) {
+            // const item = j.split('&')
+            const predicate = 'acl:' + aclAgent[j].agent.predicate // item[0]
+            let object = aclAgent[j].agent.object // item[1]
+            if (object === 'Agent') object = 'foaf:' + object
+            else if (object === 'AuthenticatedAgent') object = 'acl:' + object
+            // else if (predicate === 'acl:default') object = 'target:'
+            else object = '<' + object + '>'
+            aclBlock = aclBlock + '\n' + `    ${predicate} ${object};`
+          }
+        }
+        // if (url.endsWith('/') && addAclDefault) aclBlock = aclBlock + '\n    acl:default target:;'
+        aclBlock = aclBlock + `\n    ${aclSubject[i].mode}` + '\n'
+        aclContent = aclContent + aclBlock
+      }
+    } // end agentsArray
+
     // makerelative
     aclContent = this.makeContentRelative(aclContent, url, target, { agent: 'to_target' })
     // check is valid acl
@@ -258,8 +271,8 @@ class AclParser {
    * @returns {object} aclAgents
    */
   async addUserMode (aclAgents, userAgent, userMode, userAccess = ['accessTo', 'default']) {
-    if (!Array.isArray(userAgent) || !Array.isArray(userMode) || !Array.isArray(userAccess)) {
-      throw toFetchError(new Error('Parameters should be Arrays'))
+    if (Array.isArray(aclAgents) || !Array.isArray(userAgent) || !Array.isArray(userMode) || !Array.isArray(userAccess)) {
+      throw toFetchError(new Error('Parameters should be Arrays, except first'))
     }
     if (userAgent && userAgent.length) {
       for (const j in userAgent) {
@@ -292,8 +305,8 @@ class AclParser {
    * @returns {object} aclAgents
    */
   async deleteUserMode (aclAgents, userAgent, userMode, userAccess) {
-    if (!Array.isArray(userAgent) || (userMode && !Array.isArray(userMode)) || (userAccess && !Array.isArray(userAccess))) {
-      throw toFetchError(new Error('Parameters should be Arrays)'))
+    if (Array.isArray(aclAgents) || !Array.isArray(userAgent) || (userMode && !Array.isArray(userMode)) || (userAccess && !Array.isArray(userAccess))) {
+      throw toFetchError(new Error('Parameters should be Arrays, except first'))
     }
     if (userAgent && userAgent.length) {
       for (const j in userAgent) {
