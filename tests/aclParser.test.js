@@ -187,7 +187,7 @@ describe('aclUrlParser', () => {
     acl: true,
     placeholder: { meta: true }
   }) // Note: Acl Content will be overriden by some tests
-  const targetWithAcl = new File('target.txt', 'target', 'text/plain', {
+  const targetWithoutAcl = new File('target.txt', 'target', 'text/plain', {
   })
   const targetFolderWithAcl = new Folder('folder-with-acl', [], {
       acl: true, // Note: Content will be overriden by some tests
@@ -197,7 +197,7 @@ describe('aclUrlParser', () => {
   const folder = new BaseFolder(container, 'aclUrlParser', [
       new Folder('nested', [
           targetFolderWithAcl,
-          targetWithAcl
+          targetWithoutAcl
         ])
     ], {
       acl: true 
@@ -206,14 +206,20 @@ describe('aclUrlParser', () => {
   beforeEach(() => folder.reset())
   folder.acl.content = acl0('./', '/profile/card#', defaultTarget)
 
-  test('get acl content for folder', async () => {
+  test('get acl content for folder with acl', async () => {
     const users = await api.aclUrlParser(targetFolderWithAcl.url)
+    const keysUsers = ['agent&' + getRootUrl(folder.url) + '/profile/card#me', 'agentClass&Agent']
+    const usersKeys = Object.keys(users)
+    expect(usersKeys).toEqual(keysUsers)
+  })
+  test('get acl content for folder without acl', async () => {
+    const users = await api.aclUrlParser(folder.url+'nested/')
     const keysUsers = ['agent&' + getRootUrl(folder.url) + '/profile/card#me', 'agent&https://test.solid.community/profile/card#me', 'agentClass&AuthenticatedAgent', 'agentClass&Agent']
     const usersKeys = Object.keys(users)
     expect(usersKeys).toEqual(keysUsers)
   })
-  test('get acl content for file', async () => {
-    const users = await api.aclUrlParser(targetWithAcl.url)
+  test('get acl content for file without acl', async () => {
+    const users = await api.aclUrlParser(targetWithoutAcl.url)
     const keysUsers = ['agent&' + getRootUrl(folder.url) + '/profile/card#me', 'agent&https://test.solid.community/profile/card#me', 'agentClass&AuthenticatedAgent', 'agentClass&Agent']
     const usersKeys = Object.keys(users)
     expect(usersKeys).toEqual(keysUsers)

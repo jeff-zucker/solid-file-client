@@ -118,8 +118,8 @@ class SolidFileClient extends SolidApi {
   async aclUrlParser (url) {
     const target = getItemName(url)
     const max = url.substring(getRootUrl(url).length - 2).split('/').length
-    for (let i = 1; i < max; i++) {
-      url = getParentUrl(url)
+    for (let i = 0; i < max; i++) {
+      if (i) url = getParentUrl(url)
       const links = await this.getItemLinks(url, { links: 'include' })
       if (links.acl) {
         let aclContent = await this.readFile(links.acl)
