@@ -108,7 +108,7 @@ class SolidFileClient extends SolidApi {
    * The first one will be the folder specified by "url".
    * The others will be the deletion responses from the contents in arbitrary order
    */
-  async deleteFolder (url, options) { return super.deleteFolderRecursively(url) }
+  async deleteFolder (url, options) { return super.deleteFolderRecursively(url,options) }
 
   /**
    * ACL content url parser
