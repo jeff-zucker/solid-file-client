@@ -751,7 +751,7 @@ class SolidAPI {
    * Shortcut for moving items within the same directory
    * @param {string} url
    * @param {string} newName
-   * @param {RequestOptions} [moveOptions]
+   * @param {WriteOptions} [moveOptions]
    * @returns {Promise<Response[]>} Response of the newly created items
    */
   rename (url, newName, moveOptions) {
