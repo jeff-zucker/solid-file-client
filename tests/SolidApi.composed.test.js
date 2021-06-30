@@ -2,7 +2,7 @@ import SolidApi, { MERGE } from '../src/SolidApi'
 import apiUtils from '../src/utils/apiUtils'
 import TestFolderGenerator from './utils/TestFolderGenerator'
 import contextSetupModule from './utils/contextSetup'
-import { rejectsWithStatuses, resolvesWithStatus, rejectsWithStatus } from './utils/jestUtils'
+import { resolvesWithStatuses, rejectsWithStatuses, resolvesWithStatus, rejectsWithStatus } from './utils/jestUtils'
 
 const { getFetch, getTestContainer, contextSetup, getPrefix } = contextSetupModule
 const { Folder, File, FolderPlaceholder, FilePlaceholder, BaseFolder } = TestFolderGenerator
@@ -95,7 +95,11 @@ describe('composed methods', () => {
 
       test('resolves with 201 on existing file and has new content', async () => {
         const resPost = await api.postFile(usedFile.url, content, contentType)
-        expect(resPost.status).toEqual(201)
+        console.log('alain resPost')
+        console.log(resPost.headers.location)
+        // expect(resPost.status).toEqual(201)
+        await resolvesWithStatus(resPost, 201)
+
         const createdFile = createContainer.url + resPost.headers.get('location').split('/').pop()
         const res = await api.fetch(createdFile)
         expect(await res.text()).toBe(content)
@@ -329,6 +333,8 @@ describe('composed methods', () => {
         test.todo('throws some kind of error when called on file')
         test('resolved array contains all names of the deleted items', async () => {
           const responses = await api.deleteFolderContents(parentFolder.url)
+          console.log('alain ' + parentFolder.url)
+          console.log(responses)
           const urls = responses.map(response => response.url)
           const expectedUrls = parentFolder.contents.map(item => item.url)
           expect(urls.sort()).toEqual(expectedUrls.sort())
@@ -401,7 +407,8 @@ describe('composed methods', () => {
           const responses = await api.copyFolder(childOne.url, folderPlaceholder.url)
           expect(responses).toHaveLength(childOne.contents.length + 1)
           expect(responses[0]).toHaveProperty('url', apiUtils.getParentUrl(folderPlaceholder.url))
-          expect(responses[0]).toHaveProperty('status', 201)
+          // expect(responses[0]).toHaveProperty('status', 201)
+          await resolvesWithStatus(response[0], 201)
 
           await expect(api.itemExists(folderPlaceholder.url)).resolves.toBe(true)
           await expect(api.itemExists(`${folderPlaceholder.url}${emptyFolder.name}/`)).resolves.toBe(true)
@@ -411,7 +418,9 @@ describe('composed methods', () => {
           const responses = await api.copyFolder(parentFolder.url, folderPlaceholder.url)
           expect(responses).toHaveLength(parentFolder.contents.length + 1)
           expect(responses[0]).toHaveProperty('url', apiUtils.getParentUrl(folderPlaceholder.url))
-          expect(responses[0]).toHaveProperty('status', 201)
+          // expect(responses[0]).toHaveProperty('status', 201)
+          await resolvesWithStatus(response[0], 201)
+
 
           await expect(api.itemExists(folderPlaceholder.url)).resolves.toBe(true)
           // Note: Could test for others to exist too
@@ -446,7 +455,9 @@ describe('composed methods', () => {
       describe('moving file', () => {
         test('resolves with 201 moving existing to inexistent file', async () => {
           const res = await api.move(childFile.url, filePlaceholder.url)
-          expect(res).toHaveProperty('status', 201)
+          // expect(res).toHaveProperty('status', 201)
+          await resolvesWithStatus(res, 201)
+
           expect(res).toHaveProperty('url', filePlaceholder.url)
         })
         test('resolves moving existing to existing file', () => {
@@ -471,7 +482,9 @@ describe('composed methods', () => {
         test('resolves with 201 moving empty folder to placeholder', async () => {
           const responses = await api.move(emptyFolder.url, folderPlaceholder.url)
           expect(responses).toHaveLength(1)
-          expect(responses[0]).toHaveProperty('status', 201)
+          // expect(responses[0]).toHaveProperty('status', 201)
+          await resolvesWithStatus(response[0], 201)
+
           expect(responses[0]).toHaveProperty('url', apiUtils.getParentUrl(folderPlaceholder.url))
         })
         test('resolves with 201 moving a folder with depth 2 to placeholder', async () => {
@@ -479,7 +492,9 @@ describe('composed methods', () => {
           // Nonetheless it checks whether or not it works in principle
           const responses = await api.move(parentFolder.url, folderPlaceholder.url)
           expect(responses).toHaveLength(parentFolder.contents.length + 1)
-          expect(responses[0]).toHaveProperty('status', 201)
+          // expect(responses[0]).toHaveProperty('status', 201)
+          await resolvesWithStatus(response[0], 201)
+
           expect(responses[0]).toHaveProperty('url', apiUtils.getParentUrl(folderPlaceholder.url))
         })
         test('rejects on moving to a parent folder', () => {
@@ -520,7 +535,9 @@ describe('composed methods', () => {
           const newName = 'new-name.txt'
           const newUrl = `${apiUtils.getParentUrl(childFile.url)}${newName}`
           const res = await api.rename(childFile.url, newName)
-          expect(res).toHaveProperty('status', 201)
+          // expect(res).toHaveProperty('status', 201)
+          await resolvesWithStatus(response[0], 201)
+
           expect(res).toHaveProperty('url', apiUtils.getParentUrl(childFile.url) + newName)
 
           await expect(api.itemExists(childFile.url)).resolves.toBe(false)

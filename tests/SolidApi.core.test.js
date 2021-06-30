@@ -86,6 +86,13 @@ describe('core methods', () => {
       }
     }
 
+    const putOptions = {
+      headers: {
+        'Content-type': 'text/turtle'
+      },
+      body: ''
+    }
+
     const invalidSlugOptions = getPostOptions(newFolderPlaceholder.name)
     invalidSlugOptions.headers.slug += '/'
 
@@ -104,9 +111,9 @@ describe('core methods', () => {
     test('post resolves with 201 writing to the location of an existing folder', () => resolvesWithStatus(api.post(postFolder.url, getPostOptions(usedFolder.name)), 201))
     test('post resolves with 201 writing to the location of an existing file', () => resolvesWithStatus(api.post(postFolder.url, getPostOptions(usedFile.name)), 201))
 
-    test('put resolves with 201 creating a new file', () => resolvesWithStatus(api.put(newFilePlaceholder.url), 201))
-    test('put resolves with 201 overwriting a file', () => resolvesWithStatus(api.put(usedFile.url), 201))
-    test('put resolves with 201 creating a nested files', () => resolvesWithStatus(api.put(nestedFilePlaceholder.url), 201))
+    test('put resolves with 201 creating a new file', () => resolvesWithStatus(api.put(newFilePlaceholder.url, putOptions), 201))
+    test('put resolves with 201 overwriting a file', () => resolvesWithStatus(api.put(usedFile.url, putOptions), 201))
+    test('put resolves with 201 creating a nested files', () => resolvesWithStatus(api.put(nestedFilePlaceholder.url, putOptions), 201))
   })
 
   describe('delete', () => {
@@ -124,6 +131,14 @@ describe('core methods', () => {
 
     test('delete rejects with 404 on an inexistent file', () => rejectsWithStatus(api.delete(inexistentFile.url), 404))
     test('delete rejects with 404 on an inexistent folder', () => rejectsWithStatus(api.delete(inexistentFolder.url), 404))
+    test('delete alain', async () => {
+      try {
+        const res = await api.delete(inexistentFolder.url)
+        console.log('deleteAlain')
+        console.log(res)
+      } catch (err) { console.log(err) }
+    })
+
     test('delete resolves deleting a file and it does not exist afterwards', async () => {
       await expect(api.delete(file.url)).resolves.toBeDefined()
       return expect(api.itemExists(file.url)).resolves.toBe(false)

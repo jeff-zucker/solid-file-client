@@ -10,8 +10,25 @@ const { FetchError } = SolidFileClient
  * @param {Promise<Response>} promise
  * @param {number} status
  */
-export function resolvesWithStatus (promise, status) {
+/* export function resolvesWithStatus (promise, status) {
   return expect(promise).resolves.toHaveProperty('status', status)
+} */
+
+/**
+ * @param {Promise<Response>} promise
+ * @param {number} status
+ */
+export async function resolvesWithStatus (promise, status) {
+  try {
+    if (status === 200 || status === 201) {
+      const res = await promise
+      return expect(`${Math.floor(res.status / 100)}xx`).toEqual(`${Math.floor(status / 100)}xx`)
+    } else {
+      return expect(promise).resolves.toHaveProperty('status', status)
+    }
+  } catch (err) {
+    expect('promise did not resolve').toBe(false)
+  }
 }
 
 /**

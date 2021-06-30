@@ -13,7 +13,7 @@
   "scripts": {
     "test": "npm run test:ls -- --coverage",
     "test:ls": "cross-env TEST_PREFIX=app://ls/ jest",
-    "test:file": "cross-env TEST_PREFIX=file:// jest",
+    "test:file": "cross-env TEST_PREFIX=file:// jest --verbose",
     "test:https": "cross-env TEST_PREFIX=https:// jest",
     "test:watch": "npm run test:ls -- --watch",
     "test:all": "npm run test:ls && npm run test:file && npm run test:https",
@@ -68,7 +68,7 @@
     "mime-types": "^2.1.27",
     "regenerator-runtime": "^0.13.3",
     "rdflib": "^2.1.1",
-    "solid-node-client": "^1.2.2",
+    "solid-node-client": "^2.0.6",
     "standard": "^14.3.3",
     "uuid": "^8.3.0",
     "webpack": "^4.42.1",

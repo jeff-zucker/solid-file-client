@@ -230,7 +230,9 @@ const fileWithAcl = new File('child-file.txt', 'I am a child', 'text/plain', {
         })
         test('responds with put response', async () => {
             const res = await api.copyAclFileForItem(fileWithAcl.url, targetWithAcl.url)
-            expect(res).toHaveProperty('status', 201)
+            // expect(res).toHaveProperty('status', 201)
+            await resolvesWithStatus(res, 201)
+
             expect(res).toHaveProperty('url', targetWithAcl.acl.url)
         })
         test('fails with 404 if source acl does not exist', () => {
@@ -249,7 +251,9 @@ const fileWithAcl = new File('child-file.txt', 'I am a child', 'text/plain', {
         })
         test('responds with put response', async () => {
             const res = await api.copyAclFileForItem(fileWithAcl.url, targetWithAcl.url)
-            expect(res).toHaveProperty('status', 201)
+            // expect(res).toHaveProperty('status', 201)
+            await resolvesWithStatus(res, 201)
+
             expect(res).toHaveProperty('url', targetWithAcl.acl.url)
         })
         test('fails with 404 if source meta does not exist', () => {
