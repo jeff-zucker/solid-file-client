@@ -1,0 +1,5 @@
+module.exports = {
+  idp:"https://solidcommunity.net",
+  username:"jeff-zucker",
+  password:"hondaRav88*",
+}
