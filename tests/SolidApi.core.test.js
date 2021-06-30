@@ -114,6 +114,7 @@ describe('core methods', () => {
     test('put resolves with 201 creating a new file', () => resolvesWithStatus(api.put(newFilePlaceholder.url, putOptions), 201))
     test('put resolves with 201 overwriting a file', () => resolvesWithStatus(api.put(usedFile.url, putOptions), 201))
     test('put resolves with 201 creating a nested files', () => resolvesWithStatus(api.put(nestedFilePlaceholder.url, putOptions), 201))
+    test('put rejects with 400 on file without contentType', () => rejectsWithStatus(api.put(usedFile.url), 400))
   })
 
   describe('delete', () => {
@@ -131,13 +132,13 @@ describe('core methods', () => {
 
     test('delete rejects with 404 on an inexistent file', () => rejectsWithStatus(api.delete(inexistentFile.url), 404))
     test('delete rejects with 404 on an inexistent folder', () => rejectsWithStatus(api.delete(inexistentFolder.url), 404))
-    test('delete alain', async () => {
+    /* test('delete alain', async () => {
       try {
         const res = await api.delete(inexistentFolder.url)
         console.log('deleteAlain')
         console.log(res)
       } catch (err) { console.log(err) }
-    })
+    }) */
 
     test('delete resolves deleting a file and it does not exist afterwards', async () => {
       await expect(api.delete(file.url)).resolves.toBeDefined()
