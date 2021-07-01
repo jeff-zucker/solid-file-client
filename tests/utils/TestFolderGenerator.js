@@ -298,6 +298,7 @@ class BaseFolder extends Folder {
   /**
    *
    * @param {string|TestFolderGenerator} base base path for all children
+   * @param {string} name
    * @param {TestFolderGenerator[]} [children]
    * @param {Links} [links]
    */
