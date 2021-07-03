@@ -10,6 +10,10 @@
     "Solid",
     "Linked Data"
   ],
+  "engines": {
+    "node": ">=12"
+  },
+  "engine-strict": true,
   "scripts": {
     "test": "npm run test:file -- --coverage",
     "test:ls": "cross-env TEST_PREFIX=app://ls/ jest",
@@ -66,9 +70,9 @@
     "jest": "^25.4.0",
     "jsdoc-to-markdown": "^5.0.3",
     "mime-types": "^2.1.27",
-    "rdflib": "^2.2.5",
+    "rdflib": "^2.2.6",
     "regenerator-runtime": "^0.13.3",
-    "solid-node-client": "^2.0.6",
+    "solid-node-client": "^2.0.9",
     "standard": "^14.3.3",
     "uuid": "^8.3.0",
     "webpack": "^4.42.1",
