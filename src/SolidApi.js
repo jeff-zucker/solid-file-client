@@ -432,6 +432,7 @@ class SolidAPI {
 
     if (options.links === LINKS.INCLUDE_POSSIBLE || options.links === LINKS.INCLUDE) {
       const addItemLinks = async item => { item.links = await this.getItemLinks(item.url, options) }
+//console.log(1,await addItemLinks(parsedFolder),options);
       await composedFetch([
         addItemLinks(parsedFolder),
         ...parsedFolder.files.map(addItemLinks)
@@ -707,7 +708,12 @@ class SolidAPI {
   async deleteFolderContents (url) {
     // pod root cannot be deleted recursively
     if (url === getRootUrl(url)) { throw toFetchError(new Error('405 Pod cannot be deleted')) }
-    const { folders, files } = await this.readFolder(url)
+    const { folders, files } = await this.readFolder(url,{links:LINKS.INCLUDE})
+/*    console.log(2,"deleteFolderContents",[
+      ...folders.map(({ url }) => url),
+      ...files.map(({ url }) => url)
+    ]);
+*/
     return composedFetch([
       ...folders.map(({ url }) => this.deleteFolderRecursively(url)),
       ...files.map(({ url }) => this._deleteItemWithLinks(url))

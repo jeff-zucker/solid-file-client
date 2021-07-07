@@ -149,6 +149,28 @@ class SolidFileClient extends SolidApi {
     }
     return itemList;
   }
+ async getFolderItemListOLD (path, options) {
+    options = {
+      links: SolidFileClient.LINKS.INCLUDE,
+      ...options
+    }
+    const folderData = await this.readFolder(path, options)
+    let itemList
+    if (options.links !== SolidFileClient.LINKS.EXCLUDE) {
+      itemList = [
+        ...Object.values(folderData.links),
+        ...folderData.files.map(item => [item.url, ...Object.values(item.links)].flat()),
+        ...folderData.folders.map(item => item.url)
+      ]
+    } else {
+      itemList = [
+        ...folderData.files.map(item => item.url),
+        ...folderData.folders.map(item => item.url)]
+    }
+    return itemList.flat()
+  }
+
+
 
   zipSupport () { return JSZip.support }
 
