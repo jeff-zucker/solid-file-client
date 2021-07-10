@@ -333,6 +333,7 @@ describe('extractZipArchive', () => {
       expect(result.err[0]).toMatch('no agent with Control')
       expect(await fc.itemExists(nestedFolderAcl.url+getItemName(nestedChildFile.acl.url))).toBe(false)
     })
+
     test('extract zip : folder', async () => {
       // check files
       const folderAcl = createPseudoAcl('./', '', aclDefault)
@@ -340,11 +341,16 @@ describe('extractZipArchive', () => {
       // create zip
       const res = await fc.createZipArchive(nestedFolderAcl.url, filePlaceholder.url)
       // clean destination
-      await fc.deleteFolder(nestedFolderAcl.url)
+      try {
+        await fc.deleteFolder(nestedFolderAcl.url)
+      }catch(e){}
       // extract return acl error and check acl not created
       const result = await fc.extractZipArchive(filePlaceholder.url, nestedFolderAcl.url, { URI: 'https://test' })
       expect(result.err[0]).toMatch('no agent with Control')
       expect(await fc.itemExists(nestedFolderAcl.url+getItemName(nestedChildFile.acl.url))).toBe(false)
     })
+
   })
+
+
 })

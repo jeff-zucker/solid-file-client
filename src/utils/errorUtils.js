@@ -125,7 +125,6 @@ async function promisesSettled (promises) {
  */
 async function composedFetch (promises) {
   const res = await promisesSettled(promises)
-
   /** @type {Response[]} */
   const successful = [].concat(...res.filter(({ status }) => status === 'fulfilled').map(({ value }) => value))
   /** @type {FetchError[]} */

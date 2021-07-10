@@ -108,7 +108,7 @@ class SolidFileClient extends SolidApi {
    * The first one will be the folder specified by "url".
    * The others will be the deletion responses from the contents in arbitrary order
    */
-  async deleteFolder (url, options) { return super.deleteFolderRecursively(url) }
+  async deleteFolder (url, options) { return super.deleteFolderRecursively(url,options) }
 
   /**
    * ACL content url parser
@@ -139,8 +139,21 @@ class SolidFileClient extends SolidApi {
     options = {
       links: SolidFileClient.LINKS.INCLUDE,
       ...options
+    };
+    const folderData = await this.readFolder(path, options);
+    let fi = folderData.files.map(item=>item.url);
+    let fo = folderData.folders.map(item=>item.url);
+    let itemList = fo.concat(fi);
+    if (options.links !== SolidFileClient.LINKS.EXCLUDE && folderData.links) {
+      itemList = itemList.concat(Object.values(folderData.links));
     }
-
+    return itemList;
+  }
+ async getFolderItemListOLD (path, options) {
+    options = {
+      links: SolidFileClient.LINKS.INCLUDE,
+      ...options
+    }
     const folderData = await this.readFolder(path, options)
     let itemList
     if (options.links !== SolidFileClient.LINKS.EXCLUDE) {
@@ -156,6 +169,8 @@ class SolidFileClient extends SolidApi {
     }
     return itemList.flat()
   }
+
+
 
   zipSupport () { return JSZip.support }
 

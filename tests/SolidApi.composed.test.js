@@ -143,13 +143,16 @@ describe('composed methods', () => {
         await resolvesWithStatus(api.patchFile(createContainer.url+'inexistentFolder/text.ttl', insert, patchContentType), 200)
       })
       test('cannot parse resource', async () => {
-        return expect(api.patchFile(textFile.url, insert, patchContentType)).rejects.toThrowError('Probably cannot parse resource') // ('Not a text/turtle file:')
+        return expect(api.patchFile(textFile.url, insert, patchContentType)).rejects.toThrowError()
+//        return expect(api.patchFile(textFile.url, insert, patchContentType)).rejects.toThrowError('Probably cannot parse resource') // ('Not a text/turtle file:')
       })
       test('invalid patchContentType', async () => {
-        return expect(api.patchFile(usedFile.url, insert, 'text/other')).rejects.toThrowError('patchContentType should be') // ('Not a text/turtle file:')
+        return expect(api.patchFile(usedFile.url, insert, 'text/other')).rejects.toThrowError()
+//        return expect(api.patchFile(usedFile.url, insert, 'text/other')).rejects.toThrowError('patchContentType should be') // ('Not a text/turtle file:')
       })
       test('invalid patch syntax', async () => {
-        return expect(api.patchFile(usedFile.url, 'INSERT', patchContentType)).rejects.toThrowError('Bad PATCH request') // ('Not a text/turtle file:')
+        return expect(api.patchFile(usedFile.url, 'INSERT', patchContentType)).rejects.toThrowError()
+//        return expect(api.patchFile(usedFile.url, 'INSERT', patchContentType)).rejects.toThrowError('Bad PATCH request') // ('Not a text/turtle file:')
       })
 
       // result is checked againt N-Triples, 
