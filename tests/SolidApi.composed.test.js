@@ -299,6 +299,7 @@ describe('composed methods', () => {
   describe('nested methods', () => {
     const filePlaceholder = new FilePlaceholder('placeholder.ttl')
     const folderPlaceholder = new FolderPlaceholder('folder-placeholder')
+    const parentPlaceholder = new FolderPlaceholder('parent-placeholder')
     const childFile = new File('child-file.ttl', 'I am a child')
     const childFileTwo = new File('child-file.ttl', 'I am the second child')
     const parentFile = new File('parent-file.ttl', 'I am a parent')
@@ -318,12 +319,28 @@ describe('composed methods', () => {
       folderPlaceholder
     ])
     const nestedFolder = new BaseFolder(container, 'delete', [
-      parentFolder
+      parentFolder,
+      parentPlaceholder
     ])
 
     beforeEach(() => nestedFolder.reset())
 
     describe('delete', () => {
+      describe('unified remove', () => {
+        test('rejects with 404 on inexistent folder', () => rejectsWithStatuses(api.remove(inexistentFolder.url), [404]))
+        test('resolved array contains all names of the deleted items', async () => {
+          const responses = await api.remove(parentFolder.url)
+          const urls = responses.map(response => response.url)
+          const expectedUrls = [parentFolder.url, ...parentFolder.contents.map(item => item.url)]
+          expect(urls.sort()).toEqual(expectedUrls.sort())
+        })
+        test('resolves with array of length one on folder without contents', () => expect(api.remove(emptyFolder.url)).resolves.toHaveLength(1))
+        test('after deletion itemExists returns false on all contents', async () => {
+          await api.remove(parentFolder.url)
+          return Promise.all([parentFolder, ...parentFolder.contents].map(item => expect(api.itemExists(item.url)).resolves.toBe(false)))
+        })
+      })
+
       describe('deleteFolderContents', () => {
         test('rejects with 405 on root folder', () => {
           return expect(api.deleteFolderContents(apiUtils.getRootUrl(container.url))).rejects.toThrowError('405')
@@ -377,6 +394,78 @@ WITH file:// -- jeff, 2021-06-10
     })
 
     describe('copy', () => {
+      describe ('unified copy', () => {
+      	test('rejects if source and destination are not strings', async () => {
+          const responses = api.copy(null, null)
+          await expect(responses).rejects.toThrowError('Invalid parameters: source and destination must be strings.')
+        })
+        test('rejects with 404 on inexistent source', () => rejectsWithStatus(api.copy(inexistentFile.url, filePlaceholder.url), 404))
+        test('rejects if no destination is specified', () => expect(api.copy(childFile.url)).rejects.toBeDefined())
+        test('rejects copying to self', async () => {
+          const responses = api.copy(parentFolder.url, parentFolder.url)
+          await expect(responses).rejects.toThrowError('Invalid parameters: cannot copy source to itself.')
+        })
+        test('rejects moving a folder to its child', async () => {
+          const responses = api.copy(parentFolder.url, folderPlaceholder.url)
+          await expect(responses).rejects.toThrowError('Invalid parameters: cannot copy source inside itself.')
+        })
+        test('resolves with 201 when copying a file', () => resolvesWithStatus(api.copy(childFile.url, filePlaceholder.url), 201))
+        test('resolves when copying a file and has same content and contentType afterwards', async () => {
+          await resolvesWithStatus(api.copy(childFile.url, filePlaceholder.url), 201)
+          await expect(api.itemExists(filePlaceholder.url)).resolves.toBe(true)
+          const fromResponse = await api.get(childFile.url)
+          const toResponse = await api.get(filePlaceholder.url)
+          expect(fromResponse.headers.get('Content-Type')).toBe(toResponse.headers.get('Content-Type'))
+          expect(await fromResponse.text()).toBe(await toResponse.text())
+        })
+        test('rejects when copying to existent file with merge=KEEP_TARGET', () => {
+          return expect(api.copy(childFile.url, childFileTwo.url, { merge: MERGE.KEEP_TARGET })).rejects.toThrowError('already existed')
+        })
+
+        test('resolves and copies empty folder', async () => {
+          await expect(api.copyFolder(emptyFolder.url, folderPlaceholder.url)).resolves.toBeDefined()
+          await expect(api.itemExists(folderPlaceholder.url)).resolves.toBe(true)
+        })
+        test('resolves copying folder with depth 1', () => {
+          return expect(api.copyFolder(childOne.url, folderPlaceholder.url)).resolves.toBeDefined()
+        })
+        test('resolves with 201 and copies folder with depth 1 including its contents', async () => {
+          const responses = await api.copyFolder(childOne.url, folderPlaceholder.url)
+          expect(responses).toHaveLength(childOne.contents.length + 1)
+          expect(responses[0]).toHaveProperty('url', apiUtils.getParentUrl(folderPlaceholder.url))
+          expect(responses[0]).toHaveProperty('status', 201)
+
+          await expect(api.itemExists(folderPlaceholder.url)).resolves.toBe(true)
+          await expect(api.itemExists(`${folderPlaceholder.url}${emptyFolder.name}/`)).resolves.toBe(true)
+          await expect(api.itemExists(`${folderPlaceholder.url}${childFile.name}`)).resolves.toBe(true)
+        })
+        test('resolves copying folder with depth 2', async () => {
+          const responses = await api.copyFolder(parentFolder.url, folderPlaceholder.url)
+          expect(responses).toHaveLength(parentFolder.contents.length + 1)
+          expect(responses[0]).toHaveProperty('url', apiUtils.getParentUrl(folderPlaceholder.url))
+          expect(responses[0]).toHaveProperty('status', 201)
+
+          await expect(api.itemExists(folderPlaceholder.url)).resolves.toBe(true)
+          // Note: Could test for others to exist too
+        })
+        test('replaces existing folders per default', async () => {
+          await expect(api.copyFolder(childTwo.url, childOne.url)).resolves.toBeDefined()
+          await expect(api.itemExists(emptyFolder.url)).resolves.toBe(false) // empty folder was only in childOne
+          await expect(api.itemExists(childFile.url)).resolves.toBe(true) // childFile is in both
+        })
+        test('overwrites files from target folder with merge=KEEP_SOURCE', async () => {
+          await expect(api.copyFolder(childTwo.url, childOne.url, { merge: MERGE.KEEP_SOURCE })).resolves.toBeDefined()
+          await expect(api.itemExists(emptyFolder.url)).resolves.toBe(true)
+          await expect(api.get(childFile.url).then(res => res.text())).resolves.toBe(childFileTwo.content)
+        })
+        test('keeps files from target folder with merge=KEEP_TARGET', async () => {
+          await expect(api.copyFolder(childTwo.url, childOne.url, { merge: MERGE.KEEP_TARGET })).resolves.toBeDefined()
+          await expect(api.itemExists(emptyFolder.url)).resolves.toBe(true)
+          await expect(api.get(childFile.url).then(res => res.text())).resolves.toBe(childFile.content)
+        })
+        test.todo('rejects when trying to copy a file to a folder')
+        test.todo('throws flattened errors when it fails in multiple levels')
+      })
       describe('copyFile', () => {
         test('rejects with 404 on inexistent file', () => rejectsWithStatus(api.copyFile(inexistentFile.url, filePlaceholder.url), 404))
         test('rejects if no second url is specified', () => expect(api.copyFile(childFile.url)).rejects.toBeDefined())
@@ -452,19 +541,51 @@ WITH file:// -- jeff, 2021-06-10
     })
 
     describe('move', () => {
-      test('rejects with 404 on inexistent item', () => {
-        return rejectsWithStatuses(api.move(inexistentFile.url, filePlaceholder.url), [404])
-      })
-
-      describe('moving file', () => {
+      describe('unified move', () => {
+      	test('rejects if source and destination are not strings', async () => {
+          const responses = api.move(null, null)
+          await expect(responses).rejects.toThrowError('Invalid parameters: source and destination must be strings.')
+        })
+        test('rejects with 404 on inexistent item', () => {
+          return rejectsWithStatuses(api.move(inexistentFile.url, filePlaceholder.url), [404])
+        })
+        test('rejects copying to self', async () => {
+          const responses = api.move(parentFolder.url, parentFolder.url)
+          await expect(responses).rejects.toThrowError('Invalid parameters: cannot move source to itself.')
+        })
+        test('rejects moving a folder to its child', async () => {
+          const responses = api.move(parentFolder.url, folderPlaceholder.url)
+          await expect(responses).rejects.toThrowError('Invalid parameters: cannot move source inside itself.')
+        })
         test('resolves with 201 moving existing to inexistent file', async () => {
           const res = await api.move(childFile.url, filePlaceholder.url)
           expect(res).toHaveProperty('status', 201)
           expect(res).toHaveProperty('url', filePlaceholder.url)
         })
+        test('resolves with 201 moving empty folder to placeholder', async () => {
+          const responses = await api.move(emptyFolder.url, folderPlaceholder.url)
+          expect(responses).toHaveLength(1)
+          expect(responses[0]).toHaveProperty('status', 201)
+          expect(responses[0]).toHaveProperty('url', apiUtils.getParentUrl(folderPlaceholder.url))
+        })
+        test('resolves with 201 moving a folder with depth 2 to placeholder', async () => {
+          const responses = await api.move(parentFolder.url, parentPlaceholder.url)
+          expect(responses).toHaveLength(parentFolder.contents.length + 1)
+          expect(responses[0]).toHaveProperty('status', 201)
+          expect(responses[0]).toHaveProperty('url', apiUtils.getParentUrl(parentPlaceholder.url))
+        })
         test('resolves moving existing to existing file', () => {
           return expect(api.move(childFile.url, parentFile.url)).resolves.toBeDefined()
         })
+        test('resolves moving folder with depth 1 to folder with depth 1', () => {
+          return expect(api.move(childTwo.url, childOne.url)).resolves.toBeDefined()
+        })
+
+        test('resolves moving folder to existing folder with similar contents with merge=KEEP_TARGET', async () => {
+          await expect(api.move(childTwo.url, childOne.url, { merge: MERGE.KEEP_TARGET })).resolves.toBeDefined()
+          await expect(api.itemExists(childTwo.url)).resolves.toBe(false)
+        })
+
         test('rejects moving existing to existing file with merge=KEEP_TARGET', async () => {
           await expect(api.move(childFile.url, parentFile.url, { merge: MERGE.KEEP_TARGET })).rejects.toThrowError('already existed')
           await expect(api.itemExists(childFile.url)).resolves.toBe(true)
@@ -478,11 +599,54 @@ WITH file:// -- jeff, 2021-06-10
           const content = await res.text()
           await expect(content).toEqual(childFile.content)
         })
+
+        test('overwrites new folder contents and deletes old one', async () => {
+          await expect(api.move(childOne.url, childTwo.url)).resolves.toBeDefined()
+
+          await expect(api.itemExists(childOne.url)).resolves.toBe(false)
+          await expect(api.itemExists(childTwo.url)).resolves.toBe(true)
+          await expect(api.itemExists(childFileTwo.url)).resolves.toBe(true)
+          await expect(api.itemExists(`${childTwo.url}${emptyFolder.name}/`)).resolves.toBe(true)
+
+          const fileResponse = await api.get(childFileTwo.url)
+          const content = await fileResponse.text()
+          expect(content).toEqual(childFile.content)
+        })
+      })
+
+      describe('moving file', () => {
+        test('rejects with 404 on inexistent file', () => {
+          return rejectsWithStatuses(api.move(inexistentFile.url, filePlaceholder.url), [404])
+        })
+        test('resolves with 201 moving existing to inexistent file', async () => {
+          const res = await api.moveFile(childFile.url, filePlaceholder.url)
+          expect(res).toHaveProperty('status', 201)
+          expect(res).toHaveProperty('url', filePlaceholder.url)
+        })
+        test('resolves moving existing to existing file', () => {
+          return expect(api.moveFile(childFile.url, parentFile.url)).resolves.toBeDefined()
+        })
+        test('rejects moving existing to existing file with merge=KEEP_TARGET', async () => {
+          await expect(api.moveFile(childFile.url, parentFile.url, { merge: MERGE.KEEP_TARGET })).rejects.toThrowError('already existed')
+          await expect(api.itemExists(childFile.url)).resolves.toBe(true)
+        })
+        test('overwrites new location and deletes old one', async () => {
+          await expect(api.moveFile(childFile.url, parentFile.url)).resolves.toBeDefined()
+
+          await expect(api.itemExists(childFile.url)).resolves.toBe(false)
+          await expect(api.itemExists(parentFile.url)).resolves.toBe(true)
+          const res = await api.get(parentFile.url)
+          const content = await res.text()
+          await expect(content).toEqual(childFile.content)
+        })
       })
 
       describe('moving folder', () => {
+        test('rejects with 404 on inexistent folder', () => {
+          return rejectsWithStatuses(api.move(inexistentFolder.url, folderPlaceholder.url), [404])
+        })
         test('resolves with 201 moving empty folder to placeholder', async () => {
-          const responses = await api.move(emptyFolder.url, folderPlaceholder.url)
+          const responses = await api.moveFolder(emptyFolder.url, folderPlaceholder.url)
           expect(responses).toHaveLength(1)
           expect(responses[0]).toHaveProperty('status', 201)
           expect(responses[0]).toHaveProperty('url', apiUtils.getParentUrl(folderPlaceholder.url))
@@ -490,7 +654,7 @@ WITH file:// -- jeff, 2021-06-10
         test('resolves with 201 moving a folder with depth 2 to placeholder', async () => {
           // Note: This example doesn't really makes sense because folderPlaceholder is inside parentFolder
           // Nonetheless it checks whether or not it works in principle
-          const responses = await api.move(parentFolder.url, folderPlaceholder.url)
+          const responses = await api.moveFolder(parentFolder.url, folderPlaceholder.url)
           expect(responses).toHaveLength(parentFolder.contents.length + 1)
           expect(responses[0]).toHaveProperty('status', 201)
           expect(responses[0]).toHaveProperty('url', apiUtils.getParentUrl(folderPlaceholder.url))
@@ -499,14 +663,14 @@ WITH file:// -- jeff, 2021-06-10
           return expect(api.move(childTwo.url, apiUtils.getRootUrl(container.url))).rejects.toThrowError('options.merge = replace')
         })
         test('resolves moving folder with depth 1 to folder with depth 1', () => {
-          return expect(api.move(childTwo.url, childOne.url)).resolves.toBeDefined()
+          return expect(api.moveFolder(childTwo.url, childOne.url)).resolves.toBeDefined()
         })
         test('resolves moving folder to existing folder with similar contents with merge=KEEP_TARGET', async () => {
-          await expect(api.move(childTwo.url, childOne.url, { merge: MERGE.KEEP_TARGET })).resolves.toBeDefined()
+          await expect(api.moveFolder(childTwo.url, childOne.url, { merge: MERGE.KEEP_TARGET })).resolves.toBeDefined()
           await expect(api.itemExists(childTwo.url)).resolves.toBe(false)
         })
         test('overwrites new folder contents and deletes old one', async () => {
-          await expect(api.move(childOne.url, childTwo.url)).resolves.toBeDefined()
+          await expect(api.moveFolder(childOne.url, childTwo.url)).resolves.toBeDefined()
 
           await expect(api.itemExists(childOne.url)).resolves.toBe(false)
           await expect(api.itemExists(childTwo.url)).resolves.toBe(true)

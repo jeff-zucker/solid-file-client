@@ -296,9 +296,49 @@ const fileWithAcl = new File('child-file.txt', 'I am a child', 'text/plain', {
         })
     })
 
+    describe('moveFile', () => {
+        test('also moves acl, meta and meta.acl if existing', async () => {
+            await api.moveFile(fileWithLinks.url, filePlaceholder.url)
+            await expect(api.itemExists(filePlaceholder.acl.url)).resolves.toBe(true)
+//            await expect(api.itemExists(filePlaceholder.meta.url)).resolves.toBe(true)
+//            await expect(api.itemExists(filePlaceholder.meta.acl.url)).resolves.toBe(true)
+        })
+        test('moves no links if withMeta=false and withAcl=false', async () => {
+            await api.moveFile(fileWithLinks.url, filePlaceholder.url, { withAcl: false, withMeta: false })
+            await expect(api.itemExists(filePlaceholder.acl.url)).resolves.toBe(false)
+//            await expect(api.itemExists(filePlaceholder.meta.url)).resolves.toBe(false)
+//            await expect(api.itemExists(filePlaceholder.meta.acl.url)).resolves.toBe(false)
+        })
+    })
+
+    describe('unified copy', () => {
+        test('also copies acl, meta and meta.acl if existing', async () => {
+            await api.copy(fileWithLinks.url, filePlaceholder.url)
+            await expect(api.itemExists(filePlaceholder.acl.url)).resolves.toBe(true)
+//            await expect(api.itemExists(filePlaceholder.meta.url)).resolves.toBe(true)
+//            await expect(api.itemExists(filePlaceholder.meta.acl.url)).resolves.toBe(true)
+        })
+        test('copies no links if withMeta=false and withAcl=false', async () => {
+            await api.copy(fileWithLinks.url, filePlaceholder.url, { withAcl: false, withMeta: false })
+            await expect(api.itemExists(filePlaceholder.acl.url)).resolves.toBe(false)
+//            await expect(api.itemExists(filePlaceholder.meta.url)).resolves.toBe(false)
+//            await expect(api.itemExists(filePlaceholder.meta.acl.url)).resolves.toBe(false)
+        })
+    })
+
     describe('_deleteItemWithLinks', () => {
         test('deletes meta, meta.acl and acl of file', async () => {
             await api._deleteItemWithLinks(fileWithLinks.url)
+            await expect(api.itemExists(fileWithLinks.url)).resolves.toBe(false)
+            await expect(api.itemExists(fileWithLinks.acl.url)).resolves.toBe(false)
+//            await expect(api.itemExists(fileWithLinks.meta.url)).resolves.toBe(false)
+//            await expect(api.itemExists(fileWithLinks.meta.acl.url)).resolves.toBe(false)
+        })
+    })
+
+    describe('unified remove', () => {
+        test('remove meta, meta.acl and acl of file', async () => {
+            await api.remove(fileWithLinks.url)
             await expect(api.itemExists(fileWithLinks.url)).resolves.toBe(false)
             await expect(api.itemExists(fileWithLinks.acl.url)).resolves.toBe(false)
 //            await expect(api.itemExists(fileWithLinks.meta.url)).resolves.toBe(false)
@@ -356,6 +396,30 @@ describe('recursive', () => {
         })
     })
 
+    describe('unified copy', () => {
+        test('copies folder without links', async () => {
+//          await api.delete(target.url+'.meta')
+/*          const links = await api.getItemLinks(target.url, { links: LINKS.INCLUDE })
+            if (links.meta) {
+                await api._deleteItemWithLinks(links.meta)
+            }
+*/
+            await api.copy(source.url, target.url, { withAcl: false, withMeta: false })
+            const results = await Promise.all(target.contentsAndPlaceholders
+                .map(({ url }) => api.itemExists(url).then(exists => [url, exists])))
+            results.forEach(res => {
+                const isLink = res[0].endsWith('.meta') || res[0].endsWith('.acl')
+                expect(res).toEqual([expect.any(String), !isLink])
+            })
+        })
+        test('copies folder with all links', async () => {
+            await api.copy(source.url, target.url)
+            const results = await Promise.all(target.contentsAndPlaceholders
+                .map(({ url }) => api.itemExists(url).then(exists => [url, exists])))
+            results.forEach(res => expect(res).toEqual([expect.any(String), true]))
+        })
+    })
+
     describe('deleteFolderRecursively', () => {
         test('deletes folder and all links', async () => {
             await api.deleteFolderRecursively(source.url)
@@ -363,7 +427,29 @@ describe('recursive', () => {
         })
     })
 
-    describe('move', () => {
+    describe('unified remove', () => {
+        test('removes folder and all links', async () => {
+            await api.remove(source.url)
+            await expect(api.itemExists(source.url)).resolves.toBe(false)
+        })
+    })
+
+    describe('moveFolder', () => {
+        test('moves folder with all links', async () => {
+            await api.moveFolder(source.url, target.url)
+            const results = await Promise.all(target.contentsAndPlaceholders
+                .map(({ url }) => api.itemExists(url).then(exists => [url, exists])))
+            results.forEach(res => expect(res).toEqual([expect.any(String), true]))
+        })
+        test('deletes source completely', async () => {
+            await api.moveFolder(source.url, target.url)
+            const results = await Promise.all(target.contentsAndPlaceholders
+                .map(({ url }) => api.itemExists(url).then(exists => [url, exists])))
+            results.forEach(res => expect(res).toEqual([expect.any(String), true]))
+        })
+    })
+
+    describe('unified move', () => {
         test('moves folder with all links', async () => {
             await api.move(source.url, target.url)
             const results = await Promise.all(target.contentsAndPlaceholders
