@@ -8,7 +8,7 @@ const fc = new FileClient(auth)
 
 // CHANGE THIS REMOTE URL TO ONE IN YOUR OWN POD!
 //
-const remote = "https://jeffz.solid.community/public/square.png"
+const remote = "https://jeffz.solidcommunity.net/public/square.png"
 const local  = "file://" + process.cwd() + "/square.png"
 
 async function run(){
