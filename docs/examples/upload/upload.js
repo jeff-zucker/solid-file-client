@@ -1,4 +1,6 @@
-
+//Jeff, I start my exploration in this file, this is only a dummy PR because I like comments a lot.
+//must check lotsa links in my archive to find solid.authn. Finally after 3 1/2 years I touch code, thanx.
+//feel free to delete the comments afterwards. many and little PRs. starting tomorrow.
 const fileClient = new SolidFileClient(solid.auth, { enableLogging: true })
 
 document.getElementById('login').addEventListener('click', e => solid.auth.popupLogin({ popupUri: 'https://solid.community/common/popup.html' }))
