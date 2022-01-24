@@ -24,14 +24,20 @@
         <div class="row">
             <div class="col-md-4 order-md-2 mb-4">
                 <h4 class="d-flex justify-content-between align-items-center mb-3">
-                    <span class="text-muted">Login to your Pod</span>
+                    <!--old <span class="text-muted">Login to your Pod</span>
                 </h4>
                 <div class="logged-out">
                     <button id="login" class="btn btn-primary">Login</button>
                 </div>
                 <div class="logged-in">
                     <p class="text-muted">Logged in as <span class="webid"></span></p>
-                    <button id="logout" class="btn btn-secondary">Logout</button>
+                    <button id="logout" class="btn btn-secondary">Logout</button> -->
+                    <!--new -->
+                    <span id="webId"></span>
+                     <input id="oidc" value="https://solidweb.me" style="width:24em" />
+                      <button id="loginButton">Login</button>
+                     <button id="logoutButton">Logout</button>
+                    <!--end new -->
                 </div>
             </div>
             <div class="col-md-8 order-md-1">
