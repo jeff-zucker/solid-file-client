@@ -3,8 +3,11 @@
 //feel free to delete the comments afterwards. many and little PRs. starting tomorrow.
 //to keep the documentation in a minimum meaningful level, I check 
 //https://docs.inrupt.com/developer-tools/javascript/client-libraries/authentication/ and will need solid-client-authn-browser I think
+
+//here authn is needed
 const fileClient = new SolidFileClient(solid.auth, { enableLogging: true })
 
+/*old
 document.getElementById('login').addEventListener('click', e => solid.auth.popupLogin({ popupUri: 'https://solid.community/common/popup.html' }))
 document.getElementById('logout').addEventListener('click', e => solid.auth.logout())
 solid.auth.trackSession(session => {
@@ -17,6 +20,24 @@ solid.auth.trackSession(session => {
         $('.webid').text(session.webId)
     }
 })
+*/
+//new (taken from https://docs.inrupt.com/developer-tools/javascript/client-libraries/tutorial/authenticate-browser/)
+ // 2. Start the Login Process if not already logged in.
+  if (!getDefaultSession().info.isLoggedIn) {
+    // The `login()` redirects the user to their identity provider;
+    // i.e., moves the user away from the current page.
+    await login({
+      // Specify the URL of the user's Solid Identity Provider; e.g., "https://broker.pod.inrupt.com" or "https://inrupt.net"
+      oidcIssuer: "https://solidweb.me/",
+      // Specify the URL the Solid Identity Provider should redirect to after the user logs in,
+      // e.g., the current page for a single-page app.
+      redirectUrl: window.location.href,
+      // Pick an application name that will be shown when asked 
+      // to approve the application's access to the requested data.
+      clientName: "solid-file-client-demo"
+    });
+  }
+//end new
 
 const setUploadStatus = isUploading => {
     if (isUploading) {
