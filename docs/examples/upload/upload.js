@@ -5,10 +5,10 @@
 //https://docs.inrupt.com/developer-tools/javascript/client-libraries/authentication/ and will need solid-client-authn-browser I think
 
 //here authn is needed
-<!--new -->
+//new
 const auth = solidClientAuthentication.getDefaultSession();      
 const fileClient = new SolidFileClient( auth, { enableLogging: true })
-<!--end new -->
+//end new
 
 /*old
 document.getElementById('login').addEventListener('click', e => solid.auth.popupLogin({ popupUri: 'https://solid.community/common/popup.html' }))
