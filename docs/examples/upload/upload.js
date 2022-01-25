@@ -28,7 +28,7 @@ solid.auth.trackSession(session => {
     // i.e., moves the user away from the current page.
     await login({
       // Specify the URL of the user's Solid Identity Provider; e.g., "https://broker.pod.inrupt.com" or "https://inrupt.net"
-      oidcIssuer: "https://solidweb.me/",
+      oidcIssuer: document.getElementById("oidc").value,
       // Specify the URL the Solid Identity Provider should redirect to after the user logs in,
       // e.g., the current page for a single-page app.
       redirectUrl: window.location.href,
