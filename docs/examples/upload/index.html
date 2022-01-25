@@ -40,6 +40,45 @@
                     <!--end new -->
                 </div>
             </div>
+<!--new            
+<script>
+const iscan = solidClientAuthentication;
+var session = iscan.getDefaultSession();
+
+const loginButton = document.querySelector("#loginButton");
+const logoutButton = document.querySelector("#logoutButton");
+const webIdArea = document.querySelector("#webId");
+loginButton.onclick = ()=> { 
+  return iscan.login({
+    oidcIssuer: document.getElementById("oidc").value,
+    redirectUrl: window.location.href,
+    clientName: "Minimal login/logout"
+  });
+};
+logoutButton.onclick = async ()=> { 
+  await session.logout();
+  showLoginStatus();
+};
+async function handleRedirectAfterLogin() {
+  await iscan.handleIncomingRedirect();
+  showLoginStatus();
+}
+function showLoginStatus() {
+  session = iscan.getDefaultSession();
+  if (session.info.isLoggedIn) {
+    loginButton.style.display = "none";
+    logoutButton.style.display = "inline-block";
+    webId.innerHTML = `Logged in as ${session.info.webId}`;
+  }
+  else {
+    loginButton.style.display =  "inline-block";
+    logoutButton.style.display = "none";
+    webId.innerHTML = `Not logged in.`;
+  }
+}
+handleRedirectAfterLogin();
+</script> 
+<!--end new-->
             <div class="col-md-8 order-md-1">
                 <form id="upload-form" class="needs-validation">
                     <h4 class="mb-3">Settings</h4>
