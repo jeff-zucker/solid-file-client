@@ -2,12 +2,10 @@
 //found in the state pre-V2
 //modified (co-authored) 2022-01-27 by @ewingson in order to switch to new auth (DPoP)
 //original authors @Otto-AA, @bourgeoa and @jeff-zucker
-console.log('start pre auth get session')
-const auth = solidClientAuthentication.getDefaultSession();
-console.log('post auth')      
+//new
+const auth = solidClientAuthentication.getDefaultSession();      
 const fileClient = new SolidFileClient( auth, { enableLogging: true })
-console.log('solid file client initialized')
-
+//end new
 /*old
 document.getElementById('login').addEventListener('click', e => solid.auth.popupLogin({ popupUri: 'https://solidcommunity.net/common/popup.html' }))
 document.getElementById('logout').addEventListener('click', e => solid.auth.logout())
