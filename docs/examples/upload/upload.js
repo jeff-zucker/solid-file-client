@@ -1,5 +1,5 @@
-
-const fileClient = new SolidFileClient(solid.auth, { enableLogging: true })
+const auth = solidClientAuthentication.getDefaultSession();      
+const fileClient = new SolidFileClient( auth, { enableLogging: true }))
 
 document.getElementById('login').addEventListener('click', e => solid.auth.popupLogin({ popupUri: 'https://solidcommunity.net/common/popup.html' }))
 document.getElementById('logout').addEventListener('click', e => solid.auth.logout())

@@ -32,10 +32,10 @@
        				  <span id="webId"></span>
                       <input id="oidc" value="https://solidweb.me/" style="width:24em" />
                       <div class="logged-out">
-                        <button id="login" class="btn btn-primary">Login</button>
+                        <button id="loginButton">Login</button>
                       </div>
                       <div class="logged-in">
-                        <button id="logout" class="btn btn-secondary">Logout</button>
+                        <button id="logoutButton">Logout</button>
                       </div>
                     </div>
                      <!-- end new -->
@@ -99,7 +99,45 @@
             </ul>
         </footer>
     </div>
+<!-- new -->
+<script>
+const iscan = solidClientAuthentication;
+var session = iscan.getDefaultSession();
 
+const loginButton = document.querySelector("#loginButton");
+const logoutButton = document.querySelector("#logoutButton");
+const webIdArea = document.querySelector("#webId");
+loginButton.onclick = ()=> { 
+  return iscan.login({
+    oidcIssuer: document.getElementById("oidc").value,
+    redirectUrl: window.location.href,
+    clientName: "solid-file-client-demo"
+  });
+};
+logoutButton.onclick = async ()=> { 
+  await session.logout();
+  showLoginStatus();
+};
+async function handleRedirectAfterLogin() {
+  await iscan.handleIncomingRedirect();
+  showLoginStatus();
+}
+function showLoginStatus() {
+  session = iscan.getDefaultSession();
+  if (session.info.isLoggedIn) {
+    loginButton.style.display = "none";
+    logoutButton.style.display = "inline-block";
+    webId.innerHTML = `Logged in as ${session.info.webId}`;
+  }
+  else {
+    loginButton.style.display =  "inline-block";
+    logoutButton.style.display = "none";
+    webId.innerHTML = `Not logged in.`;
+  }
+}
+handleRedirectAfterLogin();
+</script>
+<!-- end new -->
     <!-- Scripts for the layout -->
     <script src="https://code.jquery.com/jquery-3.3.1.slim.min.js"
         integrity="sha384-q8i/X+965DzO0rT7abK41JStQIAqVgRVzpbzo5smXKp4YfRvH+8abtTE1Pi6jizo"
