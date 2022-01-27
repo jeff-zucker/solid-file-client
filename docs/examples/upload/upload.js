@@ -1,4 +1,4 @@
-//file docs/examples/upload.js
+//file docs/examples/upload/upload.js
 //found in the state pre-V2
 //modified (co-authored) 2022-01-27 by @ewingson in order to switch to new auth (DPoP)
 //original authors @Otto-AA, @bourgeoa and @jeff-zucker
