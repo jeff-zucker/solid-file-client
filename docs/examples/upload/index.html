@@ -1,3 +1,4 @@
+<!-- switched to new auth by @ewingson 2022-01-27 -->
 <!doctype html>
 <html lang="en">
 
@@ -101,25 +102,33 @@
     </div>
 <!-- new -->
 <script>
+console.log('index script started');
 const iscan = solidClientAuthentication;
+console.log('set var session get default session');
 var session = iscan.getDefaultSession();
+console.log('got session');
 
+console.log('define buttons and webId');
 const loginButton = document.querySelector("#loginButton");
 const logoutButton = document.querySelector("#logoutButton");
 const webIdArea = document.querySelector("#webId");
+console.log('buttons and webId defined');
 loginButton.onclick = ()=> { 
   return iscan.login({
+    console.log('click login button');
     oidcIssuer: document.getElementById("oidc").value,
     redirectUrl: window.location.href,
     clientName: "solid-file-client-demo"
   });
 };
 logoutButton.onclick = async ()=> { 
+  console.log('click logout button');
   await session.logout();
   showLoginStatus();
 };
 async function handleRedirectAfterLogin() {
   await iscan.handleIncomingRedirect();
+  console.log('action await iscan done function handleIncomingRedirect called');
   showLoginStatus();
 }
 function showLoginStatus() {
@@ -127,14 +136,17 @@ function showLoginStatus() {
   if (session.info.isLoggedIn) {
     loginButton.style.display = "none";
     logoutButton.style.display = "inline-block";
+    console.log('show log status logged in');
     webId.innerHTML = `Logged in as ${session.info.webId}`;
   }
   else {
     loginButton.style.display =  "inline-block";
     logoutButton.style.display = "none";
+    console.log('show log status logged out');
     webId.innerHTML = `Not logged in.`;
   }
 }
+console.log('call function handleRedirectAfterLogin here');
 handleRedirectAfterLogin();
 </script>
 <!-- end new -->
