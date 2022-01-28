@@ -1,4 +1,4 @@
-<!-- switched to new auth by @ewingson 2022-01-27 -->
+<!-- switched to new auth by @ewingson 2022-01-28 -->
 <!doctype html>
 <html lang="en">
 
@@ -27,16 +27,17 @@
         </div>
 
         <div class="row">
-        			<!--new -->
+        			<!-- new -->
+        			<!-- login area hardcoded default value, options input needs some TLC -->
                     <span id="webId"></span>
-                     <input id="oidc" value="https://solidweb.me/" style="width:24em" />
-                      <div class="logged-out">
+                    <input id="oidc" value="https://solidweb.me/" style="width:24em" />
+                    <div class="logged-out">
                       <button id="loginButton" class="btn btn-primary">Login</button>
-                      </div>
-                      <div class="logged-in">
-                     <button id="logoutButton" class="btn btn-secondary">Logout</button>
-                     </div>
-                    <!--end new -->
+                    </div>
+                    <div class="logged-in">
+                      <button id="logoutButton" class="btn btn-secondary">Logout</button>
+                    </div>
+                    <!-- end new -->
             <!-- old
             <div class="col-md-4 order-md-2 mb-4">
                 <h4 class="d-flex justify-content-between align-items-center mb-3">
@@ -99,12 +100,15 @@
     </div>
 <!--new -->           
 <script>
+//get session
 const iscan = solidClientAuthentication;
 var session = iscan.getDefaultSession();
 
+//define buttons
 const loginButton = document.querySelector("#loginButton");
 const logoutButton = document.querySelector("#logoutButton");
 const webIdArea = document.querySelector("#webId");
+//event
 loginButton.onclick = ()=> { 
   return iscan.login({
     oidcIssuer: document.getElementById("oidc").value,
@@ -112,14 +116,17 @@ loginButton.onclick = ()=> {
     clientName: "solid-file-client-demo"
   });
 };
+//event
 logoutButton.onclick = async ()=> { 
   await session.logout();
   showLoginStatus();
 };
+//handle redirect
 async function handleRedirectAfterLogin() {
   await iscan.handleIncomingRedirect();
   showLoginStatus();
 }
+//show status
 function showLoginStatus() {
   session = iscan.getDefaultSession();
   if (session.info.isLoggedIn) {
@@ -137,6 +144,7 @@ function showLoginStatus() {
     webId.innerHTML = `Not logged in.`;
   }
 }
+//initial call
 handleRedirectAfterLogin();
 </script> 
 <!--end new-->
