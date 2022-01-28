@@ -30,8 +30,12 @@
         			<!--new -->
                     <span id="webId"></span>
                      <input id="oidc" value="https://solidweb.me/" style="width:24em" />
-                      <button id="loginButton">Login</button>
-                     <button id="logoutButton">Logout</button>
+                      <div class="logged-out">
+                      <button id="loginButton" class="btn btn-primary">Login</button>
+                      </div>
+                      <div class="logged-in">
+                     <button id="logoutButton" class="btn btn-secondary">Logout</button>
+                     </div>
                     <!--end new -->
             <!-- old
             <div class="col-md-4 order-md-2 mb-4">
@@ -119,13 +123,17 @@ async function handleRedirectAfterLogin() {
 function showLoginStatus() {
   session = iscan.getDefaultSession();
   if (session.info.isLoggedIn) {
-    loginButton.style.display = "none";
-    logoutButton.style.display = "inline-block";
+    $('.logged-in').show()
+    $('.logged-out').hide()
+    //loginButton.style.display = "none";
+    //logoutButton.style.display = "inline-block";
     webId.innerHTML = `Logged in as ${session.info.webId}`;
   }
   else {
-    loginButton.style.display =  "inline-block";
-    logoutButton.style.display = "none";
+    $('.logged-in').hide()
+    $('.logged-out').show()
+    //loginButton.style.display =  "inline-block";
+    //logoutButton.style.display = "none";
     webId.innerHTML = `Not logged in.`;
   }
 }

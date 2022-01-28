@@ -5,6 +5,18 @@
 //new
 const auth = solidClientAuthentication.getDefaultSession();      
 const fileClient = new SolidFileClient( auth, { enableLogging: true })
+
+session = iscan.getDefaultSession();
+  if (session.info.isLoggedIn) {
+    $('.logged-in').show();
+    $('.logged-out').hide();
+    webId.innerHTML = `Logged in as ${session.info.webId}`;
+  }
+  else {
+    $('.logged-in').hide();
+    $('.logged-out').show();
+    webId.innerHTML = `Not logged in.`;
+  }
 //end new
 /*old
 document.getElementById('login').addEventListener('click', e => solid.auth.popupLogin({ popupUri: 'https://solidcommunity.net/common/popup.html' }))
