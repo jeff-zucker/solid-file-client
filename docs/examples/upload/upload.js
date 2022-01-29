@@ -1,6 +1,6 @@
 //file docs/examples/upload/upload.js
 //found in the state pre-V2
-//modified (co-authored) 2022-01-28 by @ewingson in order to switch to new auth (DPoP)
+//modified (co-authored) <the_date_goes_here by> @ewingson in order to switch to new auth (DPoP)
 //original authors @Otto-AA, @bourgeoa and @jeff-zucker
 //new
 //declare
