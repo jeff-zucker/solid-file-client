@@ -43,18 +43,19 @@ body {
 
 <div id="sidebar">
     <h3>Solid-File-Client Demo</h3>
-    <button id="upload" class="btn btn-primary">Upload</button>
-    <button id="copy" class="btn btn-primary">Copy</button>
-    <button id="return" class="btn btn-primary">Back to README</button>
+    <a href="./upload/index.html"><button id="upload" class="btn btn-primary">Upload</button></a>
+    <a href="./copy/index.html"><button id="copy" class="btn btn-primary">Copy</button></a>
+    <a href = "https://github.com/jeff-zucker/solid-file-client/blob/master/README.md"><button id="return" class="btn btn-primary">Back to README</button></a>
     <div id="note">To use this (or any app), you must specify the origin
       of the app as a trustedApp for your pod. In this case, you need to
       add Write permissions for https://jeff-zucker.github.io - no trailing
       slash.  Go here to learn <a href="https://github.com/solid/userguide#manage-your-trusted-applications">how to specify trustedApps</a>.
     </div>
 </div>
-<iframe id="main" src="upload/index.html"></iframe>
+<iframe id="main" src="./info.html"></iframe>
 
 <script>
+</*
 document.getElementById('copy').addEventListener( 'click', e => {
    document.getElementById('main').src="./copy/index.html"
 
@@ -66,5 +67,6 @@ document.getElementById('upload').addEventListener( 'click', e => {
 document.getElementById('return').addEventListener( 'click', e => {
    document.location.href="https://github.com/jeff-zucker/solid-file-client/blob/master/README.md"
 })
+*/
 </script>
 </body>
