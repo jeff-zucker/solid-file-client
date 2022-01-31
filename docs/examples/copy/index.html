@@ -140,17 +140,70 @@
         crossorigin="anonymous"></script>
 
     <!-- Solid Copy -->
-    <script src="https://cdn.jsdelivr.net/npm/solid-auth-client@2.4.1/dist-lib/solid-auth-client.bundle.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/solid-file-client"></script>
+    <!--<script src="https://cdn.jsdelivr.net/npm/solid-auth-client@2.4.1/dist-lib/solid-auth-client.bundle.js"></script> -->
+    <!-- bundle -->
+    <script src="https://cdn.jsdelivr.net/npm/@inrupt/solid-client-authn-browser@1/dist/solid-client-authn.bundle.js">
+</script>
+	<!-- end bundle -->
+    <!--<script src="https://cdn.jsdelivr.net/npm/solid-file-client"></script>-->
     <script>
     	//new
     	//declare
-    	const auth = solidClientAuthentication.getDefaultSession();      
+    	const auth = solidClientAuthentication.getDefaultSession(); 
+    	
+    	//get session
+const iscan = solidClientAuthentication;
+var session = iscan.getDefaultSession();
+
+//define buttons
+const loginButton = document.querySelector("#loginButton");
+const logoutButton = document.querySelector("#logoutButton");
+const webIdArea = document.querySelector("#webId");
+//event
+loginButton.onclick = ()=> { 
+  return iscan.login({
+    oidcIssuer: document.getElementById("oidc").value,
+    redirectUrl: window.location.href,
+    clientName: "solid-file-client-demo"
+  });
+};
+//event
+logoutButton.onclick = async ()=> { 
+  await session.logout();
+  showLoginStatus();
+};
+//handle redirect
+async function handleRedirectAfterLogin() {
+  await iscan.handleIncomingRedirect();
+  showLoginStatus();
+}
+//show status
+function showLoginStatus() {
+  session = iscan.getDefaultSession();
+  if (session.info.isLoggedIn) {
+    $('.logged-in').show()
+    $('.logged-out').hide()
+    //loginButton.style.display = "none";
+    //logoutButton.style.display = "inline-block";
+    webId.innerHTML = `Logged in as ${session.info.webId}`;
+  }
+  else {
+    $('.logged-in').hide()
+    $('.logged-out').show()
+    //loginButton.style.display =  "inline-block";
+    //logoutButton.style.display = "none";
+    webId.innerHTML = `Not logged in.`;
+  }
+}
+//initial call
+handleRedirectAfterLogin();
+    	     
 		const fileClient = new SolidFileClient( auth, { enableLogging: true })
     	//old
         //const fileClient = new SolidFileClient(solid.auth, { enableLogging: true })
         const { MERGE: { REPLACE, KEEP_SOURCE, KEEP_TARGET } } = SolidFileClient
-
+        
+/* old
         document.getElementById('login').addEventListener('click', e => solid.auth.popupLogin({ popupUri: 'https://solidcommunity.net/common/popup.html' }))
         document.getElementById('logout').addEventListener('click', e => solid.auth.logout())
         solid.auth.trackSession(session => {
@@ -163,7 +216,7 @@
                 $('.webid').text(session.webId)
             }
         })
-
+end old */
         const setCopyStatus = isCopying => {
             if (isCopying) {
                 $('.not-copying').hide()
