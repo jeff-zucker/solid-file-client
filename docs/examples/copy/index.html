@@ -145,7 +145,7 @@
     <script src="https://cdn.jsdelivr.net/npm/@inrupt/solid-client-authn-browser@1/dist/solid-client-authn.bundle.js">
 </script>
 	<!-- end bundle -->
-    <!--<script src="https://cdn.jsdelivr.net/npm/solid-file-client"></script>-->
+    <script src="https://cdn.jsdelivr.net/npm/solid-file-client"></script>
     <script>
     	//new
     	//declare
@@ -195,9 +195,9 @@ function showLoginStatus() {
     webId.innerHTML = `Not logged in.`;
   }
 }
-//initial call
-handleRedirectAfterLogin();
-    	     
+
+  //initial call
+handleRedirectAfterLogin();  	     
 		const fileClient = new SolidFileClient( auth, { enableLogging: true })
     	//old
         //const fileClient = new SolidFileClient(solid.auth, { enableLogging: true })
@@ -292,6 +292,7 @@ end old */
             setCopyStatus(false)
             setLogStatus(true)
         })
+        
     </script>
 </body>
 
