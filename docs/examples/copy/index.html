@@ -143,7 +143,12 @@
     <script src="https://cdn.jsdelivr.net/npm/solid-auth-client@2.4.1/dist-lib/solid-auth-client.bundle.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/solid-file-client"></script>
     <script>
-        const fileClient = new SolidFileClient(solid.auth, { enableLogging: true })
+    	//new
+    	//declare
+    	const auth = solidClientAuthentication.getDefaultSession();      
+		const fileClient = new SolidFileClient( auth, { enableLogging: true })
+    	//old
+        //const fileClient = new SolidFileClient(solid.auth, { enableLogging: true })
         const { MERGE: { REPLACE, KEEP_SOURCE, KEEP_TARGET } } = SolidFileClient
 
         document.getElementById('login').addEventListener('click', e => solid.auth.popupLogin({ popupUri: 'https://solidcommunity.net/common/popup.html' }))
