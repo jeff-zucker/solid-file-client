@@ -1,0 +1,121 @@
+<!-- new index -->
+<!doctype html>
+<html>
+<head>
+<!-- Required meta tags -->
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+<!-- Bootstrap CSS -->
+<link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css" integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
+<!-- bundle -->
+<script src="https://cdn.jsdelivr.net/npm/@inrupt/solid-client-authn-browser@1/dist/solid-client-authn.bundle.js">
+</script>
+<!-- optional?, jquery -->
+<script src="https://code.jquery.com/jquery-3.3.1.slim.min.js"
+integrity="sha384-q8i/X+965DzO0rT7abK41JStQIAqVgRVzpbzo5smXKp4YfRvH+8abtTE1Pi6jizo"
+crossorigin="anonymous"></script>
+<!-- optional?, popper -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js"
+integrity="sha384-UO2eT0CpHqdSJQ6hJty5KVphtPhzWj9WO1clHTMGa3JDZwrnQq4sF86dIHNDz0W1"
+crossorigin="anonymous"></script>
+<!-- optional?, stackpath -->
+<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js"
+integrity="sha384-JjSmVgyd0p3pXB1rRibZUAYoIIy6OrQ6VrjIEaFf/nJGzIxFDsf4x0xIM+B07jRM"
+crossorigin="anonymous"></script>
+<!-- source -->
+<script src="https://cdn.jsdelivr.net/npm/solid-file-client"></script>
+<title>Copy Demo</title>
+<style>
+body {
+    padding:0;
+    margin:0;
+    overflow:hidden;
+}
+#h3 {
+    text-align:center;
+    width:100%;
+    margin-bottom:1em;
+}
+#button {
+    width:100%;
+    margin-bottom:1em;
+    font-size : large;
+}
+#display {
+    border:0;
+    left : 25vw;
+    width : 75vw;
+    height : 99vh;
+    position:absolute;
+}
+#note {
+    padding:1em;
+    border:1px solid black;
+}
+</style>
+</head>
+
+<body>
+<div class="container">
+	<div class="row">
+		<span id="webId"></span>
+        <input id="oidc" value="https://solidweb.me/" style="width:24em" />
+        <div class="logged-out">
+        <button id="loginButton" class="btn btn-primary">Login</button>
+        </div>
+        <div class="logged-in">
+        <button id="logoutButton" class="btn btn-secondary">Logout</button>
+        </div>
+        
+        
+        
+	</div>
+</div>
+<script>
+//get session
+const iscan = solidClientAuthentication;
+var session = iscan.getDefaultSession();
+
+//define buttons
+const loginButton = document.querySelector("#loginButton");
+const logoutButton = document.querySelector("#logoutButton");
+const webIdArea = document.querySelector("#webId");
+//event
+loginButton.onclick = ()=> { 
+  return iscan.login({
+    oidcIssuer: document.getElementById("oidc").value,
+    redirectUrl: window.location.href,
+    clientName: "solid-file-client-demo"
+  });
+};
+//event
+logoutButton.onclick = async ()=> { 
+  await session.logout();
+  showLoginStatus();
+};
+//handle redirect
+async function handleRedirectAfterLogin() {
+  await iscan.handleIncomingRedirect();
+  showLoginStatus();
+}
+//show status
+function showLoginStatus() {
+  session = iscan.getDefaultSession();
+  if (session.info.isLoggedIn) {
+    $('.logged-in').show();
+    $('.logged-out').hide();
+    webId.innerHTML = `Logged in as ${session.info.webId}`;
+  }
+  else {
+    $('.logged-in').hide();
+    $('.logged-out').show();
+    webId.innerHTML = `Not logged in.`;
+  }
+}
+//initial call
+handleRedirectAfterLogin();
+</script>
+<!-- copyscript -->
+<script src="./copy.js" type="application/javascript"></script>
+</body>
+</html>
