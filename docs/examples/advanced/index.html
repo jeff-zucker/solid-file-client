@@ -74,13 +74,14 @@ body {
         <button id="logoutButton" class="btn btn-secondary">Logout</button>
         </div>
         
-        
+       <!-- the formular input happens here --> 
         
 	</div>
 </div>
 <script>
 //get session
 const iscan = solidClientAuthentication;
+// I've got several calls of 'getDefaultSession()'. (here index.html L85 and L111 and copy.js L3) do I need that only once...?
 var session = iscan.getDefaultSession();
 
 //define buttons
