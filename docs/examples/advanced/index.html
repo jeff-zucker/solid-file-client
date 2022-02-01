@@ -105,6 +105,7 @@ logoutButton.onclick = async ()=> {
 async function handleRedirectAfterLogin() {
   await iscan.handleIncomingRedirect();
   showLoginStatus();
+  if (session.info.isLoggedIn)  main(session);
 }
 //show status
 function showLoginStatus() {
