@@ -1,3 +1,6 @@
+// file docs/examples/advanced/copy.js
+// restructure february 2022 @ewingson
+//
 //code goes here
 //?
 

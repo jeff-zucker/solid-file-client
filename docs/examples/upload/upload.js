@@ -1,6 +1,7 @@
-//file docs/examples/upload/upload.js
-//modified (co-authored) <the_date_goes_here> by @ewingson in order to switch to new auth (DPoP)
-//original authors @Otto-AA, @bourgeoa and @jeff-zucker
+// file docs/examples/upload/upload.js
+// modified (co-authored) 2022/january by @ewingson in order to switch to new auth (DPoP)
+// original authors @Otto-AA, @bourgeoa and @jeff-zucker
+//
 //new
 //declare
 const auth = solidClientAuthentication.getDefaultSession();      
