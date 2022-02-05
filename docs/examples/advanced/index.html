@@ -64,6 +64,10 @@ body {
 
 <body>
 <div class="container">
+		<div class="py-5 text-center">
+            <h2>Solid Copy Demo</h2>
+            <p class="lead">Copy folders or files within your solid pod or from a public source to your pod.</p>
+        </div>
 	<div class="row">
 		<span id="webId"></span>
         	<input id="oidc" value="https://solidweb.me/" style="width:24em" />
@@ -74,10 +78,91 @@ body {
         	<button id="logoutButton" class="btn btn-secondary">Logout</button>
         </div>
         
-       <!-- the formular input happens here --> 
+       <!-- the formular input happens here -->
+       <br />
+       <div><!-- form div -->
+       
+       <form id="copy-form" class="needs-validation">
+                    <div class="mb-3">
+                        <label for="src">Folder/File from your pod or public pod</label>
+                        <div class="input-group">
+                            <div class="input-group-prepend">
+                                <span class="input-group-text">From</span>
+                            </div>
+                            <input type="text" class="form-control" id="src"
+                                placeholder="https://solid.example.org/folder/" required>
+                            <div class="invalid-feedback" style="width: 100%;">
+                                Please specify which item you want to copy.
+                            </div>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label for="dest">Destination at your pod</label>
+                        <div class="input-group">
+                            <div class="input-group-prepend">
+                                <span class="input-group-text">To</span>
+                            </div>
+                            <input type="text" class="form-control" id="dest"
+                                placeholder="https://solid.example.org/other/" required>
+                            <div class="invalid-feedback" style="width: 100%;">
+                                Please specify where it should be copied to.
+                            </div>
+                        </div>
+                    </div>
+       
+        <div class="form-check form-check-inline">
+                        <input class="form-check-input" type="radio" name="merge-option" id="merge-replace" value="replace" checked>
+                        <label class="form-check-label" for="merge-replace">Replace target</label>
+                      </div>
+                      <div class="form-check form-check-inline">
+                        <input class="form-check-input" type="radio" name="merge-option" id="merge-keep-source" value="keep-source">
+                        <label class="form-check-label" for="merge-keep-source">Merge and keep source</label>
+                      </div>
+                      <div class="form-check form-check-inline">
+                        <input class="form-check-input" type="radio" name="merge-option" id="merge-keep-target" value="keep-target">
+                        <label class="form-check-label" for="merge-keep-target">Merge and keep target</label>
+                      </div>
+                    <div class="custom-control custom-checkbox">
+                        <input type="checkbox" class="custom-control-input" id="create-path" checked>
+                        <label class="custom-control-label" for="create-path">Create path to target container</label>
+                    </div>
+                    <div class="custom-control custom-checkbox">
+                        <input type="checkbox" class="custom-control-input" id="with-acl" checked>
+                        <label class="custom-control-label" for="with-acl">Include acl files</label>
+                    </div>
+                    <div class="custom-control custom-checkbox">
+                        <input type="checkbox" class="custom-control-input" id="with-meta" checked>
+                        <label class="custom-control-label" for="with-meta">Include meta files</label>
+                    </div>
+                    <hr class="mb-4">
+                    <div class="not-copying">
+                        <button class="btn btn-primary btn-lg btn-block" type="submit">Start Copying</button>
+                    </div>
+                    <div class="copying">
+                        <button class="btn btn-primary btn-lg btn-block disabled" type="submit">
+                            Copying...
+                            <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+                        </button>
+                    </div>
+                    <ul class="logs my-2 list-group"></ul>
+                </form>
+       </div><!-- end form div -->
         
 	</div>
+	<br /><br />
+<a href="../upload/index.html"><button id="upload" class="btn btn-primary">to Upload</button></a>
+		<footer class="my-5 pt-5 text-muted text-center text-small">
+            <p class="mb-1">Implemented using solid-file-client</p>
+            <ul class="list-inline">
+                <li class="list-inline-item"><a href="https://github.com/jeff-zucker/solid-file-client">Source Code</a></li>
+                <li class="list-inline-item"><a href="https://jeff-zucker.github.io/solid-file-client/">Docs</a></li>
+                <li class="list-inline-item"><a href="https://github.com/jeff-zucker/solid-file-client/issues">Bugs</a></li>
+            </ul>
+        </footer>
+
 </div>
+<!-- copyscript -->
+<script src="./copy.js" type="application/javascript"></script>
 <script>
 //get session
 const iscan = solidClientAuthentication;
@@ -124,7 +209,6 @@ function showLoginStatus() {
 //initial call
 handleRedirectAfterLogin();
 </script>
-<!-- copyscript -->
-<script src="./copy.js" type="application/javascript"></script>
+
 </body>
 </html>
