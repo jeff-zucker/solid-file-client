@@ -9,6 +9,9 @@ async function main(session){
 const auth = solidClientAuthentication.getDefaultSession();      
 const fileClient = new SolidFileClient( auth, { enableLogging: true });
 
+//this seems to be the actual copy command
+const { MERGE: { REPLACE, KEEP_SOURCE, KEEP_TARGET } } = SolidFileClient;
+
 const setCopyStatus = isCopying => {
             if (isCopying) {
                 $('.not-copying').hide()
@@ -84,7 +87,4 @@ const setCopyStatus = isCopying => {
             setCopyStatus(false)
             setLogStatus(true)
         })
-//this seems to be the actual copy command
-const { MERGE: { REPLACE, KEEP_SOURCE, KEEP_TARGET } } = SolidFileClient;
-
 }

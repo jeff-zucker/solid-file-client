@@ -163,8 +163,7 @@ body {
         </footer>
 
 </div>
-<!-- copyscript -->
-<script src="./copy.js" type="application/javascript"></script>
+
 <script>
 //get session
 const iscan = solidClientAuthentication;
@@ -192,7 +191,7 @@ logoutButton.onclick = async ()=> {
 async function handleRedirectAfterLogin() {
 	await iscan.handleIncomingRedirect();
 	showLoginStatus();
-	if (session.info.isLoggedIn)  main(session);
+	if (session.info.isLoggedIn)  main(session); //call main function
 }
 //show status
 function showLoginStatus() {
@@ -211,6 +210,7 @@ function showLoginStatus() {
 //initial call
 handleRedirectAfterLogin();
 </script>
-
+<!-- copyscript -->
+<script src="./copy.js" type="application/javascript"></script>
 </body>
 </html>
