@@ -1,10 +1,9 @@
-// file docs/examples/advanced/copy.js
+// file docs/examples/advanced/solidCopyDemo.js
 // restructure february 2022 @ewingson
 //
 //code goes here
 //trying to understand the logic and put everything in the right order / verbose
-//import self
-//import solidCopyDemo from './solidCopyDemo';
+//codebase that is called at the bottom of advanced/index.html
 //import helper class
 import solidCopyDemoHelper from '../tools/solidCopyDemoHelper';
 console.log('file solidCopyDemo imports done');

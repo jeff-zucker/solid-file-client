@@ -1,10 +1,8 @@
 // file docs/examples/tools/solidCopyDemoHelper.js
 // restructure february 2022 by @ewingson
-//import self
-//import solidCopyDemoHelper from './solidCopyDemoHelper';
+// helper class that fulfills the needed promise in solidCopyDemo.js
 async function solidCopyDemoHelper() {
 console.log('solidCopyDemoHelper code started');
-
 
 
 
