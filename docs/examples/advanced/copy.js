@@ -11,6 +11,11 @@ console.log('SolidFileClient object initialized');
 const { MERGE: { REPLACE, KEEP_SOURCE, KEEP_TARGET } } = SolidFileClient;
 console.log('MERGE const');
 
+console.log('codeblock main // MOVED');
+const addSuccessLog = msg => $('.logs').append(`<li class="list-group-item list-group-item-success">${msg}</li>`)
+const addErrorLog = msg => $('.logs').append(`<li class="list-group-item list-group-item-danger">${msg}</li>`)
+//split up L49
+
 console.log('process form');
         document.getElementById('copy-form').addEventListener('submit', async e => {
             e.preventDefault()
@@ -38,12 +43,11 @@ console.log('process form');
                 merge = KEEP_TARGET
 
             console.log('set response');
+            //wo kommen diese 3 attribute/eigenschaften her ?
             const responseToMsg = response => `${response.status} ${response.statusText} ${response.url}`
 
-            console.log('codeblock main // MOVED');
-            const addSuccessLog = msg => $('.logs').append(`<li class="list-group-item list-group-item-success">${msg}</li>`)
-            const addErrorLog = msg => $('.logs').append(`<li class="list-group-item list-group-item-danger">${msg}</li>`)
-            resetLogs()
+//          resetLogs()
+//wird zweimal ausgeführt
 
             try {
               console.log('set copy status true');
