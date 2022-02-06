@@ -79,11 +79,11 @@ body {
         <div class="logged-in">
         	<button id="logoutButton" class="btn btn-secondary">Logout</button>
         </div>
-        
+
        <!-- the formular input happens here -->
        <br />
        <div><!-- form div -->
-       
+
        <form id="copy-form" class="needs-validation">
                     <div class="mb-3">
                         <label for="src">Folder/File from your pod or public pod</label>
@@ -111,7 +111,7 @@ body {
                             </div>
                         </div>
                     </div>
-       
+
         <div class="form-check form-check-inline">
                         <input class="form-check-input" type="radio" name="merge-option" id="merge-replace" value="replace" checked>
                         <label class="form-check-label" for="merge-replace">Replace target</label>
@@ -149,7 +149,7 @@ body {
                     <ul class="logs my-2 list-group"></ul>
                 </form>
        </div><!-- end form div -->
-        
+
 	</div>
 	<br /><br />
 <a href="../upload/index.html"><button id="upload" class="btn btn-primary">to Upload</button></a>
@@ -167,15 +167,20 @@ body {
 <script>
 //get session
 const iscan = solidClientAuthentication;
+console.log('iscan initialized');
 // I've got several calls of 'getDefaultSession()'. (here index.html L171 and L198 and copy.js L9) do I need that only once...?
 var session = iscan.getDefaultSession();
+console.log('define session / iscan.getDefaultSession done')
 
 //define buttons
+console.log('define Buttons and WebID');
 const loginButton = document.querySelector("#loginButton");
 const logoutButton = document.querySelector("#logoutButton");
 const webIdArea = document.querySelector("#webId");
+console.log('buttons and WebID defined');
 //event
-loginButton.onclick = ()=> { 
+loginButton.onclick = ()=> {
+	console.log('login button clicked');
 	return iscan.login({
     	oidcIssuer: document.getElementById("oidc").value,
     	redirectUrl: window.location.href,
@@ -183,31 +188,38 @@ loginButton.onclick = ()=> {
   	});
 };
 //event
-logoutButton.onclick = async ()=> { 
+logoutButton.onclick = async ()=> {
+	console.log('logout button clicked');
 	await session.logout();
+	console.log('logout done');
 	showLoginStatus();
 };
 //handle redirect
 async function handleRedirectAfterLogin() {
+	console.log('handle redirect called');
 	await iscan.handleIncomingRedirect();
 	showLoginStatus();
-	if (session.info.isLoggedIn)  main(session); //call main function
+	//if (session.info.isLoggedIn)  main(session); //call main function
 }
 //show status
 function showLoginStatus() {
+	console.log('show status start');
 	session = iscan.getDefaultSession();
 	if (session.info.isLoggedIn) {
 		$('.logged-in').show();
 		$('.logged-out').hide();
 		webId.innerHTML = `Logged in as ${session.info.webId}`;
+		console.log('show logged in');
 	}
 	else {
 		$('.logged-in').hide();
 		$('.logged-out').show();
 		webId.innerHTML = `Not logged in.`;
+		console.log('show logged out');
 	}
 }
 //initial call
+console.log('call handleRedirectAfterLogin()')
 handleRedirectAfterLogin();
 </script>
 <!-- copyscript -->
