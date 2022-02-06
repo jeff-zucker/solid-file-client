@@ -16,10 +16,8 @@ console.log('SolidFileClient object initialized');
 const { MERGE: { REPLACE, KEEP_SOURCE, KEEP_TARGET } } = SolidFileClient;
 console.log('MERGE const');
 
-console.log('codeblock main // MOVED');
-const addSuccessLog = msg => $('.logs').append(`<li class="list-group-item list-group-item-success">${msg}</li>`)
-const addErrorLog = msg => $('.logs').append(`<li class="list-group-item list-group-item-danger">${msg}</li>`)
-//split up L49
+
+//split up L54
 
 console.log('process form');
         document.getElementById('copy-form').addEventListener('submit', async e => {
@@ -50,7 +48,7 @@ console.log('process form');
             console.log('set response');
             //wo kommen diese 3 attribute/eigenschaften her ?
             const responseToMsg = response => `${response.status} ${response.statusText} ${response.url}`
-
+            //console.log('status:' + ${response.status} + 'text:' + ${response.statusText} + 'url:' + ${response.url});
 //          resetLogs()
 //wird zweimal ausgeführt
 
@@ -112,5 +110,10 @@ const setCopyStatus = isCopying => {
             $('.logs').empty()
             console.log('logs resetted');
         }
+
+        console.log('codeblock main // MOVED');
+        const addSuccessLog = msg => $('.logs').append(`<li class="list-group-item list-group-item-success">${msg}</li>`)
+        const addErrorLog = msg => $('.logs').append(`<li class="list-group-item list-group-item-danger">${msg}</li>`)
+        resetLogs()
 //console.log('solidCopyDemo export now');
 //export default solidCopyDemo;
