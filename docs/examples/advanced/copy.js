@@ -2,7 +2,7 @@
 // restructure february 2022 @ewingson
 //
 //code goes here
-//?
+//trying to understand the logic and put everything in the right order / verbose
 console.log('copy.js execution');
 const auth = solidClientAuthentication.getDefaultSession();
 const fileClient = new SolidFileClient( auth, { enableLogging: true });
