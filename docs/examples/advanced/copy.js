@@ -6,7 +6,7 @@
 
 async function main(session){
 
-const auth = solidClientAuthentication.getDefaultSession();      
+const auth = solidClientAuthentication.getDefaultSession();
 const fileClient = new SolidFileClient( auth, { enableLogging: true });
 
 //this seems to be the actual copy command
@@ -42,7 +42,7 @@ const setCopyStatus = isCopying => {
         const destInput = document.getElementById('dest')
         const createPathInput = document.getElementById('create-path')
         const withAclInput = document.getElementById('with-acl')
-        const withMetaInput = document.getElementById('with-acl')
+        const withMetaInput = document.getElementById('with-meta')
         const getMergeInput = () => document.querySelector('input[name="merge-option"]:checked')
 
         document.getElementById('copy-form').addEventListener('submit', async e => {
@@ -59,7 +59,7 @@ const setCopyStatus = isCopying => {
                 merge = KEEP_SOURCE
             else if (mergeVal === 'keep-target')
                 merge = KEEP_TARGET
-            
+
 
             const responseToMsg = response => `${response.status} ${response.statusText} ${response.url}`
             try {
