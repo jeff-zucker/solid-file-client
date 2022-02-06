@@ -168,7 +168,7 @@ body {
 //get session
 const iscan = solidClientAuthentication;
 console.log('iscan initialized');
-// I've got several calls of 'getDefaultSession()'. (here index.html L171 and L198 and copy.js L9) do I need that only once...?
+// I have let the auth stuff in index.html and put the copy code in an extra file. now I've made it verbose and try to follow the flow.
 var session = iscan.getDefaultSession();
 console.log('define session / iscan.getDefaultSession done')
 
