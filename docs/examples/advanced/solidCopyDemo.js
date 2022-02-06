@@ -4,10 +4,11 @@
 //code goes here
 //trying to understand the logic and put everything in the right order / verbose
 //import self
-import solidCopyDemo from './solidCopyDemo';
+//import solidCopyDemo from './solidCopyDemo';
 //import helper class
 import solidCopyDemoHelper from '../tools/solidCopyDemoHelper';
-console.log('copy.js execution');
+console.log('file solidCopyDemo imports done');
+console.log('solidCopyDemo.js code execution');
 const auth = solidClientAuthentication.getDefaultSession();
 const fileClient = new SolidFileClient( auth, { enableLogging: true });
 console.log('SolidFileClient object initialized');
@@ -111,4 +112,5 @@ const setCopyStatus = isCopying => {
             $('.logs').empty()
             console.log('logs resetted');
         }
-export solidCopyDemo;
+//console.log('solidCopyDemo export now');
+//export default solidCopyDemo;
