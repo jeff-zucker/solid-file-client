@@ -88,13 +88,14 @@ const setCopyStatus = isCopying => {
 
                         // Copy a file or folder
                         console.log('actual copy work');
+
                         const res = await fileClient.copy(from, to, {
                             merge,
                             createPath,
                             withAcl,
                             withMeta
                         })
-
+                  
                         res.forEach(response => {
                             const msg = responseToMsg(response)
                             console.log(msg)
@@ -109,6 +110,9 @@ const setCopyStatus = isCopying => {
 
                             addErrorLog(err.message)
                         })
+                    }
+                    finally {
+                      console.log('Ein Problem ist aufgetreten.')
                     }
                     console.log('set copy status false');
                     setCopyStatus(false)
