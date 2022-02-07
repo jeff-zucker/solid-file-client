@@ -3,7 +3,7 @@
 // helper class that fulfills the needed promise in solidCopyDemo.js
 function solidCopyDemoHelper(von,an,mer,cp,wacl,wmeta) {
 console.log('solidCopyDemoHelper code started');
-const antwort = 'Test:' + Test;
+let antwort = 42;
 
 
 

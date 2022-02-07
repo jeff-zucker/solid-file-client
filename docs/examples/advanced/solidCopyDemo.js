@@ -74,6 +74,8 @@ const setCopyStatus = isCopying => {
                         merge = KEEP_TARGET
 
                     console.log(from + '_' + to + '_' + merge + '_' + createPath + '_' + withAcl + '_' + withMeta);
+                    let help = solidCopyDemoHelper(from, to, merge, createPath, withAcl, withMeta);
+                    console.log(help);
 
                     console.log('set response');
                     //wo kommen diese 3 attribute/eigenschaften her ?
@@ -92,6 +94,7 @@ const setCopyStatus = isCopying => {
                             withAcl,
                             withMeta
                         })
+
                         res.forEach(response => {
                             const msg = responseToMsg(response)
                             console.log(msg)
