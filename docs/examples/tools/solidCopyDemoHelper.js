@@ -4,8 +4,8 @@
 async function solidCopyDemoHelper(von,an,mer,cp,wacl,wmeta) {
 console.log('solidCopyDemoHelper code started');
 let antwort = 42;
-const authn = solidClientAuthentication.getDefaultSession();
-const fc = new SolidFileClient( authn, { enableLogging: true });
+//const authn = solidClientAuthentication.getDefaultSession();
+//const fc = new SolidFileClient( authn, { enableLogging: true });
 
 /*let content = fc.copy(von, an, {
     mer,
