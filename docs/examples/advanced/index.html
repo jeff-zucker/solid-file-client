@@ -71,6 +71,7 @@ body {
             <p class="lead">Copy folders or files within your solid pod or from a public source to your pod.</p>
         </div>
 	<div class="row">
+		<!-- auth status -->
 		<span id="webId"></span>
         	<input id="oidc" value="https://solidweb.me/" style="width:24em" />
         <div class="logged-out">
@@ -146,6 +147,7 @@ body {
                             <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
                         </button>
                     </div>
+										<!-- SuccessLog / ErrorLog output -->
                     <ul class="logs my-2 list-group"></ul>
                 </form>
        </div><!-- end form div -->
@@ -223,7 +225,6 @@ console.log('call handleRedirectAfterLogin()')
 handleRedirectAfterLogin();
 </script>
 <!-- copyscript -->
-<!-- <script src="../tools/solidCopyDemoHelper.js" type="module"></script> -->
 <script src="./solidCopyDemo.js" type="module"></script>
 </body>
 </html>
