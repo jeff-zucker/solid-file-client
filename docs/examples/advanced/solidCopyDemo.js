@@ -15,11 +15,6 @@ console.log('SolidFileClient object initialized');
 const { MERGE: { REPLACE, KEEP_SOURCE, KEEP_TARGET } } = SolidFileClient;
 console.log('MERGE const');
 
-
-//split up L54
-
-
-
 const setCopyStatus = isCopying => {
             if (isCopying) {
                 $('.not-copying').hide()
@@ -81,13 +76,8 @@ const setCopyStatus = isCopying => {
                     console.log(from + '_' + to + '_' + merge + '_' + createPath + '_' + withAcl + '_' + withMeta);
 
                     console.log('set response');
-                    //console.log(solidCopyDemoHelper.testfirst);
                     //wo kommen diese 3 attribute/eigenschaften her ?
                     const responseToMsg = response => `${response.status} ${response.statusText} ${response.url}`
-
-                    //console.log('status:' + ${response.status} + 'text:' + ${response.statusText} + 'url:' + ${response.url});
-        //          resetLogs()
-        //wird zweimal ausgeführt
 
                     try {
                       console.log('set copy status true');
