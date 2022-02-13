@@ -95,7 +95,7 @@ const setCopyStatus = isCopying => {
                             withAcl,
                             withMeta
                         })
-                  
+
                         res.forEach(response => {
                             const msg = responseToMsg(response)
                             console.log(msg)
@@ -112,7 +112,7 @@ const setCopyStatus = isCopying => {
                         })
                     }
                     finally {
-                      console.log('Ein Problem ist aufgetreten.')
+                      console.log('try/catch passed.')
                     }
                     console.log('set copy status false');
                     setCopyStatus(false)
