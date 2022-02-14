@@ -1,14 +1,14 @@
-//file docs/examples/upload/upload.js
-//found in the state pre-V2
-//modified (co-authored) 2022-01-28 by @ewingson in order to switch to new auth (DPoP)
-//original authors @Otto-AA, @bourgeoa and @jeff-zucker
+// file docs/examples/upload/upload.js
+// modified (co-authored) 2022/january by @ewingson in order to switch to new auth (DPoP)
+// original authors @Otto-AA, @bourgeoa and @jeff-zucker
+//
 //new
 //declare
 const auth = solidClientAuthentication.getDefaultSession();      
 const fileClient = new SolidFileClient( auth, { enableLogging: true })
 
 //show / hide respective buttons
-session = iscan.getDefaultSession();
+//session = iscan.getDefaultSession();
   if (session.info.isLoggedIn) {
     $('.logged-in').show();
     $('.logged-out').hide();
