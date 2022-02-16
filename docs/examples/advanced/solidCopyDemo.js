@@ -5,7 +5,7 @@
 //trying to understand the logic and put everything in the right order / verbose
 //this is the codebase that is called at the bottom of advanced/index.html
 //import helper class
-import solidCopyDemoHelper from '../tools/solidCopyDemoHelper';
+import solidCopyDemoHelper from '../tools/solidCopyDemoHelper.js';
 console.log('file solidCopyDemo import done');
 console.log('solidCopyDemo.js code execution');
 const auth = solidClientAuthentication.getDefaultSession();
