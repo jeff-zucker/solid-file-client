@@ -1,6 +1,6 @@
 {
   "name": "solid-file-client",
-  "version": "2.1.0",
+  "version": "2.1.2",
   "description": "A library for creating and managing files and folders in Solid data stores",
   "author": "Jeff Zucker",
   "maintainer": "Alain Bourgeois",
@@ -21,7 +21,8 @@
     "test:watch": "npm run test:file -- --watch",
     "test:all": "npm run test:file && npm run test:https",
     "test:travis": "jest",
-    "prepublishOnly": "npm run build && npm run test:file",
+    "prepublishOnlyOLD": "npm run build && npm run test:file",
+    "prepublishOnly": "npm run build",
     "build": "webpack",
     "build:dev": "webpack --mode development --watch",
     "build:doc-api": "jsdoc2md src/*.js > docs/JSdoc/api.md",
@@ -71,13 +72,14 @@
     "mime-types": "^2.1.27",
     "rdflib": "^2.2.6",
     "regenerator-runtime": "^0.13.3",
-    "solid-node-client": "^2.1.0",
+    "solid-node-client": "^2.1.5",
     "standard": "^14.3.3",
     "uuid": "^8.3.0",
     "webpack": "^4.42.1",
     "webpack-cli": "^3.3.11"
   },
   "dependencies": {
+    "dotenv": "^16.0.0",
     "jszip": "^3.7.1",
     "mime": "2.5.2",
     "n3": "^1.9.0",
