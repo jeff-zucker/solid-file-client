@@ -7,7 +7,7 @@ import linksUtils from './utils/linksUtils'
 import AclParser from './utils/aclParser'
 
 const fetchLog = debug('solid-file-client:fetch')
-const { getRootUrl, getParentUrl, getItemName, areFolders, areFiles, LINK } = apiUtils
+const { getRootUrl, getParentUrl, getItemName, areFolders, /* areFiles, */ LINK } = apiUtils
 const { FetchError, assertResponseOk, composedFetch, toFetchError } = errorUtils
 const { getLinksFromResponse } = linksUtils
 const { parseFolderResponse } = folderUtils
@@ -479,6 +479,26 @@ class SolidAPI {
   }
 
   /**
+   * Get acl and meta links from a server response
+   * @param {Promise<Response>} response
+   * @param {object} [options] specify if links should be checked for existence or not
+   * @returns {Promise<Links>}
+   * @private
+   */
+  async _getItemLinks (response, options = { links: LINKS.INCLUDE_POSSIBLE }) {
+    if (options.links === LINKS.EXCLUDE) {
+      toFetchError(new Error('Invalid option LINKS.EXCLUDE for getItemLinks'))
+    }
+
+    const links = await getLinksFromResponse(response)
+    if (options.links === LINKS.INCLUDE) {
+      await this._removeInexistingLinks(links)
+    }
+
+    return links
+  }
+
+  /**
    * Remove all links which are not existing of a links object
    * @param {Links} links
    * @returns {Promise<void>}
@@ -663,7 +683,168 @@ class SolidAPI {
   }
 
   /**
-   * Copy a file (url ending with file name) or folder (url ending with "/").
+   * Copy a meta file
+   * @param {string} metaFrom Url of source meta file
+   * @param {Object} metato   Url of destination meta file
+   * @param {WriteOptions} [options]
+   * @returns {Promise<Response|undefined>} creation response
+   * @private
+   */
+  async _copyMetaFileForItem (metaFrom, metaTo, options = {}) {
+    // TODO: Default options?
+    const metaResponse = await this.get(metaFrom)
+    return this._pasteFile(metaResponse, metaTo, { withAcl: options.withAcl, withMeta: false })
+  }
+
+  /**
+   * Copy an ACL file
+   * @param {string} oldTargetFile Url of the ACL file targets (e.g. file.ttl for file.ttl.acl)
+   * @param {string} newTargetFile Url of new file targeted (e.g. new-file.ttl for new-file.ttl.acl)
+   * @param {string} aclFrom       Url of source ACL file
+   * @param {string} aclTo         Url of destination ACL file
+   * @param {WriteOptions} [options]
+   * @returns {Promise<Response>} creation response
+   * @private
+   */
+  async _copyAclFileForItem (oldTargetFile, newTargetFile, aclFrom, aclTo, options) {
+    options = {
+      ...defaultWriteOptions,
+      ...({ agent: AGENT.NO_MODIFY }),
+      ...options
+    }
+
+    const aclResponse = await this.get(aclFrom)
+    const contentType = aclResponse.headers.get('Content-Type')
+    let content = await aclResponse.text()
+
+    // TODO: Use nodejs url module, make URL and use its host/base/origin/... instead of getRootUrl
+    // Make absolute paths to the same directory relative
+    // Update relative paths to the new location
+    const fromName = getItemName(oldTargetFile)
+    const toName = areFolders(newTargetFile) ? '' : getItemName(newTargetFile)
+    if (content.includes(oldTargetFile)) {
+      // if object values are absolute URI's make them relative to the destination
+      content = content.replace(new RegExp('<' + oldTargetFile + '>', 'g'), '<./' + toName + '>')
+    }
+    if (toName !== fromName) {
+      // if relative replace file destination
+      content = content.replace(new RegExp(fromName + '>', 'g'), toName + '>')
+    }
+    if (options.agent === AGENT.TO_TARGET) {
+      content = content.replace(new RegExp('<' + getRootUrl(oldTargetFile) + 'profile/card#', 'g'), '</profile/card#')
+      content = content.replace(new RegExp('<' + getRootUrl(oldTargetFile) + 'profile/card#me>', 'g'), '</profile/card#me>')
+    }
+    if (options.agent === AGENT.TO_SOURCE) {
+      content = content.replace(new RegExp('</profile/card#', 'g'), '<' + getRootUrl(oldTargetFile) + 'profile/card#')
+      content = content.replace(new RegExp('</profile/card#me>', 'g'), '<' + getRootUrl(oldTargetFile) + 'profile/card#me>')
+    }
+
+    return this.putFile(aclTo, content, contentType, options)
+  }
+
+  /**
+   * Optimized Copy links for an item (for unified copy used by pasteFile and copyFolderContents).
+   * Use withAcl and withMeta options to specify which links to copy
+   * Does not throw if the links don't exist.
+   * @param {Promise<Response>} getResponse Response from the get call to a source item
+   * @param {Promise<Response>} putResponse Response from the put call to a destination item
+   * @param {WriteOptions} [options]
+   * @returns {Promise<Response[]>} creation responses
+   * @private
+   */
+  async _copyLinksForItem (getResponse, putResponse, options) {
+    // TODO: Default options?
+    const responses = []
+
+    // Don't extract links if nothing is to run ahead
+    if (options.withMeta || options.withAcl) {
+      const {
+        acl: aclFrom,
+        meta: metaFrom
+      } = await this._getItemLinks(getResponse).catch(() => {})
+
+      const {
+        acl: aclTo,
+        meta: metaTo
+      } = await this._getItemLinks(putResponse).catch(() => {})
+
+      if (options.withMeta && await this._linkUrlsDefined(metaFrom, metaTo)) {
+        responses.push(await this._copyMetaFileForItem(metaFrom, metaTo, options)
+          .catch(assertResponseStatus(404)))
+      }
+      if (options.withAcl && await this._linkUrlsDefined(aclFrom, aclTo)) {
+        responses.push(await this._copyAclFileForItem(getResponse.url, putResponse.url, aclFrom, aclTo, options)
+          .catch(assertResponseStatus(404)))
+      }
+    }
+
+    return responses.filter(res => res && !(res instanceof Error))
+  }
+
+  /**
+   * Paste file contents.
+   * @param {Promise<Response>} getResoponse
+   * @param {string} to
+   * @param {WriteOptions} [options]
+   * @returns {Promise<Response>}
+   * @private
+   */
+  async _pasteFile (getResponse, to, options) {
+    const content = await getResponse.blob()
+    const contentType = getResponse.headers.get('content-type')
+    const putResponse = await this.putFile(to, content, contentType, options)
+
+    // Optionally copy ACL and Meta Files
+    // TODO: What do we want to do when the source has no acl, but the target has one?
+    //       Currently it keeps the old acl.
+    await this._copyLinksForItem(getResponse, putResponse, options)
+
+    return putResponse
+  }
+
+  /**
+   * Copies Folder contents.
+   * @param {Promise<Response>} getResoponse
+   * @param {string} to
+   * @param {WriteOptions} [options]
+   * @returns {Promise<Response[]>} Resolves to an array of responses to copy further or paste.
+   * @private
+   */
+  async _copyFolderContents (getResponse, to, options) {
+    const from = getResponse.url
+    const { folders, files } = await parseFolderResponse(getResponse)
+    const folderResponse = await this.createFolder(to, options)
+
+    await this._copyLinksForItem(getResponse, folderResponse, options)
+
+    const foldersCreation = folders.map(async ({ name }) => {
+      const folderResp = await this.get(`${from}${name}/`, { headers: { Accept: 'text/turtle' } })
+      return this._copyFolderContents(folderResp, `${to}${name}/`, options)
+    })
+
+    const filesCreation = files.map(async ({ name }) => {
+      try {
+        const fileResp = await this.get(`${from}${name}`)
+        return this._pasteFile(fileResp, `${to}${name}`, options)
+      } catch (error) {
+        if (error.message.includes('already existed')) {
+          return error // Don't throw when merge=KEEP_TARGET and it tried to overwrite a file
+        } else {
+          throw toFetchError(error)
+        }
+      }
+    })
+
+    const creationResults = await composedFetch([
+      ...foldersCreation,
+      ...filesCreation
+    ]).then(responses => responses.filter(item => !(item instanceof FetchError)))
+
+    return [folderResponse].concat(...creationResults) // Alternative to Array.prototype.flat
+  }
+
+  /**
+   * Copy a file or folder.
    * Per default existing folders will be deleted before copying and links will be copied.
    * @param {string} from
    * @param {string} to
@@ -672,16 +853,37 @@ class SolidAPI {
    * The first one will be the folder specified by "to".
    * If it is a folder, the others will be creation responses from the contents in arbitrary order.
    */
-  copy (from, to, options) {
-    // TBD: Rewrite to detect folders not by url (ie remove areFolders)
-    if (areFolders(from, to)) {
-      return this.copyFolder(from, to, options)
-    }
-    if (areFiles(from, to)) {
-      return this.copyFile(from, to, options)
+  async copy (from, to, options) {
+    options = {
+      ...defaultWriteOptions,
+      ...options
     }
 
-    toFetchError(new Error('Cannot copy from a folder url to a file url or vice versa'))
+    _checkInputs('copy', from, to)
+
+    let fromItem = await this.get(from)
+    // This check works only with a strict implementation of solid standards
+    // A bug in NSS prevents 'content-type' to be reported correctly in response to HEAD
+    // https://github.com/solid/node-solid-server/issues/454
+    // TBD: Obtain item type from the link header instead
+    const fromItemType = fromItem.url.endsWith('/') ? 'Container' : 'Resource'
+
+    if (fromItemType === 'Resource') {
+      if (to.endsWith('/')) {
+        throw toFetchError(new Error('May not copy file to a folder'))
+      }
+      return this._pasteFile(fromItem, to, options)
+    } else if (fromItemType === 'Container') {
+      // TBD: Add additional check to see if response can be converted to turtle
+      //      and avoid this additional fetch.
+      if (fromItem.headers.get('content-type') !== 'text/turtle') {
+        fromItem = await this.get(fromItem.url, { headers: { Accept: 'text/turtle' } })
+      }
+      to = to.endsWith('/') ? to : `${to}/`
+      return this._copyFolderContents(fromItem, to, options)
+    } else {
+      throw toFetchError(new Error(`Unrecognized item type "${fromItemType}"`))
+    }
   }
 
   /**
@@ -735,21 +937,191 @@ class SolidAPI {
   }
 
   /**
-   * Move a file (url ending with file name) or folder (url ending with "/").
-   * Shortcut for copying and deleting items
+   * Remove a file and its links
+   * @param {Response} response   response of the HEAD/GET call
+   * @returns {Promise<Response>} response of the file deletion
+   * @private
+   */
+  async _removeItemWithLinks (response) {
+    const links = await this._getItemLinks(response, { links: LINKS.INCLUDE })
+    if (links.meta) {
+      const metaHeadResponse = await this.head(links.meta)
+      await this._removeItemWithLinks(metaHeadResponse)
+    }
+    if (links.acl) {
+      await this.delete(links.acl)
+    }
+
+    // Note: Deleting item after deleting links to make it work for folders
+    //       Change this if a new spec allows to delete them together (to avoid deleting the permissions before the folder)
+    return this.delete(response.url)
+  }
+
+  /**
+   * Remove all folders and files inside a folder
+   * @param {Response} response   response of the HEAD/GET call
+   * @returns {Promise<Response[]>} Resolves with a response for each deletion request
+   * @private
+   */
+  async _removeFolderRecursively (response) {
+    const { folders, files } = await parseFolderResponse(response)
+
+    const foldersRemoval = folders.map(async ({ url }) => {
+      const folderResponse = await this.get(url, { headers: { Accept: 'text/turtle' } })
+      return this._removeFolderRecursively(folderResponse)
+    })
+    const filesRemoval = files.map(async ({ url }) => {
+      const fileResponse = await this.head(url)
+      return this._removeItemWithLinks(fileResponse)
+    })
+
+    const subResponses = await composedFetch([...foldersRemoval, ...filesRemoval])
+    subResponses.unshift(await this._removeItemWithLinks(response))
+    return subResponses
+  }
+
+  /**
+   * Remove a file or folder.
+   * @param {string} url
+   * @returns {Promise<Response[]>} Resolves with an array of deletion responses.
+   * The first one will be the folder specified by "url".
+   * The others will be the deletion responses from the contents in arbitrary order
+   */
+  async remove (url) {
+    const headResponse = await this.head(url)
+    // This check works only with a strict implementation of solid standards
+    // A bug in NSS prevents 'content-type' to be reported correctly in response to HEAD
+    // https://github.com/solid/node-solid-server/issues/454
+    // TBD: Obtain item type from the link header instead
+    const itemType = headResponse.url.endsWith('/') ? 'Container' : 'Resource'
+
+    if (itemType === 'Resource') {
+      return this._removeItemWithLinks(headResponse)
+    } else if (itemType === 'Container') {
+      const getResponse = await this.get(headResponse.url, { headers: { Accept: 'text/turtle' } })
+      return this._removeFolderRecursively(getResponse)
+    } else {
+      throw toFetchError(new Error(`Unrecognized item type ${itemType}`))
+    }
+  }
+
+  /**
+   * Move a file and its links.
+   * Shortcut for copying and deleting file
    * @param {string} from
    * @param {string} to
-   * @param {WriteOptions} [copyOptions]
-   * @returns {Promise<Response[]>} Responses of the copying
+   * @param {WriteOptions} [options]
+   * @returns {Promise<Response[]>} Resolves with an array of creation (copy) responses.
    */
-  async move (from, to, copyOptions) {
-    const copyResponse = await this.copy(from, to, copyOptions)
-    if (areFolders(from)) {
-      await this.deleteFolderRecursively(from)
-    } else {
-      await this._deleteItemWithLinks(from)
-    }
+  async moveFile (from, to, options) {
+    const copyResponse = await this.copyFile(from, to, options)
+    await this._deleteItemWithLinks(from)
     return copyResponse
+  }
+
+  /**
+   * Move a folder and its contents
+   * Shortcut for copying and deleting folder
+   * @param {string} from
+   * @param {string} to
+   * @param {WriteOptions} [options]
+   * @returns {Promise<Response[]>} Resolves with an array of creation (copy) responses.
+   */
+  async moveFolder (from, to, options) {
+    const copyResponse = await this.copyFolder(from, to, options)
+    await this.deleteFolderRecursively(from)
+    return copyResponse
+  }
+
+  /**
+   * Moves Folder contents.
+   * @param {Promise<Response>} getResoponse
+   * @param {string} to
+   * @param {WriteOptions} [options]
+   * @returns {Promise<Response[]>} Resolves to an array of responses to copy further or paste.
+   * @private
+   */
+  async _moveFolderContents (getResponse, to, options) {
+    const from = getResponse.url
+
+    const { folders, files } = await parseFolderResponse(getResponse)
+    const folderResponse = await this.createFolder(to, options)
+
+    await this._copyLinksForItem(getResponse, folderResponse, options)
+
+    const foldersCreation = folders.map(async ({ name }) => {
+      const folderResp = await this.get(`${from}${name}/`, { headers: { Accept: 'text/turtle' } })
+      return this._moveFolderContents(folderResp, `${to}${name}/`, options)
+    })
+
+    const filesCreation = files.map(async ({ name }) => {
+      let fileResp
+      let copyResponse
+      try {
+        fileResp = await this.get(`${from}${name}`)
+        copyResponse = await this._pasteFile(fileResp, `${to}${name}`, options)
+      } catch (error) {
+        if (error.message.includes('already existed')) {
+          copyResponse = error // Don't throw when merge=KEEP_TARGET and it tried to overwrite a file
+        } else {
+          throw toFetchError(error)
+        }
+      }
+      await this._removeItemWithLinks(fileResp)
+      return copyResponse
+    })
+
+    const creationResults = await composedFetch([
+      ...foldersCreation,
+      ...filesCreation
+    ]).then(responses => responses.filter(item => !(item instanceof FetchError)))
+
+    await this._removeItemWithLinks(getResponse)
+
+    return [folderResponse, ...creationResults] // Alternative to Array.prototype.flat
+  }
+
+  /**
+   * Move a file or folder.
+   * @param {string} from source
+   * @param {string} to   destination
+   * @param {WriteOptions} [options]
+   * @returns {Promise<Response[]>} Resolves with an array of creation responses.
+   * The first one will be the folder specified by "to".
+   * If it is a folder, the others will be creation responses from the contents in arbitrary order.
+   */
+  async move (from, to, options) {
+    const moveOptions = {
+      ...defaultWriteOptions,
+      ...options
+    }
+    _checkInputs('move', from, to)
+
+    let fromItem = await this.get(from)
+    // This check works only with a strict implementation of solid standards
+    // A bug in NSS prevents 'content-type' to be reported correctly in response to HEAD
+    // https://github.com/solid/node-solid-server/issues/454
+    // TBD: Obtain item type from the link header instead
+    const fromItemType = fromItem.url.endsWith('/') ? 'Container' : 'Resource'
+
+    if (fromItemType === 'Resource') {
+      if (to.endsWith('/')) {
+        throw toFetchError(new Error('May not move file to a folder'))
+      }
+      const copyResponse = await this._pasteFile(fromItem, to, moveOptions)
+      await this._removeItemWithLinks(fromItem)
+      return copyResponse
+    } else if (fromItemType === 'Container') {
+      // TBD: Add additional check to see if response can be converted to turtle
+      //      and avoid this additional fetch.
+      if (fromItem.headers.get('content-type') !== 'text/turtle') {
+        fromItem = await this.get(fromItem.url, { headers: { Accept: 'text/turtle' } })
+      }
+      to = to.endsWith('/') ? to : `${to}/`
+      return this._moveFolderContents(fromItem, to, moveOptions)
+    } else {
+      throw toFetchError(new Error(`Unrecognized item type ${fromItemType}`))
+    }
   }
 
   /**
@@ -795,6 +1167,34 @@ function catchError (callback) {
   return err => {
     if (!callback(err)) { throw toFetchError(err) }
     return err
+  }
+}
+
+/**
+ * Check Input Arguments for Copy & Move
+ * Used for error messages
+ * @param {string} op operation to tailor the message to
+ * @param {any} from
+ * @param {any} to
+ * @returns {undefined}
+ * @private
+ */
+function _checkInputs (op, from, to) {
+  const prefix = 'Invalid parameters:'
+
+  const suffix = `
+  src: ${from}
+  des: ${to}
+`
+
+  if (typeof from !== 'string' || typeof to !== 'string') {
+    throw toFetchError(new Error(`${prefix} source and destination must be strings. Found:${suffix}`))
+  }
+  if (from === to) {
+    throw toFetchError(new Error(`${prefix} cannot ${op} source to itself. Found:${suffix}`))
+  }
+  if (to.startsWith(from)) {
+    throw toFetchError(new Error(`${prefix} cannot ${op} source inside itself. Found:${suffix}`))
   }
 }
 
