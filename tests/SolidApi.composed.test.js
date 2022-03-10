@@ -178,7 +178,7 @@ describe('composed methods', () => {
       `<${url}#new> <http://example.com#temp> <${url}#321> .`,
       `<${url}#new> <http://schema.org/temp1> <${url}#245> .`,
       `<${url}> <http://example.com#temp> <${url}#245> .`]
-      
+
       describe('patchFile sparql-update', () => {
         // INSERT/DELETE or INSERT DATA/DELETE DATA
         let insert = '@prefix ex: <http://example.com#>.\n@prefix schem: <http://schema.org/>.'
@@ -214,7 +214,8 @@ describe('composed methods', () => {
           const insert = `@prefix solid: <http://www.w3.org/ns/solid/terms#>.
           @prefix : <#>.
           @prefix ex: <http://example.com#>.
-          <> solid:patches <${usedFile.url}>;
+          <> a solid:InsertDeletePatch;
+          # <> solid:patches <${usedFile.url}>;
           solid:inserts { <> ex:temp :245. <#new> ex:temp1 :245; ex:temp1 :200. }.`
           return expect(api.rdf._parse(insert, { baseIRI: './', format: contentType })).resolves
         })
@@ -222,7 +223,8 @@ describe('composed methods', () => {
           const insert = `#@prefix solid: <http://www.w3.org/ns/solid/terms#>.
           @prefix : <#>.
           @prefix ex: <http://example.com#>.
-          <> solid:patches <${usedFile.url}>;
+          <> a solid:InsertDeletePatch;
+          # <> solid:patches <${usedFile.url}>;
           solid:inserts { <> ex:temp :245. <#new> ex:temp1 :245; ex:temp1 :200. }.`
           return expect(api.rdf._parse(insert, { baseIRI: './', format: contentType })).rejects.toThrowError('Undefined prefix "solid:" on line 4.')
         })
@@ -231,7 +233,8 @@ describe('composed methods', () => {
           @prefix schem: <http://schema.org/>.
           @prefix : <#>.
           @prefix ex: <http://example.com#>.
-          <> solid:patches <${usedFile.url}>;
+          <> a solid:InsertDeletePatch;
+          # <> solid:patches <${usedFile.url}>;
           solid:deletes { <> a :test. }.`
           await resolvesWithStatus(api.patchFile(usedFile.url, insert, contentType), 200)
           const quads = await N_TriplesQuads(usedFile.url)
@@ -245,7 +248,8 @@ describe('composed methods', () => {
           @prefix schem: <http://schema.org/>.
           @prefix : <#>.
           @prefix ex: <http://example.com#>.
-          <> solid:patches <${usedFile.url}>;
+          <> a solid:InsertDeletePatch;
+          # <> solid:patches <${usedFile.url}>;
           solid:inserts { <> ex:temp :245. <#new> schem:temp1 :245; ex:temp1 :200. }.`
           await resolvesWithStatus(api.patchFile(usedFile.url, insert, contentType), 200)
           res = await api.fetch(usedFile.url)
@@ -258,12 +262,14 @@ describe('composed methods', () => {
           @prefix schem: <http://schema.org/>.
           @prefix : <#>.
           @prefix ex: <http://example.com#>.
-          <> solid:patches <${usedFile.url}>;
+          <> a solid:InsertDeletePatch;
+          #<> solid:patches <${usedFile.url}>;
           solid:inserts { <> ex:temp :245. <#new> schem:temp1 :245; ex:temp1 :200. }.`
           const insertData = `@prefix solid: <http://www.w3.org/ns/solid/terms#>.
           @prefix : <#>.
           @prefix ex: <http://example.com#>.
-          <> solid:patches <${usedFile.url}>;
+          <> a solid:InsertDeletePatch;
+          #<> solid:patches <${usedFile.url}>;
           solid:inserts { <#new> ex:temp :321; ex:temp1 :250, :300 .};
           solid:deletes { <> a :test. }.`
           await resolvesWithStatus(api.patchFile(usedFile.url, insert, contentType), 200)
@@ -276,12 +282,14 @@ describe('composed methods', () => {
           @prefix schem: <http://schema.org/>.
           @prefix : <#>.
           @prefix ex: <http://example.com#>.
-          <> solid:patches <${usedFile.url}>;
+          <> a solid:InsertDeletePatch;
+          #<> solid:patches <${usedFile.url}>;
           solid:inserts { <> ex:temp :245. <#new> schem:temp1 :245. <#new> ex:temp1 :200 .}.`
           const insertData = `@prefix solid: <http://www.w3.org/ns/solid/terms#>.
           @prefix : <#>.
           @prefix ex: <http://example.com#>.
-          <> solid:patches <${usedFile.url}>;
+          <> a solid:InsertDeletePatch;
+          #<> solid:patches <${usedFile.url}>;
           solid:deletes { <> a :test. };
           solid:where { ?a ex:temp1 :200. };
           solid:inserts { ?a ex:temp :321; ex:temp1 :250, :300. }.`
