@@ -89,7 +89,7 @@ async function getBaseUrl (prefix) {
         if (!process.env.TEST_BASE_URL) {
           throw new Error('Please specify TEST_BASE_URL url if you use the https prefix')
         }
-        // Expects something like https://test.solid.community/private/tests/
+        // Expects something like https://test.solidcommunity.net/private/tests/
         // It must be a publicy read and write able folder
         baseUrl = process.env.TEST_BASE_URL
         baseUrl += baseUrl.endsWith('/') ? '' : '/'

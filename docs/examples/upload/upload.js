@@ -21,6 +21,7 @@ const fileClient = new SolidFileClient( auth, { enableLogging: true })
   }
 //end new
 /*old
+
 document.getElementById('login').addEventListener('click', e => solid.auth.popupLogin({ popupUri: 'https://solidcommunity.net/common/popup.html' }))
 document.getElementById('logout').addEventListener('click', e => solid.auth.logout())
 solid.auth.trackSession(session => {

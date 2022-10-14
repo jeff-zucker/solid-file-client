@@ -420,11 +420,11 @@ example 2 :
 // create a block rule
 let aclUsers = await fc.acl.addUserMode({}, [{ agentClass: 'Agent' }], ['Read'])
 // add an other rule in the block rule
-aclUsers = await fc.acl.addUserMode(aclUsers, [{ agent: 'https://example.solid.community/profile/card#me' }], ['Read', 'Write', 'Control'], ['accessTo'])
+aclUsers = await fc.acl.addUserMode(aclUsers, [{ agent: 'https://example.solidcommunity.net/profile/card#me' }], ['Read', 'Write', 'Control'], ['accessTo'])
 
 // build the aclContent
 const aclBloks = [aclUsers] // array of block rules
-const aclContent = await fc.acl.createContent('https://example.solid.community/public/text.txt', aclBloks)
+const aclContent = await fc.acl.createContent('https://example.solidcommunity.net/public/text.txt', aclBloks)
 console.log('build an aclContent ' + aclContent)
 
 
@@ -460,7 +460,7 @@ const aclPredicates = ['agent', 'agentClass', 'agentGroup', 'origin']
 
 const aclAccess = ['accessTo', 'default']
 
-- userAgent : an array of objects (predicate: object). example: [{ agent: 'https://example.com/profile/card#me'}, { agentClass: 'Agent' }, { origin: 'https://solid.community' }, { default: '' }]
+- userAgent : an array of objects (predicate: object). example: [{ agent: 'https://example.com/profile/card#me'}, { agentClass: 'Agent' }, { origin: 'https://solidcommunity.net' }, { default: '' }]
 - userMode : an array of acl modes. example: ['Read', 'Write']. To be applied to each element of userAgent
 - userAccess : an array of acl access. example : ['accessTo', 'default']
    
