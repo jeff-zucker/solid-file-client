@@ -1,0 +1,230 @@
+<!-- file docs/examples/advanced/index.html -->
+<!-- restructure february 2022 @ewingson -->
+<!-- new index -->
+<!doctype html>
+<html>
+<head>
+<!-- required meta tags -->
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+<!-- bootstrap css -->
+	<link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css" integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
+<!-- bundle -->
+	<script src="https://cdn.jsdelivr.net/npm/@inrupt/solid-client-authn-browser@1/dist/solid-client-authn.bundle.js">
+	</script>
+<!-- optional?, jquery -->
+	<script src="https://code.jquery.com/jquery-3.3.1.slim.min.js"
+integrity="sha384-q8i/X+965DzO0rT7abK41JStQIAqVgRVzpbzo5smXKp4YfRvH+8abtTE1Pi6jizo"
+crossorigin="anonymous"></script>
+<!-- optional?, popper -->
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js"
+integrity="sha384-UO2eT0CpHqdSJQ6hJty5KVphtPhzWj9WO1clHTMGa3JDZwrnQq4sF86dIHNDz0W1"
+crossorigin="anonymous"></script>
+<!-- optional?, stackpath -->
+	<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js"
+integrity="sha384-JjSmVgyd0p3pXB1rRibZUAYoIIy6OrQ6VrjIEaFf/nJGzIxFDsf4x0xIM+B07jRM"
+crossorigin="anonymous"></script>
+<!-- source -->
+	<script src="https://cdn.jsdelivr.net/npm/solid-file-client"></script>
+	<title>Solid Copy Demo</title>
+<style>
+body {
+    padding:0;
+    margin:0;
+    overflow:hidden;
+}
+#check {
+    width : 25vw;
+    height : 100vh;
+    padding:5vh;
+    background-color:#e4e4e4;
+    position:absolute;
+}
+#check h3 {
+    text-align:center;
+    width:100%;
+    margin-bottom:1em;
+}
+#check button {
+    width:100%;
+    margin-bottom:1em;
+    font-size : large;
+}
+#display {
+    border:0;
+    left : 25vw;
+    width : 75vw;
+    height : 99vh;
+    position:absolute;
+}
+#note {
+    padding:1em;
+    border:1px solid black;
+}
+</style>
+</head>
+
+<body>
+<div class="container">
+		<div class="py-5 text-center">
+            <h2>Solid Copy Demo</h2>
+            <p class="lead">Copy folders or files within your solid pod or from a public source to your pod.</p>
+        </div>
+	<div class="row">
+		<!-- auth status -->
+		<span id="webId"></span>
+        	<input id="oidc" value="https://solidweb.me/" style="width:24em" />
+        <div class="logged-out">
+        	<button id="loginButton" class="btn btn-primary">Login</button>
+        </div>
+        <div class="logged-in">
+        	<button id="logoutButton" class="btn btn-secondary">Logout</button>
+        </div>
+
+       <!-- the formular input happens here -->
+       <br />
+       <div class="col-md-8 order-md-1"><!-- form div -->
+		<br />
+       <form id="copy-form" class="needs-validation">
+                    <div class="mb-3">
+                        <label for="src">Folder/File from your pod or public pod</label>
+                        <div class="input-group">
+                            <div class="input-group-prepend">
+                                <span class="input-group-text">From</span>
+                            </div>
+                            <input type="text" class="form-control" id="src"
+                                placeholder="https://solid.example.org/folder/" required>
+                            <div class="invalid-feedback" style="width: 100%;">
+                                Please specify which item you want to copy.
+                            </div>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label for="dest">Destination at your pod</label>
+                        <div class="input-group">
+                            <div class="input-group-prepend">
+                                <span class="input-group-text">To</span>
+                            </div>
+                            <input type="text" class="form-control" id="dest"
+                                placeholder="https://solid.example.org/other/" required>
+                            <div class="invalid-feedback" style="width: 100%;">
+                                Please specify where it should be copied to.
+                            </div>
+                        </div>
+                    </div>
+
+        <div class="form-check form-check-inline">
+                        <input class="form-check-input" type="radio" name="merge-option" id="merge-replace" value="replace" checked>
+                        <label class="form-check-label" for="merge-replace">Replace target</label>
+                      </div>
+                      <div class="form-check form-check-inline">
+                        <input class="form-check-input" type="radio" name="merge-option" id="merge-keep-source" value="keep-source">
+                        <label class="form-check-label" for="merge-keep-source">Merge and keep source</label>
+                      </div>
+                      <div class="form-check form-check-inline">
+                        <input class="form-check-input" type="radio" name="merge-option" id="merge-keep-target" value="keep-target">
+                        <label class="form-check-label" for="merge-keep-target">Merge and keep target</label>
+                      </div>
+                    <div class="custom-control custom-checkbox">
+                        <input type="checkbox" class="custom-control-input" id="create-path" checked>
+                        <label class="custom-control-label" for="create-path">Create path to target container</label>
+                    </div>
+                    <div class="custom-control custom-checkbox">
+                        <input type="checkbox" class="custom-control-input" id="with-acl" checked>
+                        <label class="custom-control-label" for="with-acl">Include acl files</label>
+                    </div>
+                    <div class="custom-control custom-checkbox">
+                        <input type="checkbox" class="custom-control-input" id="with-meta" checked>
+                        <label class="custom-control-label" for="with-meta">Include meta files</label>
+                    </div>
+                    <hr class="mb-4">
+                    <div class="not-copying">
+                        <button class="btn btn-primary btn-lg btn-block" type="submit">Start Copying</button>
+                    </div>
+                    <div class="copying">
+                        <button class="btn btn-primary btn-lg btn-block disabled" type="submit">
+                            Copying...
+                            <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+                        </button>
+                    </div>
+										<!-- SuccessLog / ErrorLog output -->
+                    <ul class="logs my-2 list-group"></ul>
+                </form>
+       </div><!-- end form div -->
+
+	</div>
+	<br /><br />
+<a href="../upload/index.html"><button id="upload" class="btn btn-primary">to Upload</button></a>
+		<footer class="my-5 pt-5 text-muted text-center text-small">
+            <p class="mb-1">Implemented using solid-file-client</p>
+            <ul class="list-inline">
+                <li class="list-inline-item"><a href="https://github.com/jeff-zucker/solid-file-client">Source Code</a></li>
+                <li class="list-inline-item"><a href="https://jeff-zucker.github.io/solid-file-client/">Docs</a></li>
+                <li class="list-inline-item"><a href="https://github.com/jeff-zucker/solid-file-client/issues">Bugs</a></li>
+            </ul>
+        </footer>
+
+</div>
+
+<script>
+//get session
+const iscan = solidClientAuthentication;
+console.log('iscan initialized');
+// I have let the auth stuff in index.html and put the copy code in an extra file. now I've made it verbose and try to follow the flow.
+var session = iscan.getDefaultSession();
+console.log('define session / iscan.getDefaultSession done')
+
+//define buttons
+console.log('define Buttons and WebID');
+const loginButton = document.querySelector("#loginButton");
+const logoutButton = document.querySelector("#logoutButton");
+const webIdArea = document.querySelector("#webId");
+console.log('buttons and WebID defined');
+//event
+loginButton.onclick = ()=> {
+	console.log('login button clicked');
+	return iscan.login({
+    	oidcIssuer: document.getElementById("oidc").value,
+    	redirectUrl: window.location.href,
+    	clientName: "solid-file-client-demo"
+  	});
+};
+//event
+logoutButton.onclick = async ()=> {
+	console.log('logout button clicked');
+	await session.logout();
+	console.log('logout done');
+	showLoginStatus();
+};
+//handle redirect
+async function handleRedirectAfterLogin() {
+	console.log('handle redirect called');
+	await iscan.handleIncomingRedirect();
+	showLoginStatus();
+	//if (session.info.isLoggedIn)  main(session); //call main function
+}
+//show status
+function showLoginStatus() {
+	console.log('show status start');
+	session = iscan.getDefaultSession();
+	if (session.info.isLoggedIn) {
+		$('.logged-in').show();
+		$('.logged-out').hide();
+		webId.innerHTML = `Logged in as ${session.info.webId}`;
+		console.log('show logged in');
+	}
+	else {
+		$('.logged-in').hide();
+		$('.logged-out').show();
+		webId.innerHTML = `Not logged in.`;
+		console.log('show logged out');
+	}
+}
+//initial call
+console.log('call handleRedirectAfterLogin()')
+handleRedirectAfterLogin();
+</script>
+<!-- copyscript -->
+<script src="./solidCopyDemo.js" type="module"></script>
+</body>
+</html>

@@ -1,5 +1,26 @@
+// file docs/examples/upload/upload.js
+// modified (co-authored) 2022/january by @ewingson in order to switch to new auth (DPoP)
+// original authors @Otto-AA, @bourgeoa and @jeff-zucker
+//
+//new
+//declare
+const auth = solidClientAuthentication.getDefaultSession();      
+const fileClient = new SolidFileClient( auth, { enableLogging: true })
 
-const fileClient = new SolidFileClient(solid.auth, { enableLogging: true })
+//show / hide respective buttons
+//session = iscan.getDefaultSession();
+  if (session.info.isLoggedIn) {
+    $('.logged-in').show();
+    $('.logged-out').hide();
+    webId.innerHTML = `Logged in as ${session.info.webId}`;
+  }
+  else {
+    $('.logged-in').hide();
+    $('.logged-out').show();
+    webId.innerHTML = `Not logged in.`;
+  }
+//end new
+/*old
 
 document.getElementById('login').addEventListener('click', e => solid.auth.popupLogin({ popupUri: 'https://solidcommunity.net/common/popup.html' }))
 document.getElementById('logout').addEventListener('click', e => solid.auth.logout())
@@ -13,7 +34,7 @@ solid.auth.trackSession(session => {
         $('.webid').text(session.webId)
     }
 })
-
+end old*/
 const setUploadStatus = isUploading => {
     if (isUploading) {
         $('.not-uploading').hide()

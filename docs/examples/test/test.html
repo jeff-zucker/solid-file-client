@@ -1,0 +1,49 @@
+<!-- file docs/examples/test/test.html -->
+<!-- restructure february 2022 @ewingson -->
+<!-- test script modified -->
+<!DOCTYPE html>                                                              
+<html>                                                                       
+  <head>                                                                     
+    <meta charset="UTF-8" />                                                 
+    <meta name="viewport" content="width=device-width" />                    
+    <title>solid-file-client in-browser example</title>                      
+<script src="https://cdn.jsdelivr.net/npm/@inrupt/solid-client-authn-browser@1/dist/solid-client-authn.bundle.js"></script>                              
+<script src="https://cdn.jsdelivr.net/npm/solid-file-client/dist/browser/solid-file-client.bundle.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/solid-file-client"></script>
+</head>                                                                      
+<body>                                                                       
+    pod URI where you can write <input id="uri" style="width:20rem;">        
+    <button id="login">login to test</button>                                
+                                                                             
+<script type="module">                                                       
+  const auth = solidClientAuthentication.getDefaultSession();                
+  const fc = new SolidFileClient(auth);                                      
+  async function main(session){                                              
+    const uri =  window.localStorage.getItem('uri');                         
+    const expected = "Some test content.";                                   
+    let res1 = await fc.putFile(uri,expected,"text/plain")                   
+    console.log(res1.status);                                                
+    let res2 = await fc.readFile(uri)                                        
+    console.log(res2);                                                       
+  }                                                                          
+                                                                             
+                                                                             
+  // LOGIN STUFF                                                             
+  document.getElementById('login').onclick = ()=> {                          
+    const uri = document.getElementById('uri').value;                        
+    window.localStorage.setItem('uri',uri);                                  
+    solidClientAuthentication.login({                                        
+      oidcIssuer: "https://solidcommunity.net",                              
+      redirectUrl: window.location.href,                                     
+      clientName: "solid-file-client-demo-test"                                   
+    });                                                                      
+  }                                                                          
+  async function handleRedirectAfterLogin() {                                
+    await solidClientAuthentication.handleIncomingRedirect();                
+    let session = solidClientAuthentication.getDefaultSession();             
+    if (session.info.isLoggedIn)  main(session);                             
+  }                                                                          
+  handleRedirectAfterLogin();                                                
+</script>
+</body>
+</html>

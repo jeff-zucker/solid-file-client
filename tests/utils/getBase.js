@@ -1,4 +1,5 @@
-const auth = require('solid-auth-cli')
+//const auth = require('solid-auth-cli')
+const auth = require('solid-node-client')
 
 /**
    * expects "app://ls" OR "file://" OR "https://"
@@ -12,6 +13,7 @@ async function testPrep (scheme) {
     let session = await auth.login()
     let webId = session.webId
     if (!webId) throw new Error("Couldn't login!")
+    else console.log(`logged in as ${webId}`);
     base = webId.replace('/profile/card#me', '') + '/public'
   }
   return base + '/'

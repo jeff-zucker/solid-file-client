@@ -1,3 +1,5 @@
+<!-- file docs/examples/upload/index.html -->
+<!-- restructure february 2022 @ewingson -->
 <!doctype html>
 <html lang="en">
 
@@ -10,18 +12,34 @@
     <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css"
         integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
 
-    <title>Solid Upload</title>
+    <title>Solid Upload Demo</title>
+    <!-- bundle -->
+    <script src="https://cdn.jsdelivr.net/npm/@inrupt/solid-client-authn-browser@1/dist/solid-client-authn.bundle.js">
+</script>
+	<!-- end bundle -->
 </head>
 
 <body>
 
     <div class="container">
         <div class="py-5 text-center">
-            <h2>Solid Upload</h2>
+            <h2>Solid Upload Demo</h2>
             <p class="lead">Upload files from your computer to your pod.</p>
         </div>
 
         <div class="row">
+        			<!-- new -->
+        			<!-- login area hardcoded default value, options input needs some TLC -->
+                    <span id="webId"></span>
+                    <input id="oidc" value="https://solidweb.me/" style="width:24em" />
+                    <div class="logged-out">
+                      <button id="loginButton" class="btn btn-primary">Login</button>
+                    </div>
+                    <div class="logged-in">
+                      <button id="logoutButton" class="btn btn-secondary">Logout</button>
+                    </div>
+                    <!-- end new -->
+            <!-- old
             <div class="col-md-4 order-md-2 mb-4">
                 <h4 class="d-flex justify-content-between align-items-center mb-3">
                     <span class="text-muted">Login to your Pod</span>
@@ -34,6 +52,7 @@
                     <button id="logout" class="btn btn-secondary">Logout</button>
                 </div>
             </div>
+            end old -->
             <div class="col-md-8 order-md-1">
                 <form id="upload-form" class="needs-validation">
                     <h4 class="mb-3">Settings</h4>
@@ -70,6 +89,8 @@
                 </form>
             </div>
         </div>
+<br /><br />
+<a href="../advanced/index.html"><button id="copy" class="btn btn-primary">to Copy</button></a>
 
         <footer class="my-5 pt-5 text-muted text-center text-small">
             <p class="mb-1">Implemented using solid-file-client</p>
@@ -80,11 +101,61 @@
             </ul>
         </footer>
     </div>
-
-    <!-- Scripts for the layout -->
-    <script src="https://code.jquery.com/jquery-3.3.1.slim.min.js"
+<!-- new -->
+<!-- change location of jq -->
+<script src="https://code.jquery.com/jquery-3.3.1.slim.min.js"
         integrity="sha384-q8i/X+965DzO0rT7abK41JStQIAqVgRVzpbzo5smXKp4YfRvH+8abtTE1Pi6jizo"
-        crossorigin="anonymous"></script>
+        crossorigin="anonymous"></script>           
+<script>
+//get session
+const iscan = solidClientAuthentication;
+var session = iscan.getDefaultSession();
+
+//define buttons
+const loginButton = document.querySelector("#loginButton");
+const logoutButton = document.querySelector("#logoutButton");
+const webIdArea = document.querySelector("#webId");
+//event
+loginButton.onclick = ()=> { 
+  return iscan.login({
+    oidcIssuer: document.getElementById("oidc").value,
+    redirectUrl: window.location.href,
+    clientName: "solid-file-client-demo"
+  });
+};
+//event
+logoutButton.onclick = async ()=> { 
+  await session.logout();
+  showLoginStatus();
+};
+//handle redirect
+async function handleRedirectAfterLogin() {
+  await iscan.handleIncomingRedirect();
+  showLoginStatus();
+}
+//show status
+function showLoginStatus() {
+  session = iscan.getDefaultSession();
+  if (session.info.isLoggedIn) {
+    $('.logged-in').show()
+    $('.logged-out').hide()
+    //loginButton.style.display = "none";
+    //logoutButton.style.display = "inline-block";
+    webId.innerHTML = `Logged in as ${session.info.webId}`;
+  }
+  else {
+    $('.logged-in').hide()
+    $('.logged-out').show()
+    //loginButton.style.display =  "inline-block";
+    //logoutButton.style.display = "none";
+    webId.innerHTML = `Not logged in.`;
+  }
+}
+//initial call
+handleRedirectAfterLogin();
+</script> 
+<!--end new-->
+    <!-- Scripts for the layout -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js"
         integrity="sha384-UO2eT0CpHqdSJQ6hJty5KVphtPhzWj9WO1clHTMGa3JDZwrnQq4sF86dIHNDz0W1"
         crossorigin="anonymous"></script>

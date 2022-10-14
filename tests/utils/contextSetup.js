@@ -85,7 +85,7 @@ async function getBaseUrl (prefix) {
     case prefixes.https:
       try {
         // Due to a bug in combination with jest authentication will be skipped
-        // await auth.login()
+         await auth.login()
         if (!process.env.TEST_BASE_URL) {
           throw new Error('Please specify TEST_BASE_URL url if you use the https prefix')
         }
