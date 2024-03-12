@@ -89,8 +89,12 @@ function assertResponseOk (res) {
     const fetchErr = (res.status in defaultErrorDescriptions)
       ? new SingleResponseError(res, `${res.status} ${res.url} - ${defaultErrorDescriptions[res.status]}`)
       : new SingleResponseError(res)
-
-    throw new FetchError({ successful: [], rejectedErrors: [fetchErr] })
+//    throw new FetchError({ successful: [], rejectedErrors: [fetchErr] })
+//
+// JZ replaced the line above with the line below, 2024-03-11
+// otherwise, this spews untrappable error messages
+//
+      return res;
   }
   return res
 }

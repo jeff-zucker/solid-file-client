@@ -86,12 +86,15 @@ class SolidFileClient extends SolidApi {
    * @returns {string} headStr
    */
   async readHead (url, options) {
-    const response = await super.head(url, options)
-    let headStr = ''
-    for (var pair of response.headers.entries()) {
-      headStr += pair[0] + ': ' + pair[1] + '\n'
+    try {
+      const response = await super.head(url, options)
+      let headStr = ''
+      for (var pair of response.headers.entries()) {
+        headStr += pair[0] + ': ' + pair[1] + '\n'
+      }
+      return headStr
     }
-    return headStr
+    catch(e){throw(e)}
   }
 
   /**
