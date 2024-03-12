@@ -434,8 +434,8 @@ class SolidAPI {
       ...options
     }
     const folderRes = await this.get(url, { headers: { Accept: 'text/turtle' } })
+    if(folderRes.status==404) return {files:[],folders:[]} // JZ, 2024-03-12
     const parsedFolder = await parseFolderResponse(folderRes, url)
-
     if (options.links === LINKS.INCLUDE_POSSIBLE || options.links === LINKS.INCLUDE) {
       const addItemLinks = async item => { item.links = await this.getItemLinks(item.url, options) }
 //console.log(1,await addItemLinks(parsedFolder),options);
@@ -715,6 +715,9 @@ class SolidAPI {
     // pod root cannot be deleted recursively
     if (url === getRootUrl(url)) { throw toFetchError(new Error('405 Pod cannot be deleted')) }
     const { folders, files } = await this.readFolder(url,{links:LINKS.INCLUDE})
+    // ADDED BY JZ, 2024-04-12
+    // don't try to delete contents of an empty folder
+    if(folders.length<1 &&files.length<1) return [];
     return composedFetch([
       ...folders.map(({ url }) => this.deleteFolderRecursively(url)),
       ...files.map(({ url }) => this._deleteItemWithLinks(url))
@@ -730,6 +733,7 @@ class SolidAPI {
    */
   async deleteFolderRecursively (url) {
     const resolvedResponses = await this.deleteFolderContents(url)
+    if(resolvedResponses.length<1) return [];
     resolvedResponses.unshift(await this._deleteItemWithLinks(url))
     return resolvedResponses
   }
