@@ -17,6 +17,7 @@ const { FetchError, assertResponseOk, composedFetch, toFetchError } = errorUtils
  * @property {boolean} [withMeta=true] also copy meta files
  */
 const zipOptions = {
+  blob: true,
   links: 'include',
   withAcl: true,
   withMeta: true
@@ -36,6 +37,7 @@ const zipOptions = {
  * @property {aclDefault} [aclDefault="must"] specify if acl:default is needed to validate ACL document
  */
 const unzipOptions = {
+  blob: true,
   links: 'include',
   withAcl: true,
   withMeta: true,
@@ -195,9 +197,9 @@ class SolidFileClient extends SolidApi {
     }
 
     try {
-      const type = this.zipSupport().blob ? 'blob' : 'string'
+      const type = (this.zipSupport().blob && options.blob === true) ? 'blob' : 'string'
       return this.getAsZip(path, options)
-        .then(zip => zip.generateAsync({ type: type }))
+        .then(zip => zip.generateAsync({ type: 'string' })) // alain
         .then(blob => this.createFile(archiveUrl, blob, 'application/zip'))
     } catch (err) {
       throw toFetchError(new Error(`getAsZip ${err}`))
@@ -235,7 +237,7 @@ class SolidFileClient extends SolidApi {
         await this.addItemsToZip(folderZip, folderItems, options)
       // zip file with links
       } else {
-        if (this.zipSupport().blob) {
+        if (this.zipSupport().blob && options.blob === true) {
           const blob = await this.getFileBlob(item)
           zip.file(itemName, blob, { binary: true })
         } else {
@@ -267,7 +269,7 @@ class SolidFileClient extends SolidApi {
     for (const i in itemLinks) {
       const itemLink = itemLinks[i]
       const { fileName, content } = await this.itemLinkContent(itemLink, item, options)
-      /* if (this.zipSupport().blob) {
+      /* if (this.zipSupport().blob && options.blob === true) {
         // not supported by browser ???
         const blob = new Blob([content], { type: 'text/turtle' })
         zip.file(fileName, blob, { binary: true })
@@ -314,7 +316,7 @@ class SolidFileClient extends SolidApi {
     }
     try {
       let blob
-      if (this.zipSupport().blob) blob = await this.getFileBlob(file)
+      if (this.zipSupport().blob && options.blob === true) blob = await this.getFileBlob(file)
       else blob = await this.readFile(file) // more details to be given is it only for test ???
       const zip = await JSZip.loadAsync(blob)
       const responses = []
@@ -389,7 +391,7 @@ class SolidFileClient extends SolidApi {
     const relativePath = item.name
     let contentType, blob
     try {
-      const type = this.zipSupport().blob ? 'blob' : 'string'
+      const type = (this.zipSupport().blob && options.blob === true) ? 'blob' : 'string'
       blob = await item.async(type)
       contentType = blob.type ? blob.type : mime.getType(relativePath)
 
@@ -418,7 +420,7 @@ class SolidFileClient extends SolidApi {
     try {
       if (zipItemLink) {
         let content
-        if (this.zipSupport().blob) {
+        if (this.zipSupport().blob && options.blob === true) {
           const blob = await zipItemLink.async('blob')
           content = await blob.text()
         } else content = await zipItemLink.async('string')
@@ -488,7 +490,7 @@ class SolidFileClient extends SolidApi {
 
   async getFileBlob (path) {
     const res = await this.get(path)
-    return res.blob()
+    return await res.blob()
   }
 }
 
