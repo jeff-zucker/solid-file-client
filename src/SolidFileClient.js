@@ -199,7 +199,7 @@ class SolidFileClient extends SolidApi {
     try {
       const type = (this.zipSupport().blob && options.blob === true) ? 'blob' : 'string'
       return this.getAsZip(path, options)
-        .then(zip => zip.generateAsync({ type: 'string' })) // alain
+        .then(zip => zip.generateAsync({ type: type }))
         .then(blob => this.createFile(archiveUrl, blob, 'application/zip'))
     } catch (err) {
       throw toFetchError(new Error(`getAsZip ${err}`))
