@@ -180,7 +180,7 @@ class RdfQuery {
         if (quad) {
           quadsArray.push(quad)
         }
-        if (err) return reject(err)
+        // if (err) return reject(err) // JZ 2024-03-19, it was generating spurious errors
         if (!quad) {
           const store = new N3.Store()
           store.addQuads(quadsArray)
